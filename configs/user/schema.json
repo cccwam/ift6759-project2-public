@@ -1,0 +1,145 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "definitions": {
+    "python-definition": {
+      "type": "object",
+      "properties": {
+        "module": {
+          "description": "The python module to load",
+          "type": "string"
+        },
+        "name": {
+          "description": "The python name to load",
+          "type": "string"
+        }
+      },
+      "required": [
+        "module",
+        "name"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "properties": {
+    "model": {
+      "type": "object",
+      "properties": {
+        "definition": {
+          "$ref": "#/definitions/python-definition"
+        },
+        "hyper_params": {
+          "type": "object",
+          "description": "The hyper-parameters to use for this model during training",
+          "dropout": {
+            "type": "array"
+          }
+        },
+        "source": {
+          "oneOf": [
+            {
+              "enum": [
+                "online",
+                ""
+              ]
+            },
+            {
+              "pattern": "^.*\\.hdf5$"
+            }
+          ],
+          "description": "Online evaluation, pre-saved .hdf5 file for evaluation or undefined method of evaluation"
+        }
+      },
+      "required": [
+        "definition",
+        "hyper_params",
+        "source"
+      ],
+      "additionalProperties": false
+    },
+    "data_loader": {
+      "type": "object",
+      "properties": {
+        "definition": {
+          "$ref": "#/definitions/python-definition"
+        },
+        "hyper_params": {
+          "type": "object",
+          "description": "The hyper-parameters to use for this data loader",
+          "properties": {
+            "should_preprocess_data": {
+              "type": "boolean"
+            },
+            "preprocessed_data_source": {
+              "type": "object",
+              "properties": {
+                "training": {
+                  "type": "string"
+                },
+                "validation": {
+                  "type": "string"
+                },
+                "test": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "training",
+                "validation",
+                "test"
+              ]
+            }
+          },
+          "required": [
+            "should_preprocess_data",
+            "preprocessed_data_source"
+          ]
+        }
+      },
+      "required": [
+        "definition",
+        "hyper_params"
+      ],
+      "additionalProperties": false
+    },
+    "trainer": {
+      "type": "object",
+      "description": "The hyper-parameters to use for the trainer",
+      "properties": {
+        "hyper_params": {
+          "type": "object",
+          "properties": {
+            "lr_rate": {
+              "type": "array"
+            },
+            "batch_size": {
+              "type": "array"
+            },
+            "epochs": {
+              "type": "array"
+            },
+            "patience": {
+              "type": "array"
+            }
+          },
+          "required": [
+            "lr_rate",
+            "epochs",
+            "batch_size",
+            "patience"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "hyper_params"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "model",
+    "data_loader"
+  ],
+  "additionalProperties": false
+}
