@@ -12,8 +12,8 @@ set -e
 # Example usage:
 #   /create_venv.sh
 
-LOCAL_GIT_REPO_FOLDER=~/ift6759-project1
-LOCAL_VENV_FOLDER=~/ift6759-project1-venv
+LOCAL_GIT_REPO_FOLDER=~/ift6759-project2
+LOCAL_VENV_FOLDER=~/ift6759-project2-venv
 
 if [ -d "$LOCAL_VENV_FOLDER" ];
 then
