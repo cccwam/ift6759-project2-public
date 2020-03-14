@@ -21,6 +21,7 @@
 .idea/**/dictionaries
 .idea/**/shelf
 .idea/webServers.xml
+.idea/ift6759-project2.iml
 
 # Generated files
 .idea/**/contentModel.xml
