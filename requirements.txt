@@ -16,4 +16,4 @@ numpy
 tensorboard
 jupyter
 spacy
-sacrebleu
+sacrebleu==1.4.3
