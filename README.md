@@ -62,17 +62,29 @@ Simply run `sbatch sbatch_template.sh` to launch the training job.
 
 ## Evaluator.py example usage
 
+* `input-file-path`: path to input file (training data or pre-calculated predictions)
+* `target-file-path`: path to target (reference) file
+* `print-all-scores`: will print one score per sentence
+* `do-not-run-model`: If specified, `--input-file-path` will be treated as predictions. Otherwise, as testing data
+
+**Examples:**
+
+*Produce predictions and then calculate BLEU score:*
+
+```
+python evaluator.py \
+    --input-file-path /project/cq-training-1/project2/data/train.lang1 \
+    --target-file-path /project/cq-training-1/project2/data/train.lang2
+```
+
+*Read predictions from file and then calculate BLEU score:*
+
 ```
 python evaluator.py \
     --input-file-path predictions.txt \
-    --target-file-path targets.txt \
+    --target-file-path /project/cq-training-1/project2/data/train.lang2 \
     --do-not-run-model
 ```
-
-* `input-file-path`: path to input file
-* `target-file-path`: path to target (reference) file
-* `print-all-scores`: will print one score per sentence
-* `do-not-run-model`: (Default: True) will use --input-file-path as predictions, instead of running the model on it
 
 ## Trainer.py example usage
 
