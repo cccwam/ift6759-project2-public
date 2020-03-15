@@ -5,14 +5,10 @@ import argparse
 import os
 import typing
 
-# netCDF4 has to be imported before tensorflow because of hdf5 issues
-import netCDF4
 import tensorflow as tf
 from tensorboard.plugins.hparams import api as hp
 
 from libs import helpers
-
-_ = netCDF4  # surpress unused module warning
 
 
 def main(

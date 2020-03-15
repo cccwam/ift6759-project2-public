@@ -9,15 +9,10 @@ tensorflow_gpu==2.0.0 # Keep fixed
 pandas
 jsonschema
 tqdm
-h5netcdf
-netCDF4
-lz4
-opencv-python
-pyyaml
 h5py
-pvlib
-tables
+pyyaml
 matplotlib
 numpy
 tensorboard
 jupyter
+spacy
