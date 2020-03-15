@@ -16,3 +16,4 @@ numpy
 tensorboard
 jupyter
 spacy
+sacrebleu
