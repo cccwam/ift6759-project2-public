@@ -6,7 +6,6 @@ from datetime import datetime, timedelta
 
 import jsonschema
 import tensorflow as tf
-import pvlib
 import numpy as np
 import pandas as pd
 
