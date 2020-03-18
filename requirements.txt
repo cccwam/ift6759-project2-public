@@ -15,5 +15,5 @@ matplotlib
 numpy
 tensorboard
 jupyter
-spacy
+spacy==2.2.2
 sacrebleu==1.4.3
