@@ -9,8 +9,8 @@ tensorflow_gpu==2.0.0 # Keep fixed
 pandas
 jsonschema
 tqdm
+h5py
 pyyaml
-tables
 matplotlib
 numpy
 tensorboard
@@ -24,7 +24,7 @@ spacy==2.2.2 # Version from Helios
 tokenizers==0.6.0
 transformers=2.5.1
 
-sacrebleu
+sacrebleu==1.4.3
 
 # To plot models
 pydot
