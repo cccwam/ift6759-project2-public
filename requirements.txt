@@ -22,7 +22,7 @@ spacy==2.2.2 # Version from Helios
 #   This forces the use of tokenizers 0.6.0 during installation instead of 0.5.1
 #   See bug https://github.com/huggingface/transformers/issues/2831
 tokenizers==0.6.0
-transformers=2.5.1
+transformers==2.5.1
 
 sacrebleu==1.4.3
 
