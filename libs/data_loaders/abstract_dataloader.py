@@ -1,7 +1,8 @@
-from abc import ABCMeta, abstractmethod
-import tensorflow as tf
+from abc import abstractmethod
 from pathlib import Path
 from typing import Optional
+
+import tensorflow as tf
 
 
 class AbstractDataloader:

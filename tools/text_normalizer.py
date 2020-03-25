@@ -1,12 +1,13 @@
-import spacy
-import fire
 import logging
-import numpy as np
-from sklearn.utils import shuffle
-from pathlib import Path
-import pandas as pd
 import pickle
+from pathlib import Path
+
+import fire
+import numpy as np
+import pandas as pd
+import spacy
 import tqdm
+from sklearn.utils import shuffle
 
 logger = logging.getLogger(__name__)
 

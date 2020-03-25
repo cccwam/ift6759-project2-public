@@ -2,17 +2,14 @@
 #   Trains the predictor
 
 import argparse
-import os
+import logging
 import typing
+from pathlib import Path
 
 import tensorflow as tf
 from tensorboard.plugins.hparams import api as hp
 
 from libs import helpers
-import logging
-
-from pathlib import Path
-
 from libs.data_loaders.abstract_dataloader import AbstractDataloader
 
 logger = logging.getLogger(__name__)

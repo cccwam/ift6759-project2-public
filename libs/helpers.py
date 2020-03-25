@@ -1,14 +1,11 @@
 import json
+import logging
 import os
-import pickle
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import jsonschema
 import tensorflow as tf
-
-import logging
-
 
 logger = logging.getLogger(__name__)
 

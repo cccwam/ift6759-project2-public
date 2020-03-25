@@ -1,12 +1,8 @@
-import spacy
-import fire
 import logging
-import numpy as np
-from sklearn.utils import shuffle
-from pathlib import Path
-import pandas as pd
 import pickle
-import tqdm
+from pathlib import Path
+
+import fire
 
 logger = logging.getLogger(__name__)
 
