@@ -68,7 +68,7 @@ def my_numericalizer(data_path):
         return {**special_tokens, **{token_to_word[k]: k + len(special_tokens) for k, _ in
                                      sorted(token_to_frequency.items(), key=lambda item: item[1], reverse=True)}}
 
-    ## EN
+    # EN
 
     logging.info("Create English vocabulary")
 
@@ -98,7 +98,7 @@ def my_numericalizer(data_path):
     with open(data_path / 'unaligned_en_numericalized.pickle', 'wb') as handle:
         pickle.dump(unaligned_en_numericalized, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-    ## FR
+    # FR
 
     logging.info("Create French vocabulary")
 

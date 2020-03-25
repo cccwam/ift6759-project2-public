@@ -8,7 +8,7 @@ import pandas as pd
 import pickle
 import tqdm
 
-logging = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def my_tokenizer(data_path,
@@ -30,13 +30,13 @@ def my_tokenizer(data_path,
     Returns:
 
     """
-    logging.basicConfig(level=logging.INFO)
+    logger.basicConfig(level=logger.INFO)
 
     data_path = Path(data_path)
     output_path = Path(output_path)
     output_path.mkdir(parents=True, exist_ok=True)
 
-    logging.info("Initialize Spacy tokenizers")
+    logger.info("Initialize Spacy tokenizers")
 
     # python -m spacy download en_core_web_sm
     tokenizer_en = spacy.load("en_core_web_sm")
@@ -50,7 +50,7 @@ def my_tokenizer(data_path,
     # Add back the sentencizer because the tokenizer will run without other parts
     tokenizer_fr.add_pipe(tokenizer_fr.create_pipe('sentencizer'))
 
-    logging.info("Read all inputs files")
+    logger.info("Read all inputs files")
 
     with open(data_path / "unaligned.en", 'r') as f:
         unaligned_en = [line.rstrip() for line in f]  # Remove the \n
@@ -99,8 +99,8 @@ def my_tokenizer(data_path,
             if split_sentence:
                 yield sentence
 
-    ## EN
-    logging.info("Tokenize English corpora")
+    # EN
+    logger.info("Tokenize English corpora")
 
     unaligned_en_tokenized = list(my_tokenize(unaligned_en, tokenizer=tokenizer_en,
                                               keep_case=False, keep_punctuation=False))
@@ -108,8 +108,8 @@ def my_tokenizer(data_path,
     train_lang1_en_tokenized = list(my_tokenize(train_lang1_en, tokenizer=tokenizer_en,
                                                 keep_case=False, keep_punctuation=False))
 
-    ## FR
-    logging.info("Tokenize French corpora")
+    # FR
+    logger.info("Tokenize French corpora")
 
     unaligned_fr_tokenized = list(my_tokenize(unaligned_fr, tokenizer=tokenizer_fr,
                                               keep_case=True, keep_punctuation=True))
@@ -121,14 +121,14 @@ def my_tokenizer(data_path,
         train_lang1_en_tokenized), "The bilingual dataset must match in number of samples"
 
     if should_shuffle:
-        logging.info("Shuffle corpora")
+        logger.info("Shuffle corpora")
         if shuffle_seed:
             np.random.seed(shuffle_seed)
         train_lang1_en_tokenized, train_lang2_fr_tokenized = shuffle(train_lang1_en_tokenized, train_lang2_fr_tokenized)
         unaligned_en_tokenized = shuffle(unaligned_en_tokenized)
         unaligned_fr_tokenized = shuffle(unaligned_fr_tokenized)
 
-    logging.info("Save all corpora")
+    logger.info("Save all corpora")
 
     with open(output_path / 'unaligned_en_tokenized.pickle', 'wb') as handle:
         pickle.dump(unaligned_en_tokenized, handle, protocol=pickle.HIGHEST_PROTOCOL)

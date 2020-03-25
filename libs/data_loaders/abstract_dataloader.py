@@ -18,9 +18,9 @@ class AbstractDataloader:
         self._seq_length: int = self._dl_hparams["seq_length"]
 
         # To be initialized in build method (because called for each experiment during hparams search)
-        self.ds_test: tf.data.Dataset = None
-        self.ds_valid: tf.data.Dataset = None
-        self.ds_train: tf.data.Dataset = None
+        self.test_dataset: tf.data.Dataset = None
+        self.valid_dataset: tf.data.Dataset = None
+        self.training_dataset: tf.data.Dataset = None
 
     @abstractmethod
     def build(self,
@@ -39,17 +39,17 @@ class AbstractDataloader:
         return " ".join(mapped_tokens)
 
     def _build_all_dataset(self, ds: tf.data.Dataset, batch_size: int):
-        self.ds_test = ds.take(int(self._samples_for_test / batch_size))
+        self.test_dataset = ds.take(int(self._samples_for_test / batch_size))
         ds = ds.skip(int(self._samples_for_test / batch_size))
-        self.ds_valid = ds.take(int(self._samples_for_valid / batch_size))
-        self.ds_train = ds.skip(int(self._samples_for_valid / batch_size))
+        self.valid_dataset = ds.take(int(self._samples_for_valid / batch_size))
+        self.training_dataset = ds.skip(int(self._samples_for_valid / batch_size))
 
         self._validation_steps = int(self._samples_for_valid / batch_size)
 
         if self._samples_for_train > 0:
             # Allow training with less samples and keeping the same validation size
             # Useful to train models more quickly
-            self.ds_train = self.ds_train.take(int(self._samples_for_train / batch_size))
+            self.training_dataset = self.training_dataset.take(int(self._samples_for_train / batch_size))
 
     @property
     def validation_steps(self):

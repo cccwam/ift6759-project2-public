@@ -53,7 +53,7 @@ def train_models(
     data_loader_dict = config['data_loader']
     trainer_hyper_params = config['trainer']['hyper_params']
 
-    data_loader = helpers.get_online_data_loader(config)
+    data_loader: AbstractDataloader = helpers.get_online_data_loader(config)
 
     mirrored_strategy = helpers.get_mirrored_strategy()
 
@@ -88,7 +88,7 @@ def train_models(
     hp_patience = hp.HParam('patience', hp.Discrete(trainer_hyper_params["patience"]))
 
     data_loader.build(batch_size=hp_batch_size.domain.values[0])
-    ds_train, ds_valid = data_loader.ds_train, data_loader.ds_valid
+    training_dataset, valid_dataset = data_loader.training_dataset, data_loader.valid_dataset
 
     # Main loop to iterate over all possible hyper parameters
     variation_num = 0
@@ -132,8 +132,8 @@ def train_models(
                         tensorboard_log_dir = tensorboard_experiment_id / str(variation_num)
                         # Fileformat must be hdf5, otherwise bug
                         # https://github.com/tensorflow/tensorflow/issues/34127
-                        checkpoints_path = tensorboard_log_dir / \
-                                           (tensorboard_experiment_name + ".{epoch:02d}-{val_loss:.2f}.hdf5")
+                        checkpoints_path = tensorboard_log_dir / (tensorboard_experiment_name +
+                                                                  ".{epoch:02d}-{val_loss:.2f}.hdf5")
                         logging.info(f"Start variation id: " + str(tensorboard_log_dir))
                     else:
                         tensorboard_log_dir, checkpoints_path = None, None
@@ -141,8 +141,8 @@ def train_models(
 
                     train_model(
                         model=model,
-                        ds_train=ds_train,
-                        ds_valid=ds_valid,
+                        training_dataset=training_dataset,
+                        valid_dataset=valid_dataset,
                         validation_steps=data_loader.validation_steps,
                         tensorboard_log_dir=tensorboard_log_dir,
                         hparams=hparams,
@@ -160,8 +160,8 @@ def train_models(
 
 def train_model(
         model: tf.keras.Model,
-        ds_train: tf.data.Dataset,
-        ds_valid: tf.data.Dataset,
+        training_dataset: tf.data.Dataset,
+        valid_dataset: tf.data.Dataset,
         validation_steps: int,
         tensorboard_log_dir,
         hparams,
@@ -175,8 +175,8 @@ def train_model(
     The training loop for a single model
 
     :param model: The tf.keras.Model to train
-    :param ds_train: The training dataset
-    :param ds_valid: The validation dataset to evaluate training progress
+    :param training_dataset: The training dataset
+    :param valid_dataset: The validation dataset to evaluate training progress
     :param tensorboard_log_dir: Path of where to store TensorFlow logs
     :param hparams: A dictionary of TensorBoard.plugins.hparams.api.hp.HParam to track on TensorBoard
     :param mirrored_strategy: A tf.distribute.MirroredStrategy on how many GPUs to use during training
@@ -184,6 +184,9 @@ def train_model(
     :param learning_rate: The learning rate hyper parameter
     :param patience: The early stopping patience hyper parameter
     :param checkpoints_path: Path of where to store TensorFlow checkpoints
+
+    Args:
+        validation_steps:
     """
 
     # Multi GPU setup
@@ -207,10 +210,10 @@ def train_model(
     ]
 
     compiled_model.fit(
-        ds_train,
+        training_dataset,
         epochs=epochs,
         callbacks=callbacks,
-        validation_data=ds_valid,
+        validation_data=valid_dataset,
         validation_steps=validation_steps
     )
 

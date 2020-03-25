@@ -7,7 +7,7 @@ import re
 import spacy
 import tqdm
 
-logging = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def main():
@@ -25,15 +25,15 @@ def main():
                         help='skip lines where any of these regex applies')
 
     args = parser.parse_args()
-    logging.basicConfig(level=logging.INFO)
+    logger.basicConfig(level=logging.INFO)
 
     if not os.path.exists(args.output):
         os.makedirs(args.output)
 
-    logging.info('will keep the case? {}'.format(args.keep_case))
-    logging.info('will keep empty lines? {}'.format(args.keep_empty_lines))
-    logging.info('will convert newlines to space? {}'.format(args.newline_to_space))
-    logging.info('will skip lines with the following regex: {}'.format(args.skip_lines_with_pattern))
+    logger.info('will keep the case? {}'.format(args.keep_case))
+    logger.info('will keep empty lines? {}'.format(args.keep_empty_lines))
+    logger.info('will convert newlines to space? {}'.format(args.newline_to_space))
+    logger.info('will skip lines with the following regex: {}'.format(args.skip_lines_with_pattern))
 
     if args.lang == 'en':
         try:
@@ -56,13 +56,13 @@ def main():
 
     done = 0
     for current_file in args.input:
-        logging.info('tokenizing file {}'.format(current_file))
+        logger.info('tokenizing file {}'.format(current_file))
         tot_lines, empty_skipped, regex_skipped = tokenize(
             current_file, args.output, tokenizer, args.keep_case, args.keep_empty_lines,
             args.newline_to_space, regs)
         done += 1
-        logging.info('done ({} / {}) - skipped {} lines (over {} - i.e., {:3.2f}%) because empty,'
-                     ' skipped {} lines (over {} - i.e., {:3.2f}%) because of regex'.format(
+        logger.info('done ({} / {}) - skipped {} lines (over {} - i.e., {:3.2f}%) because empty,'
+                    ' skipped {} lines (over {} - i.e., {:3.2f}%) because of regex'.format(
             done, len(args.input), empty_skipped, tot_lines, (empty_skipped / tot_lines) * 100,
             regex_skipped, tot_lines, (regex_skipped / tot_lines) * 100))
 
