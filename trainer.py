@@ -15,6 +15,7 @@ from pathlib import Path
 
 from libs.data_loaders.abstract_dataloader import AbstractDataloader
 
+logger = logging.getLogger(__name__)
 
 def main(
         config_path: typing.AnyStr,
@@ -57,9 +58,9 @@ def train_models(
 
     mirrored_strategy = helpers.get_mirrored_strategy()
 
-    logging.info(f"\nModel definitions: {model_dict}\n")
-    logging.info(f"\nData loader definitions: {data_loader_dict}\n")
-    logging.info(f"\nTrainer hyper parameters: {trainer_hyper_params}\n")
+    logger.info(f"\nModel definitions: {model_dict}\n")
+    logger.info(f"\nData loader definitions: {data_loader_dict}\n")
+    logger.info(f"\nTrainer hyper parameters: {trainer_hyper_params}\n")
 
     model_name = helpers.get_module_name(model_dict)
     data_loader_name = helpers.get_module_name(data_loader_dict)
@@ -134,10 +135,10 @@ def train_models(
                         # https://github.com/tensorflow/tensorflow/issues/34127
                         checkpoints_path = tensorboard_log_dir / (tensorboard_experiment_name +
                                                                   ".{epoch:02d}-{val_loss:.2f}.hdf5")
-                        logging.info(f"Start variation id: " + str(tensorboard_log_dir))
+                        logger.info(f"Start variation id: " + str(tensorboard_log_dir))
                     else:
                         tensorboard_log_dir, checkpoints_path = None, None
-                        logging.info(f"Start variation id: f{tensorboard_experiment_id} {str(variation_num)}")
+                        logger.info(f"Start variation id: f{tensorboard_experiment_id} {str(variation_num)}")
 
                     train_model(
                         model=model,
@@ -229,15 +230,15 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.verbose:
-        logging.getLogger().setLevel(logging.DEBUG)
+        logger.setLevel(logging.DEBUG)
     else:
-        logging.getLogger().setLevel(logging.INFO)
+        logger.setLevel(logging.INFO)
 
-    logging.info("Start")
+    logger.info("Start")
 
     main(
         config_path=args.config,
         tensorboard_tracking_folder=args.tensorboard_tracking_folder
     )
 
-    logging.info("End")
+    logger.info("End")

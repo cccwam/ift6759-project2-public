@@ -9,6 +9,8 @@ from libs.data_loaders import AbstractDataloader
 import logging
 
 
+logger = logging.getLogger(__name__)
+
 class MonolingualDataloaderWord(AbstractDataloader):
     """
         Dataset for monolingual corpora at word level.
@@ -44,7 +46,7 @@ class MonolingualDataloaderWord(AbstractDataloader):
             self._word_to_token = {k: v for i, (k, v) in enumerate(self._word_to_token.items())
                                    if i < self._vocab_size}
 
-        logging.debug(self.__class__.__name__, "Samples", len(self._source_numericalized))
+        logger.debug(self.__class__.__name__, "Samples", len(self._source_numericalized))
 
     @classmethod
     def _my_causal_lm_generator(cls, source_numericalized):
@@ -66,7 +68,7 @@ class MonolingualDataloaderWord(AbstractDataloader):
                                                            tf.TensorShape([None])))
         ds = ds.prefetch(tf.data.experimental.AUTOTUNE)
         if self._vocab_size is not None:
-            logging.debug("Vocab size limited to " + str(self._vocab_size))
+            logger.debug("Vocab size limited to " + str(self._vocab_size))
             # Only to test performance with lower vocab size (and GPU mem)
             ds = ds.map(lambda x, y: (tf.minimum(x, self._vocab_size - 1),
                                       tf.minimum(y, self._vocab_size - 1)))

@@ -10,6 +10,8 @@ from libs.data_loaders import AbstractDataloader
 import logging
 
 
+logger = logging.getLogger(__name__)
+
 class BilingualDataloaderWord(AbstractDataloader):
     """
         Dataset for bilingual corpora at word level.
@@ -48,12 +50,12 @@ class BilingualDataloaderWord(AbstractDataloader):
             self._token_to_word_en: OrderedDict = pickle.load(handle)
 
         if self._vocab_size is not None:
-            logging.debug("Vocab size limited to " + str(self._vocab_size))
+            logger.debug("Vocab size limited to " + str(self._vocab_size))
             # To limit the output vocab size
             self._token_to_word_fr = {k: v for i, (k, v) in enumerate(self._token_to_word_fr.items())
                                       if i < self._vocab_size}
 
-        logging.debug(self.__class__.__name__, "English samples", len(self._en_numericalized),
+        logger.debug(self.__class__.__name__, "English samples", len(self._en_numericalized),
                       "French samples", len(self._fr_numericalized))
 
     @classmethod

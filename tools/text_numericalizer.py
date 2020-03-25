@@ -8,7 +8,7 @@ import pandas as pd
 import pickle
 import tqdm
 
-logging = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def my_numericalizer(data_path):
@@ -24,11 +24,11 @@ def my_numericalizer(data_path):
     Returns:
 
     """
-    logging.basicConfig(level=logging.INFO)
+    logger.basicConfig(level=logging.INFO)
 
     data_path = Path(data_path)
 
-    logging.info("Load all tokenized corpora")
+    logger.info("Load all tokenized corpora")
 
     with open(data_path / "unaligned_en_tokenized.pickle", 'rb') as f:
         unaligned_en_tokenized = pickle.load(f)
@@ -70,13 +70,13 @@ def my_numericalizer(data_path):
 
     # EN
 
-    logging.info("Create English vocabulary")
+    logger.info("Create English vocabulary")
 
     word_to_token_en = create_vocab([unaligned_en_tokenized, train_lang1_en_tokenized])
 
     token_to_word_en = {v: k for k, v in word_to_token_en.items()}
 
-    logging.info("Save English vocabulary")
+    logger.info("Save English vocabulary")
 
     with open(data_path / 'word_to_token_en.pickle', 'wb') as handle:
         pickle.dump(word_to_token_en, handle, protocol=pickle.HIGHEST_PROTOCOL)
@@ -84,13 +84,13 @@ def my_numericalizer(data_path):
     with open(data_path / 'token_to_word_en.pickle', 'wb') as handle:
         pickle.dump(token_to_word_en, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-    logging.info("Numericalize English corpora")
+    logger.info("Numericalize English corpora")
 
     unaligned_en_numericalized = [[word_to_token_en[w] for w in s] for s in unaligned_en_tokenized]
 
     train_lang1_en_numericalized = [[word_to_token_en[w] for w in s] for s in train_lang1_en_tokenized]
 
-    logging.info("Save English numericalized corpora")
+    logger.info("Save English numericalized corpora")
 
     with open(data_path / 'train_lang1_en_numericalized.pickle', 'wb') as handle:
         pickle.dump(train_lang1_en_numericalized, handle, protocol=pickle.HIGHEST_PROTOCOL)
@@ -100,13 +100,13 @@ def my_numericalizer(data_path):
 
     # FR
 
-    logging.info("Create French vocabulary")
+    logger.info("Create French vocabulary")
 
     word_to_token_fr = create_vocab([unaligned_fr_tokenized, train_lang2_fr_tokenized])
 
     token_to_word_fr = {v: k for k, v in word_to_token_fr.items()}
 
-    logging.info("Save French vocabulary")
+    logger.info("Save French vocabulary")
 
     with open(data_path / 'word_to_token_fr.pickle', 'wb') as handle:
         pickle.dump(word_to_token_fr, handle, protocol=pickle.HIGHEST_PROTOCOL)
@@ -114,13 +114,13 @@ def my_numericalizer(data_path):
     with open(data_path / 'token_to_word_fr.pickle', 'wb') as handle:
         pickle.dump(token_to_word_fr, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-    logging.info("Numericalize French corpora")
+    logger.info("Numericalize French corpora")
 
     unaligned_fr_numericalized = [[word_to_token_fr[w] for w in s] for s in unaligned_fr_tokenized]
 
     train_lang2_fr_numericalized = [[word_to_token_fr[w] for w in s] for s in train_lang2_fr_tokenized]
 
-    logging.info("Save French numericalized corpora")
+    logger.info("Save French numericalized corpora")
 
     with open(data_path / 'train_lang2_fr_numericalized.pickle', 'wb') as handle:
         pickle.dump(train_lang2_fr_numericalized, handle, protocol=pickle.HIGHEST_PROTOCOL)

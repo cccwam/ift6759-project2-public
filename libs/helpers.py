@@ -10,6 +10,8 @@ import tensorflow as tf
 import logging
 
 
+logger = logging.getLogger(__name__)
+
 def import_from(module, name):
     module = __import__(module, fromlist=[name])
     return getattr(module, name)
@@ -167,8 +169,8 @@ def get_module_name(module_dictionary):
 def get_mirrored_strategy():
     nb_gpus = len(tf.config.experimental.list_physical_devices('GPU'))
     mirrored_strategy = tf.distribute.MirroredStrategy(["/gpu:" + str(i) for i in range(min(2, nb_gpus))])
-    logging.debug("------------")
-    logging.debug('Number of available GPU devices: {}'.format(nb_gpus))
-    logging.debug('Number of used GPU devices: {}'.format(mirrored_strategy.num_replicas_in_sync))
-    logging.debug("------------")
+    logger.debug("------------")
+    logger.debug('Number of available GPU devices: {}'.format(nb_gpus))
+    logger.debug('Number of used GPU devices: {}'.format(mirrored_strategy.num_replicas_in_sync))
+    logger.debug("------------")
     return mirrored_strategy

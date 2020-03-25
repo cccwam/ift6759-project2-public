@@ -4,6 +4,8 @@ import logging
 
 import tensorflow as tf
 
+logger = logging.getLogger(__name__)
+
 
 def builder(
         config: typing.Dict[typing.AnyStr, typing.Any]):
@@ -60,16 +62,16 @@ def builder(
         embedding_dim=embedding_dim,
         latent_dim=latent_dim)
 
-    my_lstm_encoder.summary(print_fn=logging.info)
+    my_lstm_encoder.summary(print_fn=logger.info)
 
     my_head = my_head(name=name,
                       seq_length=seq_length,
                       vocab_size=vocab_size,
                       latent_dim=latent_dim)
 
-    my_head.summary(print_fn=logging.info)
+    my_head.summary(print_fn=logger.info)
 
     my_model = my_model(my_lstm_encoder, my_head)
-    my_model.summary(print_fn=logging.info)
+    my_model.summary(print_fn=logger.info)
 
     return my_model
