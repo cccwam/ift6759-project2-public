@@ -36,16 +36,16 @@ class BilingualDataloaderWord(AbstractDataloader):
             self._fr_numericalized = pickle.load(handle)
 
         with open(self._preprocessed_data_path / "word_to_token_en.pickle", 'rb') as handle:
-            self._word_to_token_en: OrderedDict = pickle.load(handle)
+            self._word_to_token_en: dict = pickle.load(handle)
 
         with open(self._preprocessed_data_path / "word_to_token_fr.pickle", 'rb') as handle:
-            self._word_to_token_fr: OrderedDict = pickle.load(handle)
+            self._word_to_token_fr: dict = pickle.load(handle)
 
         with open(self._preprocessed_data_path / "token_to_word_fr.pickle", 'rb') as handle:
-            self._token_to_word_fr: OrderedDict = pickle.load(handle)
+            self._token_to_word_fr: dict = pickle.load(handle)
 
         with open(self._preprocessed_data_path / "token_to_word_en.pickle", 'rb') as handle:
-            self._token_to_word_en: OrderedDict = pickle.load(handle)
+            self._token_to_word_en: dict = pickle.load(handle)
 
         if self._vocab_size is not None:
             logger.debug("Vocab size limited to " + str(self._vocab_size))

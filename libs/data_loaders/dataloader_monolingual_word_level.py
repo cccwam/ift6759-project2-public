@@ -38,7 +38,7 @@ class MonolingualDataloaderWord(AbstractDataloader):
             self._source_numericalized = pickle.load(handle)
 
         with open(self._preprocessed_data_path / word_to_token_filename, 'rb') as handle:
-            self._word_to_token: OrderedDict = pickle.load(handle)
+            self._word_to_token: dict = pickle.load(handle)
 
         if self._vocab_size is not None:
             # To limit the output vocab size
