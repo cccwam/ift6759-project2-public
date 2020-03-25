@@ -7,6 +7,8 @@ from datetime import datetime, timedelta
 import jsonschema
 import tensorflow as tf
 
+import logging
+
 
 def import_from(module, name):
     module = __import__(module, fromlist=[name])
@@ -16,30 +18,19 @@ def import_from(module, name):
 def load_dict(json_file_path):
     with open(json_file_path, 'r') as file_handler:
         file_data = file_handler.read()
+
     return json.loads(file_data)
 
 
-def validate_admin_config(admin_config_dict):
-    schema_file = load_dict('configs/admin/schema.json')
-    jsonschema.validate(admin_config_dict, schema_file)
-
-
-def validate_user_config(user_config_dict):
+def validate_user_config(config):
     schema_file = load_dict('configs/user/schema.json')
-    jsonschema.validate(user_config_dict, schema_file)
+    jsonschema.validate(config, schema_file)
 
 
-def get_online_data_loader(
-        user_config_dict,
-        admin_config_dict=None,
-        dataframe=None,
-        target_datetimes=None,
-        stations=None,
-        target_time_offsets=None,
-        preprocessed_data_path=None
-):
+def get_online_data_loader(config):
     """
-    Get an online version of the data loader defined in user_config_dict
+    # TODO review doc
+    Get an online version of the data loader defined in config
 
     If admin_config_dict is not specified, the following have to be specified:
         * dataframe
@@ -48,7 +39,7 @@ def get_online_data_loader(
         * target_time_offsets
     If admin_config_dict is specified, it overwrites the parameters specified above.
 
-    :param user_config_dict: The user dictionary used to store user model/dataloader parameters
+    :param config: The user dictionary used to store user model/dataloader parameters
     :param admin_config_dict: The admin dictionary used to store train set parameters
     :param dataframe: a pandas dataframe that provides the netCDF file path (or HDF5 file path and offset) for all
             relevant timestamp values over the test period.
@@ -59,93 +50,62 @@ def get_online_data_loader(
     :param stations: a map of station names of interest paired with their coordinates (latitude, longitude, elevation).
     :param target_time_offsets: the list of timedeltas to predict GHIs for (by definition: [T=0, T+1h, T+3h, T+6h]).
     :param preprocessed_data_path: A path to the folder containing the preprocessed data
-    :return: An instance of user_config_dict['model']['definition']['module'].['name']
+    :return: An instance of config['model']['definition']['module'].['name']
     """
-    if admin_config_dict:
-        dataframe_path = admin_config_dict['dataframe_path']
-        with open(dataframe_path, 'rb') as df_file_handler:
-            dataframe = pickle.load(df_file_handler)
-        target_datetimes = [
-            datetime.strptime(date_time, '%Y-%m-%dT%H:%M:%S')
-            for date_time in admin_config_dict['target_datetimes']
-        ]
-        stations = admin_config_dict['stations']
-        target_time_offsets = [timedelta(hours=h) for h in [0, 1, 3, 6]]  # hard coded
 
     return import_from(
-        user_config_dict['data_loader']['definition']['module'],
-        user_config_dict['data_loader']['definition']['name']
+        config['data_loader']['definition']['module'],
+        config['data_loader']['definition']['name']
     )(
-        dataframe=dataframe,
-        target_datetimes=target_datetimes,
-        stations=stations,
-        target_time_offsets=target_time_offsets,
-        config=user_config_dict,
-        preprocessed_data_path=preprocessed_data_path
+        config=config
     )
 
 
-def get_online_model(
-        user_config_dict,
-        admin_config_dict=None,
-        stations=None,
-        target_time_offsets=None,
-):
+def get_online_model(config):
     """
-    Get an online version of the model defined in user_config_dict
+    # TODO review doc
+    Get an online version of the model defined in config
 
     If admin_config_dict is not specified, the following have to be specified:
         * stations
         * target_time_offsets
     If admin_config_dict is specified, it overwrites the parameters specified above.
 
-    :param user_config_dict: The user dictionary used to store user model/dataloader parameters
+    :param config: The user dictionary used to store user model/dataloader parameters
     :param admin_config_dict: The admin dictionary used to store train set parameters
     :param stations: a map of station names of interest paired with their coordinates (latitude, longitude, elevation).
     :param target_time_offsets: the list of timedeltas to predict GHIs for (by definition: [T=0, T+1h, T+3h, T+6h]).
-    :return: An instance of user_config_dict['model']['definition']['module'].['name']
+    :return: An instance of config['model']['definition']['module'].['name']
     """
-    if admin_config_dict:
-        stations = admin_config_dict['stations'],
-        target_time_offsets = [timedelta(hours=h) for h in [0, 1, 3, 6]]  # hard coded
 
     return import_from(
-        user_config_dict['model']['definition']['module'],
-        user_config_dict['model']['definition']['name']
+        config['model']['definition']['module'],
+        config['model']['definition']['name']
     )(
-        stations=stations,
-        target_time_offsets=target_time_offsets,
-        config=user_config_dict
+        config=config
     )
 
 
 def prepare_model(
-        user_config_dict,
-        stations,
-        target_time_offsets
+        config
 ):
     """
     Prepare model
+    # TODO review doc
 
     Args:
-        user_config_dict: configuration dictionary holding any extra parameters that might be required by the user.
+        config: configuration dictionary holding any extra parameters that might be required by the user.
             These parameters are loaded automatically if the user provided a JSON file in their submission. Submitting
             such a JSON file is completely optional, and this argument can be ignored if not needed.
-        stations: a map of station names of interest paired with their coordinates (latitude, longitude, elevation).
-        target_time_offsets: the list of timedeltas to predict GHIs for (by definition: [T=0, T+1h, T+3h, T+6h]).
 
     Returns:
         A ``tf.keras.Model`` object that can be used to generate new GHI predictions given imagery tensors.
     """
     default_model_path = '../model/best_model.hdf5'
-    model_source = user_config_dict['model']['source']
+    model_source = config['model']['source']
 
     if model_source == 'online':
-        return get_online_model(
-            user_config_dict=user_config_dict,
-            stations=stations,
-            target_time_offsets=target_time_offsets
-        )
+        return get_online_model(config=config)
     elif model_source:
         if not os.path.exists(model_source):
             raise FileNotFoundError(f'Error: The file {model_source} does not exist.')
@@ -158,15 +118,15 @@ def prepare_model(
     return tf.keras.models.load_model(model_source)
 
 
-def generate_model_name(user_config_dict):
+def generate_model_name(config):
     return "{}.{}.{}.hdf5".format(
-        user_config_dict['model']['definition']['module'],
-        user_config_dict['model']['definition']['name'],
+        config['model']['definition']['module'],
+        config['model']['definition']['name'],
         uuid.uuid4().hex
     )
 
 
-def get_tensorboard_experiment_id(experiment_name, tensorboard_tracking_folder):
+def get_tensorboard_experiment_id(experiment_name, tensorboard_tracking_folder: Path):
     """
     Create a unique id for TensorBoard for the experiment
 
@@ -174,7 +134,7 @@ def get_tensorboard_experiment_id(experiment_name, tensorboard_tracking_folder):
     :param tensorboard_tracking_folder: Path where to store TensorBoard data and save trained model
     """
     model_sub_folder = experiment_name + "-" + datetime.utcnow().isoformat()
-    return os.path.join(tensorboard_tracking_folder, model_sub_folder)
+    return tensorboard_tracking_folder / model_sub_folder
 
 
 def compile_model(model, learning_rate):
@@ -189,15 +149,15 @@ def compile_model(model, learning_rate):
 
     optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
 
+    # TODO to review this
+    #   Likely that we should have more than 1 loss
+    #   Also we should be able to optimizer
     model_instance.compile(
         optimizer=optimizer,
-        loss=tf.keras.losses.MeanSquaredError(),
-        metrics=[tf.keras.metrics.RootMeanSquaredError()]
+        loss=tf.keras.losses.SparseCategoricalCrossentropy(),
+        metrics=[tf.keras.metrics.SparseCategoricalAccuracy()]
     )
     return model_instance
-
-
-
 
 
 def get_module_name(module_dictionary):
@@ -207,8 +167,8 @@ def get_module_name(module_dictionary):
 def get_mirrored_strategy():
     nb_gpus = len(tf.config.experimental.list_physical_devices('GPU'))
     mirrored_strategy = tf.distribute.MirroredStrategy(["/gpu:" + str(i) for i in range(min(2, nb_gpus))])
-    print("------------")
-    print('Number of available GPU devices: {}'.format(nb_gpus))
-    print('Number of used GPU devices: {}'.format(mirrored_strategy.num_replicas_in_sync))
-    print("------------")
+    logging.debug("------------")
+    logging.debug('Number of available GPU devices: {}'.format(nb_gpus))
+    logging.debug('Number of used GPU devices: {}'.format(mirrored_strategy.num_replicas_in_sync))
+    logging.debug("------------")
     return mirrored_strategy

@@ -67,32 +67,33 @@
           "type": "object",
           "description": "The hyper-parameters to use for this data loader",
           "properties": {
-            "should_preprocess_data": {
-              "type": "boolean"
+            "preprocessed_data_path": {
+              "type": "string"
             },
-            "preprocessed_data_source": {
-              "type": "object",
-              "properties": {
-                "training": {
-                  "type": "string"
-                },
-                "validation": {
-                  "type": "string"
-                },
-                "test": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "training",
-                "validation",
-                "test"
-              ]
+            "vocab_size": {
+              "type": "integer"
+            },
+            "seq_length": {
+              "type": "integer"
+            },
+            "samples_for_test": {
+              "type": "integer"
+            },
+            "samples_for_valid": {
+              "type": "integer"
+            },
+            "samples_for_train": {
+              "type": "integer"
             }
+
           },
           "required": [
-            "should_preprocess_data",
-            "preprocessed_data_source"
+            "preprocessed_data_path",
+            "vocab_size",
+            "seq_length",
+            "samples_for_test",
+            "samples_for_valid",
+            "samples_for_train"
           ]
         }
       },

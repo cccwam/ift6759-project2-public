@@ -5,7 +5,7 @@ import os
 
 import tqdm
 
-logger = logging.getLogger(__name__)
+logging = logging.getLogger(__name__)
 
 PUNCTUATION = {",", ";", ":", "!", "?", ".", "'", '"', "(", ")", "...", "[", "]", "{", "}"}
 
@@ -24,9 +24,9 @@ def main():
         os.makedirs(args.output)
 
     for current_file in args.input:
-        logger.info('tokenizing file {}'.format(current_file))
+        logging.info('tokenizing file {}'.format(current_file))
         tot_lines, removed_punctuations = remove_punctuation(current_file, args.output)
-        logger.info('done - parsed {} lines and removed {} (punctuation) symbols'.format(
+        logging.info('done - parsed {} lines and removed {} (punctuation) symbols'.format(
             tot_lines, removed_punctuations))
 
 

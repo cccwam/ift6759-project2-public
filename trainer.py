@@ -9,77 +9,57 @@ import tensorflow as tf
 from tensorboard.plugins.hparams import api as hp
 
 from libs import helpers
+import logging
+
+from pathlib import Path
+
+from libs.data_loaders.abstract_dataloader import AbstractDataloader
 
 
 def main(
-        training_config_path: typing.AnyStr,
-        validation_config_path: typing.AnyStr,
-        user_config_path: typing.AnyStr,
+        config_path: typing.AnyStr,
         tensorboard_tracking_folder: typing.AnyStr
 ):
     """
     Train a model
 
-    :param training_config_path: path to the JSON config file used to store training set parameters
-    :param validation_config_path: path to the JSON config file used to store validation set parameters
-    :param user_config_path: path to the JSON config file used to store user model, dataloader and trainer parameters
+    :param config_path: path to the JSON config file used to store user model, dataloader and trainer parameters
     :param tensorboard_tracking_folder: path where to store TensorBoard data and save trained model
     """
-    training_config_dict = helpers.load_dict(training_config_path)
-    validation_config_dict = helpers.load_dict(validation_config_path)
-    user_config_dict = helpers.load_dict(user_config_path)
-
-    helpers.validate_admin_config(training_config_dict)
-    helpers.validate_admin_config(validation_config_dict)
+    user_config_dict = helpers.load_dict(config_path)
     helpers.validate_user_config(user_config_dict)
 
-    training_source = user_config_dict['data_loader']['hyper_params']['preprocessed_data_source']['training']
-    validation_source = user_config_dict['data_loader']['hyper_params']['preprocessed_data_source']['validation']
-
-    training_data_loader = helpers.get_online_data_loader(
-        user_config_dict, training_config_dict, preprocessed_data_path=training_source)
-    validation_data_loader = helpers.get_online_data_loader(
-        user_config_dict, validation_config_dict, preprocessed_data_path=validation_source)
-
-    print("Eager mode", tf.executing_eagerly())
-
-    mirrored_strategy = helpers.get_mirrored_strategy()
+    if tensorboard_tracking_folder is not None:
+        Path(tensorboard_tracking_folder).mkdir(parents=True, exist_ok=True)
 
     train_models(
-        user_config_dict=user_config_dict,
-        training_config_dict=training_config_dict,
-        training_data_loader=training_data_loader,
-        validation_data_loader=validation_data_loader,
-        tensorboard_tracking_folder=tensorboard_tracking_folder,
-        mirrored_strategy=mirrored_strategy
+        config=user_config_dict,
+        tensorboard_tracking_folder=tensorboard_tracking_folder
     )
 
 
 def train_models(
-        user_config_dict,
-        training_config_dict,
-        training_data_loader,
-        validation_data_loader,
-        tensorboard_tracking_folder,
-        mirrored_strategy
+        config: dict,
+        tensorboard_tracking_folder: Path
 ):
     """
-    Train the possible combinations of models based on the hyper parameters defined in  user_config_dict
+    # TODO review doc
+    Train the possible combinations of models based on the hyper parameters defined in  config
 
-    :param user_config_dict: A dictionary of the user configuration json file which contains the hyper parameters
-    :param training_config_dict: A dictionary of the admin configuration json file which references the training data
-    :param training_data_loader: The training data loader
-    :param validation_data_loader: The validation data loader
+    :param config: A dictionary of the user configuration json file which contains the hyper parameters
     :param tensorboard_tracking_folder: The TensorBoard tracking folder
-    :param mirrored_strategy: A tf.distribute.MirroredStrategy on how many GPUs to use during training
     """
-    model_dict = user_config_dict['model']
-    data_loader_dict = user_config_dict['data_loader']
-    trainer_hyper_params = user_config_dict['trainer']['hyper_params']
+    model_dict = config['model']
+    data_loader_dict = config['data_loader']
+    trainer_hyper_params = config['trainer']['hyper_params']
 
-    print(f"\nModel definitions: {model_dict}\n")
-    print(f"\nData loader definitions: {data_loader_dict}\n")
-    print(f"\nTrainer hyper parameters: {trainer_hyper_params}\n")
+    data_loader = helpers.get_online_data_loader(config)
+
+    mirrored_strategy = helpers.get_mirrored_strategy()
+
+    logging.info(f"\nModel definitions: {model_dict}\n")
+    logging.info(f"\nData loader definitions: {data_loader_dict}\n")
+    logging.info(f"\nTrainer hyper parameters: {trainer_hyper_params}\n")
 
     model_name = helpers.get_module_name(model_dict)
     data_loader_name = helpers.get_module_name(data_loader_dict)
@@ -88,10 +68,13 @@ def train_models(
     hp_dataloader = hp.HParam('dataloader_class', hp.Discrete([data_loader_name]))
 
     tensorboard_experiment_name = model_name + "_" + data_loader_name
-    tensorboard_experiment_id = helpers.get_tensorboard_experiment_id(
-        experiment_name=tensorboard_experiment_name,
-        tensorboard_tracking_folder=tensorboard_tracking_folder
-    )
+    if tensorboard_tracking_folder is not None:
+        tensorboard_experiment_id = helpers.get_tensorboard_experiment_id(
+            experiment_name=tensorboard_experiment_name,
+            tensorboard_tracking_folder=tensorboard_tracking_folder
+        )
+    else:
+        tensorboard_experiment_id = tensorboard_experiment_name
 
     # Hyper parameters search for the training loop
     hp_batch_size = hp.HParam('batch_size', hp.Discrete(trainer_hyper_params["batch_size"]))
@@ -104,8 +87,8 @@ def train_models(
     hp_learning_rate = hp.HParam('learning_rate', hp.Discrete(trainer_hyper_params["lr_rate"]))
     hp_patience = hp.HParam('patience', hp.Discrete(trainer_hyper_params["patience"]))
 
-    training_dataset = training_data_loader.batch(hp_batch_size.domain.values[0])
-    validation_dataset = validation_data_loader.batch(hp_batch_size.domain.values[0])
+    data_loader.build(batch_size=hp_batch_size.domain.values[0])
+    ds_train, ds_valid = data_loader.ds_train, data_loader.ds_valid
 
     # Main loop to iterate over all possible hyper parameters
     variation_num = 0
@@ -134,46 +117,52 @@ def train_models(
                         }
 
                     # Copy the user config for the specific current model
-                    current_user_dict = user_config_dict.copy()
+                    current_user_dict = config.copy()
                     # Add dropout
                     if dropout != -1.:
                         current_user_dict["model"]['hyper_params']["dropout"] = dropout
 
                     if mirrored_strategy is not None and mirrored_strategy.num_replicas_in_sync > 1:
                         with mirrored_strategy.scope():
-                            model = helpers.get_online_model(user_config_dict, training_config_dict)
+                            model = helpers.get_online_model(config)
                     else:
-                        model = helpers.get_online_model(user_config_dict, training_config_dict)
+                        model = helpers.get_online_model(config)
 
-                    tensorboard_log_dir = os.path.join(tensorboard_experiment_id, str(variation_num))
-                    print("Start variation id:", tensorboard_log_dir)
+                    if tensorboard_tracking_folder is not None:
+                        tensorboard_log_dir = tensorboard_experiment_id / str(variation_num)
+                        # Fileformat must be hdf5, otherwise bug
+                        # https://github.com/tensorflow/tensorflow/issues/34127
+                        checkpoints_path = tensorboard_log_dir / \
+                                           (tensorboard_experiment_name + ".{epoch:02d}-{val_loss:.2f}.hdf5")
+                        logging.info(f"Start variation id: " + str(tensorboard_log_dir))
+                    else:
+                        tensorboard_log_dir, checkpoints_path = None, None
+                        logging.info(f"Start variation id: f{tensorboard_experiment_id} {str(variation_num)}")
+
                     train_model(
                         model=model,
-                        training_dataset=training_dataset,
-                        validation_dataset=validation_dataset,
+                        ds_train=ds_train,
+                        ds_valid=ds_valid,
+                        validation_steps=data_loader.validation_steps,
                         tensorboard_log_dir=tensorboard_log_dir,
                         hparams=hparams,
                         mirrored_strategy=mirrored_strategy,
                         epochs=epochs,
                         learning_rate=learning_rate,
                         patience=patience,
-                        # Fileformat must be hdf5, otherwise bug
-                        # https://github.com/tensorflow/tensorflow/issues/34127
-                        checkpoints_path=os.path.join(
-                            tensorboard_log_dir,
-                            tensorboard_experiment_name + ".{epoch:02d}-{val_loss:.2f}.hdf5"
-                        )
+                        checkpoints_path=checkpoints_path
                     )
                     variation_num += 1
 
     # Save final model
-    model.save(helpers.generate_model_name(user_config_dict))
+    model.save(helpers.generate_model_name(config))
 
 
 def train_model(
-        model,
-        training_dataset,
-        validation_dataset,
+        model: tf.keras.Model,
+        ds_train: tf.data.Dataset,
+        ds_valid: tf.data.Dataset,
+        validation_steps: int,
         tensorboard_log_dir,
         hparams,
         mirrored_strategy,
@@ -186,8 +175,8 @@ def train_model(
     The training loop for a single model
 
     :param model: The tf.keras.Model to train
-    :param training_dataset: The training dataset
-    :param validation_dataset: The validation dataset to evaluate training progress
+    :param ds_train: The training dataset
+    :param ds_valid: The validation dataset to evaluate training progress
     :param tensorboard_log_dir: Path of where to store TensorFlow logs
     :param hparams: A dictionary of TensorBoard.plugins.hparams.api.hp.HParam to track on TensorBoard
     :param mirrored_strategy: A tf.distribute.MirroredStrategy on how many GPUs to use during training
@@ -204,36 +193,48 @@ def train_model(
     else:
         compiled_model = helpers.compile_model(model, learning_rate=learning_rate)
 
-    callbacks = [
+    if tensorboard_log_dir is not None:
         # Workaround for https://github.com/tensorflow/tensorboard/issues/2412
-        tf.keras.callbacks.TensorBoard(log_dir=str(tensorboard_log_dir), profile_batch=0),
-        hp.KerasCallback(writer=str(tensorboard_log_dir), hparams=hparams),
-        tf.keras.callbacks.EarlyStopping(patience=patience),
-        tf.keras.callbacks.ModelCheckpoint(filepath=checkpoints_path, save_weights_only=False),
+        callbacks = [tf.keras.callbacks.TensorBoard(log_dir=str(tensorboard_log_dir), profile_batch=0),
+                     tf.keras.callbacks.ModelCheckpoint(filepath=checkpoints_path, save_weights_only=False,
+                                                        monitor='val_loss'),
+                     hp.KerasCallback(writer=str(tensorboard_log_dir), hparams=hparams)]
+    else:
+        callbacks = []
+
+    callbacks += [
+        tf.keras.callbacks.EarlyStopping(patience=patience)
     ]
 
     compiled_model.fit(
-        training_dataset,
+        ds_train,
         epochs=epochs,
         callbacks=callbacks,
-        validation_data=validation_dataset
+        validation_data=ds_valid,
+        validation_steps=validation_steps
     )
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('-a', '--training_cfg_path', type=str,
-                        help='path to the JSON config file used to store training set parameters')
-    parser.add_argument('-v', '--validation_cfg_path', type=str,
-                        help='path to the JSON config file used to store validation set parameters')
-    parser.add_argument('-u', '--user_cfg_path', type=str, default=None,
+    parser.add_argument('-c', '--config', type=str, default=None,
                         help='path to the JSON config file used to store user model, dataloader and trainer parameters')
     parser.add_argument('-t', '--tensorboard_tracking_folder', type=str, default=None,
                         help='path where to store TensorBoard data and save trained model')
+    parser.add_argument("-v", "--verbose", help="increase output verbosity",
+                        action="store_true", default=False)
     args = parser.parse_args()
+
+    if args.verbose:
+        logging.getLogger().setLevel(logging.DEBUG)
+    else:
+        logging.getLogger().setLevel(logging.INFO)
+
+    logging.info("Start")
+
     main(
-        training_config_path=args.training_cfg_path,
-        validation_config_path=args.validation_cfg_path,
-        user_config_path=args.user_cfg_path,
+        config_path=args.config,
         tensorboard_tracking_folder=args.tensorboard_tracking_folder
     )
+
+    logging.info("End")
