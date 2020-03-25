@@ -1,6 +1,7 @@
 from abc import ABCMeta, abstractmethod
 import tensorflow as tf
 from pathlib import Path
+from typing import Optional
 
 
 class AbstractDataloader:
@@ -18,9 +19,9 @@ class AbstractDataloader:
         self._seq_length: int = self._dl_hparams["seq_length"]
 
         # To be initialized in build method (because called for each experiment during hparams search)
-        self.test_dataset: tf.data.Dataset = None
-        self.valid_dataset: tf.data.Dataset = None
-        self.training_dataset: tf.data.Dataset = None
+        self.test_dataset: Optional[tf.data.Dataset] = None
+        self.valid_dataset: Optional[tf.data.Dataset] = None
+        self.training_dataset: Optional[tf.data.Dataset] = None
 
     @abstractmethod
     def build(self,

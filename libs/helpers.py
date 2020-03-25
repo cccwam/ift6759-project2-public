@@ -42,16 +42,6 @@ def get_online_data_loader(config):
     If admin_config_dict is specified, it overwrites the parameters specified above.
 
     :param config: The user dictionary used to store user model/dataloader parameters
-    :param admin_config_dict: The admin dictionary used to store train set parameters
-    :param dataframe: a pandas dataframe that provides the netCDF file path (or HDF5 file path and offset) for all
-            relevant timestamp values over the test period.
-    :param target_datetimes: a list of timestamps that your data loader should use to provide imagery for your model.
-            The ordering of this list is important, as each element corresponds to a sequence of GHI values
-            to predict. By definition, the GHI values must be provided for the offsets given by ``target_time_offsets``
-            which are added to each timestamp (T=0) in this datetimes list.
-    :param stations: a map of station names of interest paired with their coordinates (latitude, longitude, elevation).
-    :param target_time_offsets: the list of timedeltas to predict GHIs for (by definition: [T=0, T+1h, T+3h, T+6h]).
-    :param preprocessed_data_path: A path to the folder containing the preprocessed data
     :return: An instance of config['model']['definition']['module'].['name']
     """
 
@@ -74,9 +64,6 @@ def get_online_model(config):
     If admin_config_dict is specified, it overwrites the parameters specified above.
 
     :param config: The user dictionary used to store user model/dataloader parameters
-    :param admin_config_dict: The admin dictionary used to store train set parameters
-    :param stations: a map of station names of interest paired with their coordinates (latitude, longitude, elevation).
-    :param target_time_offsets: the list of timedeltas to predict GHIs for (by definition: [T=0, T+1h, T+3h, T+6h]).
     :return: An instance of config['model']['definition']['module'].['name']
     """
 

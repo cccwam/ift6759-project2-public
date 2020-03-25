@@ -8,8 +8,8 @@ import tqdm
 from libs.data_loaders import AbstractDataloader
 import logging
 
-
 logger = logging.getLogger(__name__)
+
 
 class MonolingualDataloaderWord(AbstractDataloader):
     """
@@ -46,7 +46,7 @@ class MonolingualDataloaderWord(AbstractDataloader):
             self._word_to_token = {k: v for i, (k, v) in enumerate(self._word_to_token.items())
                                    if i < self._vocab_size}
 
-        logger.debug(self.__class__.__name__, "Samples", len(self._source_numericalized))
+        logger.debug(f"{str(self.__class__.__name__)} Samples: {len(self._source_numericalized)}")
 
     @classmethod
     def _my_causal_lm_generator(cls, source_numericalized):

@@ -17,6 +17,7 @@ from libs.data_loaders.abstract_dataloader import AbstractDataloader
 
 logger = logging.getLogger(__name__)
 
+
 def main(
         config_path: typing.AnyStr,
         tensorboard_tracking_folder: typing.AnyStr
@@ -178,6 +179,7 @@ def train_model(
     :param model: The tf.keras.Model to train
     :param training_dataset: The training dataset
     :param valid_dataset: The validation dataset to evaluate training progress
+    :param validation_steps: Number of minibatch for the validation dataset
     :param tensorboard_log_dir: Path of where to store TensorFlow logs
     :param hparams: A dictionary of TensorBoard.plugins.hparams.api.hp.HParam to track on TensorBoard
     :param mirrored_strategy: A tf.distribute.MirroredStrategy on how many GPUs to use during training
@@ -186,8 +188,6 @@ def train_model(
     :param patience: The early stopping patience hyper parameter
     :param checkpoints_path: Path of where to store TensorFlow checkpoints
 
-    Args:
-        validation_steps:
     """
 
     # Multi GPU setup

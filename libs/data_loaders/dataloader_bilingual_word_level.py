@@ -9,8 +9,8 @@ import tqdm
 from libs.data_loaders import AbstractDataloader
 import logging
 
-
 logger = logging.getLogger(__name__)
+
 
 class BilingualDataloaderWord(AbstractDataloader):
     """
@@ -55,8 +55,8 @@ class BilingualDataloaderWord(AbstractDataloader):
             self._token_to_word_fr = {k: v for i, (k, v) in enumerate(self._token_to_word_fr.items())
                                       if i < self._vocab_size}
 
-        logger.debug(self.__class__.__name__, "English samples", len(self._en_numericalized),
-                      "French samples", len(self._fr_numericalized))
+        logger.debug(f"{str(self.__class__.__name__)} English samples: {len(self._en_numericalized)}")
+        logger.debug(f"{str(self.__class__.__name__)} French samples: {len(self._fr_numericalized)})")
 
     @classmethod
     def _my_generator(cls, en_numericalized, fr_numericalized):
