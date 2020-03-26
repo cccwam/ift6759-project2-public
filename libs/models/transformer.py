@@ -288,6 +288,9 @@ class Transformer(tf.keras.Model):
         self.train_loss = tf.keras.metrics.Mean(name='train_loss')
         self.train_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(
             name='train_accuracy')
+        self.validation_loss = tf.keras.metrics.Mean(name='validation_loss')
+        self.validation_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(
+            name='validation_accuracy')
 
     def call(self, inp, tar, training, enc_padding_mask, look_ahead_mask,
              dec_padding_mask):
@@ -330,6 +333,7 @@ class Transformer(tf.keras.Model):
 
     def fit(self, x=None, epochs=1, callbacks=None,
             validation_data=None, validation_steps=None):
+        # ToDo: we will not always want to reload checkpoints...
         ckpt_manager = self.load_checkpoint()
 
         train_step_signature = [
@@ -360,14 +364,32 @@ class Transformer(tf.keras.Model):
             self.train_loss(loss)
             self.train_accuracy(tar_real, predictions)
 
+        @tf.function(input_signature=train_step_signature)
+        def validation_step(inp, tar):
+            tar_inp = tar[:, :-1]
+            tar_real = tar[:, 1:]
+
+            enc_padding_mask, combined_mask, dec_padding_mask = \
+                create_masks(inp, tar_inp)
+
+            predictions, _ = self(inp, tar_inp,
+                                  True,
+                                  enc_padding_mask,
+                                  combined_mask,
+                                  dec_padding_mask)
+            loss = self.loss_function(tar_real, predictions)
+
+            self.validation_loss(loss)
+            self.validation_accuracy(tar_real, predictions)
+
         for epoch in range(epochs):
             start = time.time()
 
             self.train_loss.reset_states()
             self.train_accuracy.reset_states()
 
-            for (batch, (inp, tar)) in enumerate(x):
-                train_step(inp, tar)
+            for (batch, (inp0, tar0)) in enumerate(x):
+                train_step(inp0, tar0)
 
                 if batch % 50 == 0:
                     print(
@@ -377,12 +399,26 @@ class Transformer(tf.keras.Model):
 
             if (epoch + 1) % 5 == 0:
                 ckpt_save_path = ckpt_manager.save()
-                print('Saving checkpoint for epoch {} at {}'.format(epoch + 1,
-                                                                    ckpt_save_path))
+                print(
+                    'Saving checkpoint for epoch {} at {}'.format(
+                        epoch + 1, ckpt_save_path))
 
-            print('Epoch {} Loss {:.4f} Accuracy {:.4f}'.format(epoch + 1,
-                                                                self.train_loss.result(),
-                                                                self.train_accuracy.result()))
+            print(
+                'Epoch {} Loss {:.4f} Accuracy {:.4f}'.format(
+                    epoch + 1, self.train_loss.result(),
+                    self.train_accuracy.result()))
+
+            if (epoch + 1) % validation_steps == 0:
+                self.train_loss.reset_states()
+                self.train_accuracy.reset_states()
+
+                for (batch, (inp0, tar0)) in enumerate(validation_data):
+                    validation_step(inp0, tar0)
+
+                print(
+                    'Epoch {} Validation Loss {:.4f} Validation Accuracy {:.4f}'.format(
+                        epoch + 1, self.validation_loss.result(),
+                        self.validation_accuracy.result()))
 
             print(
                 'Time taken for 1 epoch: {} secs\n'.format(time.time() - start))

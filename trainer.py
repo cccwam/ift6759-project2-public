@@ -158,7 +158,12 @@ def train_models(
                     variation_num += 1
 
     # Save final model
-    model.save(helpers.generate_model_name(config))
+    try:
+        model.save(helpers.generate_model_name(config))
+    except NotImplementedError:
+        model.save_weights(
+            helpers.generate_model_name(config).rstrip('.hdf5'),
+            save_format='tf')
 
 
 def train_model(

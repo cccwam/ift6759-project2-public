@@ -74,7 +74,7 @@ class SubwordDataLoader:
         self.tokenizer_fr = None
         self.input_vocab_size = None
         self.target_vocab_size = None
-        self.validation_steps = 5
+        self.validation_steps = 1
 
     def build(self, batch_size):
         dl_hparams = self.config["data_loader"]["hyper_params"]
