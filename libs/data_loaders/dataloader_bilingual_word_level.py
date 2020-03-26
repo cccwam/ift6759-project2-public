@@ -87,7 +87,8 @@ class BilingualDataloaderWord(AbstractBilingualDataloader):
                                    tf.minimum(x[1], self._vocab_size_target - 1)),
                                   tf.minimum(y, self._vocab_size_target - 1)))
 
-        ds = ds.padded_batch(batch_size=batch_size, padded_shapes=(([self._seq_length_target], [self._seq_length_target]),
+        ds = ds.padded_batch(batch_size=batch_size, padded_shapes=(([self._seq_length_target],
+                                                                    [self._seq_length_target]),
                                                                    self._seq_length_target))
 
         self._build_all_dataset(ds, batch_size)
