@@ -8,7 +8,6 @@ from libs.models.helpers import load_pretrained_layers
 logger = logging.getLogger(__name__)
 
 
-# noinspection DuplicatedCode
 def builder(
         config: typing.Dict[typing.AnyStr, typing.Any]):
     # noinspection PyShadowingNames,DuplicatedCode
@@ -43,7 +42,6 @@ def builder(
         decoder_outputs = decoder_time_distributed(decoder_outputs)
 
         return tf.keras.Model([encoder_inputs, decoder_inputs], decoder_outputs, name=name)
-
 
     dl_hparams = config["data_loader"]["hyper_params"]
     model_hparams = config["model"]["hyper_params"]
