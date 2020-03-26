@@ -28,7 +28,8 @@ def main(
     helpers.validate_user_config(user_config_dict)
 
     if tensorboard_tracking_folder is not None:
-        Path(tensorboard_tracking_folder).mkdir(parents=True, exist_ok=True)
+        tensorboard_tracking_folder = Path(tensorboard_tracking_folder)
+        tensorboard_tracking_folder.mkdir(parents=True, exist_ok=True)
 
     train_models(
         config=user_config_dict,
