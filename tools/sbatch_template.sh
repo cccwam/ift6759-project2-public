@@ -33,6 +33,5 @@ module load hdf5-mpi/1.10.3
 source $SLURM_TMPDIR/venv/bin/activate
 
 python trainer.py \
-  --admin_cfg_path configs/admin/daily_daytime_01_train.json \
-  --user_cfg_path configs/user/cnn_image_daily_daytime_v2_pretrained.json \
+  --config configs/user/lm_lstm_en_v1.json \
   --tensorboard_tracking_folder /project/cq-training-1/project2/teams/team03/tensorboard/$USER

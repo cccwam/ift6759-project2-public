@@ -1,0 +1,46 @@
+{
+  "model": {
+    "definition": {
+      "module": "libs.models.lstm_lm",
+      "name": "builder"
+    },
+    "hyper_params": {
+      "name": "FR_encoder",
+      "embedding_dim": 300,
+      "latent_dim": 256
+    },
+    "source": ""
+  },
+  "data_loader": {
+    "definition": {
+      "module": "libs.data_loaders.dataloader_monolingual_word_level",
+      "name": "MonolingualDataloaderWord"
+    },
+    "hyper_params": {
+      "preprocessed_data_path": "/project/cq-training-1/project2/teams/team03/data/word_level_24032020",
+      "monolingual_corpus_filename": "unaligned_fr_numericalized.pickle",
+      "word_to_token_filename": "word_to_token_fr.pickle",
+      "vocab_size": 10000,
+      "seq_length": 128,
+      "samples_for_test": 0,
+      "samples_for_valid": 5000,
+      "samples_for_train": 1000
+    }
+  },
+  "trainer": {
+    "hyper_params": {
+      "lr_rate": [
+        3e-3
+      ],
+      "epochs": [
+        5
+      ],
+      "batch_size": [
+        64
+      ],
+      "patience": [
+        2
+      ]
+    }
+  }
+}
