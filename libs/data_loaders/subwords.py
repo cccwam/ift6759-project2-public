@@ -74,6 +74,7 @@ class SubwordDataLoader:
         self.tokenizer_fr = None
         self.input_vocab_size = None
         self.target_vocab_size = None
+        self.validation_steps = 5
 
     def build(self, batch_size):
         dl_hparams = self.config["data_loader"]["hyper_params"]
@@ -154,6 +155,6 @@ class SubwordDataLoader:
             train_preprocessed
             .padded_batch(batch_size, padded_shapes=([None], [None]))
             .prefetch(tf.data.experimental.AUTOTUNE))
-        self.validation_dataset = (
+        self.valid_dataset = (
             val_preprocessed
             .padded_batch(batch_size, padded_shapes=([None], [None])))

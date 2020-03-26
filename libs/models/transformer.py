@@ -436,8 +436,7 @@ def create_masks(inp, tar):
 
 
 def builder(
-        config: typing.Dict[typing.AnyStr, typing.Any],
-        input_vocab_size, target_vocab_size):
+        config: typing.Dict[typing.AnyStr, typing.Any]):
     # noinspection PyShadowingNames,DuplicatedCode
     model_hparams = config["model"]["hyper_params"]
 
@@ -446,6 +445,8 @@ def builder(
     num_heads = model_hparams["num_heads"]
     dff = model_hparams["dff"]
     dropout_rate = model_hparams["dropout_rate"]
+    input_vocab_size = model_hparams["input_vocab_size"]
+    target_vocab_size = model_hparams["target_vocab_size"]
 
     transformer0 = Transformer(
         num_layers, d_model, num_heads, dff, input_vocab_size,

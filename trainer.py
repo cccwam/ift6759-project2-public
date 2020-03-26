@@ -88,6 +88,9 @@ def train_models(
     hp_patience = hp.HParam('patience', hp.Discrete(trainer_hyper_params["patience"]))
 
     data_loader.build(batch_size=hp_batch_size.domain.values[0])
+    if hasattr(data_loader, 'input_vocab_size'):
+        config['model']['hyper_params']['input_vocab_size'] = data_loader.input_vocab_size
+        config['model']['hyper_params']['target_vocab_size'] = data_loader.target_vocab_size
     training_dataset, valid_dataset = data_loader.training_dataset, data_loader.valid_dataset
 
     # Main loop to iterate over all possible hyper parameters

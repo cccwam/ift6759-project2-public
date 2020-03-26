@@ -65,28 +65,7 @@
         },
         "hyper_params": {
           "type": "object",
-          "description": "The hyper-parameters to use for this data loader",
-          "properties": {
-            "preprocessed_data_path": {
-              "type": "string"
-            },
-            "samples_for_test": {
-              "type": "integer"
-            },
-            "samples_for_valid": {
-              "type": "integer"
-            },
-            "samples_for_train": {
-              "type": "integer"
-            }
-
-          },
-          "required": [
-            "preprocessed_data_path",
-            "samples_for_test",
-            "samples_for_valid",
-            "samples_for_train"
-          ]
+          "description": "The hyper-parameters to use for this data loader"
         },
         "pretrained_layers": {
           "type": "array",

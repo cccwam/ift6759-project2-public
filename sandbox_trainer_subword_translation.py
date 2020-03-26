@@ -148,17 +148,17 @@ datasets = {
 # target_vocab_size = tokenizer_fr.vocab_size + 2
 
 BATCH_SIZE = 64
-my_dl = subwords.SubwordDataLoader(
-    helpers.load_dict('configs/user/transformer_v1.json'))
+cfg_dict = helpers.load_dict('configs/user/transformer_v1.json')
+my_dl = subwords.SubwordDataLoader(cfg_dict)
 my_dl.build(BATCH_SIZE)
+cfg_dict['model']['hyper_params']['input_vocab_size'] = my_dl.input_vocab_size
+cfg_dict['model']['hyper_params']['target_vocab_size'] = my_dl.target_vocab_size
 
 # transformer0 = transformer.Transformer(
 #     num_layers, d_model, num_heads, dff, input_vocab_size, target_vocab_size,
 #     pe_input=input_vocab_size, pe_target=target_vocab_size, rate=dropout_rate)
 
-transformer0 = transformer.builder(
-    helpers.load_dict('configs/user/transformer_v1.json'),
-    my_dl.input_vocab_size, my_dl.target_vocab_size)
+transformer0 = transformer.builder(cfg_dict)
 
 EPOCHS = 75
 
