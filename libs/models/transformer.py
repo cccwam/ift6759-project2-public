@@ -439,14 +439,8 @@ def builder(
         config: typing.Dict[typing.AnyStr, typing.Any],
         input_vocab_size, target_vocab_size):
     # noinspection PyShadowingNames,DuplicatedCode
-    dl_hparams = config["data_loader"]["hyper_params"]
     model_hparams = config["model"]["hyper_params"]
 
-    # input_vocab_size = dl_hparams["vocab_size_source"]
-    #
-    # target_vocab_size = dl_hparams["vocab_size_target"]
-
-    name = model_hparams["name"]
     num_layers = model_hparams["num_layers"]
     d_model = model_hparams["d_model"]
     num_heads = model_hparams["num_heads"]

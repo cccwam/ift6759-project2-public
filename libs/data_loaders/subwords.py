@@ -2,8 +2,6 @@ import os
 
 import tensorflow as tf
 import tensorflow_datasets as tfds
-
-from libs import helpers
 TextLineDataset = tf.data.TextLineDataset
 
 
@@ -147,13 +145,10 @@ class SubwordDataLoader:
             self.tokenizer_en, self.tokenizer_fr)
 
         train_preprocessed = (
-            sentences_translation_both_train
-                .map(tf_encode)
-                .cache())
+            sentences_translation_both_train.map(tf_encode).cache())
 
         val_preprocessed = (
-            sentences_translation_both_validation
-                .map(tf_encode))
+            sentences_translation_both_validation.map(tf_encode))
 
         self.training_dataset = (
             train_preprocessed
