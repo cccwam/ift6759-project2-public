@@ -29,19 +29,14 @@ def validate_user_config(config):
     jsonschema.validate(config, schema_file)
 
 
-def get_online_data_loader(config):
+def get_online_data_loader(config, raw_english_test_set_file_path=None):
     """
-    # TODO review doc
     Get an online version of the data loader defined in config
 
-    If admin_config_dict is not specified, the following have to be specified:
-        * dataframe
-        * target_datetimes
-        * stations
-        * target_time_offsets
-    If admin_config_dict is specified, it overwrites the parameters specified above.
-
-    :param config: The user dictionary used to store user model/dataloader parameters
+    :param config: config: The configuration dictionary. It must follow configs/user/schema.json
+    :param raw_english_test_set_file_path: The raw English test set file path (Optional). For example:
+        /project/cq-training-1/project2/data/test.lang1 (we don't have access to this specific file, the TAs have it)
+        If this path is not specified, our data loaders will instead load the pre-processed data defined in config
     :return: An instance of config['model']['definition']['module'].['name']
     """
 
@@ -49,21 +44,16 @@ def get_online_data_loader(config):
         config['data_loader']['definition']['module'],
         config['data_loader']['definition']['name']
     )(
-        config=config
+        config=config,
+        raw_english_test_set_file_path=raw_english_test_set_file_path
     )
 
 
 def get_online_model(config):
     """
-    # TODO review doc
     Get an online version of the model defined in config
 
-    If admin_config_dict is not specified, the following have to be specified:
-        * stations
-        * target_time_offsets
-    If admin_config_dict is specified, it overwrites the parameters specified above.
-
-    :param config: The user dictionary used to store user model/dataloader parameters
+    :param config: The configuration dictionary. It must follow configs/user/schema.json
     :return: An instance of config['model']['definition']['module'].['name']
     """
 
@@ -75,20 +65,42 @@ def get_online_model(config):
     )
 
 
+def get_model(
+        config
+):
+    """
+    Get model
+
+    Returns the model as defined in the config. The config should follow configs/user/schema.json
+
+    Args:
+        config: The configuration dictionary. It must follow configs/user/schema.json
+
+    Returns:
+        A ``tf.keras.Model`` object that can be used to generate French sentences given English sentence tensors.
+    """
+    mirrored_strategy = get_mirrored_strategy()
+
+    if mirrored_strategy is not None and mirrored_strategy.num_replicas_in_sync > 1:
+        with mirrored_strategy.scope():
+            model = prepare_model(config)
+    else:
+        model = prepare_model(config)
+
+    return model
+
+
 def prepare_model(
         config
 ):
     """
     Prepare model
-    # TODO review doc
 
     Args:
-        config: configuration dictionary holding any extra parameters that might be required by the user.
-            These parameters are loaded automatically if the user provided a JSON file in their submission. Submitting
-            such a JSON file is completely optional, and this argument can be ignored if not needed.
+        config: The configuration dictionary. It must follow configs/user/schema.json
 
     Returns:
-        A ``tf.keras.Model`` object that can be used to generate new GHI predictions given imagery tensors.
+        A ``tf.keras.Model`` object that can be used to generate French sentences given English sentence tensors.
     """
     default_model_path = '../model/best_model.hdf5'
     model_source = config['model']['source']

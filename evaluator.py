@@ -16,7 +16,38 @@ def generate_predictions(input_file_path: str, pred_file_path: str):
     """
 
     ##### MODIFY BELOW #####
-    ...
+    import numpy as np
+    import tensorflow as tf
+
+    from libs import helpers
+    from libs.data_loaders.abstract_dataloader import AbstractDataloader
+
+    best_config = 'configs/user/lm_lstm_fr_v1.json'
+    helpers.validate_user_config(best_config)
+
+    # TODO: Edit our AbstractDataloader to support a raw_english_test_set_file_path. Currently it only supports
+    #   preprocessed data defined directly in best_config.
+    data_loader: AbstractDataloader = helpers.get_online_data_loader(best_config, input_file_path)
+    model: tf.keras.Model = helpers.get_model(best_config)
+
+    batch_size = 64
+    data_loader.build(batch_size)
+    test_dataset = data_loader.test_dataset
+
+    all_predictions = []
+    for mini_batch in test_dataset.batch(batch_size):
+        # Outputs are mini_batch[:, 1]
+        model_inputs = mini_batch[:, 0]
+        predictions = model.predict(model_inputs)
+        if isinstance(predictions, tf.Tensor):
+            predictions = predictions.numpy()
+        all_predictions.append(predictions)
+    all_predictions = np.concatenate(all_predictions, axis=0)
+
+    with open(pred_file_path, 'w+') as file_handler:
+        for prediction in all_predictions:
+            file_handler.write(f'{prediction}\n')
+
     ##### MODIFY ABOVE #####
 
 
