@@ -70,12 +70,6 @@
             "preprocessed_data_path": {
               "type": "string"
             },
-            "vocab_size": {
-              "type": "integer"
-            },
-            "seq_length": {
-              "type": "integer"
-            },
             "samples_for_test": {
               "type": "integer"
             },
@@ -89,12 +83,27 @@
           },
           "required": [
             "preprocessed_data_path",
-            "vocab_size",
-            "seq_length",
             "samples_for_test",
             "samples_for_valid",
             "samples_for_train"
           ]
+        },
+        "pretrained_layers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "model_path": {
+                "type": "string"
+              },
+              "layer_name": {
+                "type": "string"
+              },
+              "target_layer_name": {
+                "type": "string"
+              }
+            }
+          }
         }
       },
       "required": [

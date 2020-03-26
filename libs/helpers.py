@@ -3,11 +3,10 @@ import logging
 import os
 import uuid
 from datetime import datetime
+from pathlib import Path
 
 import jsonschema
 import tensorflow as tf
-
-from pathlib import Path
 
 logger = logging.getLogger(__name__)
 

@@ -29,7 +29,8 @@ def main(
     helpers.validate_user_config(user_config_dict)
 
     if tensorboard_tracking_folder is not None:
-        Path(tensorboard_tracking_folder).mkdir(parents=True, exist_ok=True)
+        tensorboard_tracking_folder = Path(tensorboard_tracking_folder)
+        tensorboard_tracking_folder.mkdir(parents=True, exist_ok=True)
 
     train_models(
         config=user_config_dict,
@@ -128,11 +129,11 @@ def train_models(
                         model = helpers.get_online_model(config)
 
                     if tensorboard_tracking_folder is not None:
-                        tensorboard_log_dir = tensorboard_experiment_id / str(variation_num)
+                        tensorboard_log_dir = str(tensorboard_experiment_id / str(variation_num))
                         # Fileformat must be hdf5, otherwise bug
                         # https://github.com/tensorflow/tensorflow/issues/34127
-                        checkpoints_path = tensorboard_log_dir / (tensorboard_experiment_name +
-                                                                  ".{epoch:02d}-{val_loss:.2f}.hdf5")
+                        checkpoints_path = str(tensorboard_log_dir) + "/" + (tensorboard_experiment_name +
+                                                                             ".{epoch:02d}-{val_loss:.2f}.hdf5")
                         logger.info(f"Start variation id: " + str(tensorboard_log_dir))
                     else:
                         tensorboard_log_dir, checkpoints_path = None, None
@@ -162,13 +163,13 @@ def train_model(
         training_dataset: tf.data.Dataset,
         valid_dataset: tf.data.Dataset,
         validation_steps: int,
-        tensorboard_log_dir,
+        tensorboard_log_dir: str,
         hparams,
         mirrored_strategy,
-        epochs,
-        learning_rate,
-        patience,
-        checkpoints_path
+        epochs: int,
+        learning_rate: float,
+        patience: int,
+        checkpoints_path: str
 ):
     """
     The training loop for a single model
@@ -196,7 +197,7 @@ def train_model(
 
     if tensorboard_log_dir is not None:
         # Workaround for https://github.com/tensorflow/tensorboard/issues/2412
-        callbacks = [tf.keras.callbacks.TensorBoard(log_dir=str(tensorboard_log_dir), profile_batch=0),
+        callbacks = [tf.keras.callbacks.TensorBoard(log_dir=tensorboard_log_dir, profile_batch=0),
                      tf.keras.callbacks.ModelCheckpoint(filepath=checkpoints_path, save_weights_only=False,
                                                         monitor='val_loss'),
                      hp.KerasCallback(writer=str(tensorboard_log_dir), hparams=hparams)]
@@ -227,9 +228,9 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.verbose:
-        logger.setLevel(logging.DEBUG)
+        logging.getLogger().setLevel(logging.DEBUG)
     else:
-        logger.setLevel(logging.INFO)
+        logging.getLogger().setLevel(logging.INFO)
 
     logger.info("Start")
 
