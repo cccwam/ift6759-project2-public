@@ -3,6 +3,8 @@ import typing
 
 import tensorflow as tf
 
+from libs.models.helpers import load_pretrained_layers
+
 logger = logging.getLogger(__name__)
 
 
@@ -66,5 +68,7 @@ def builder(
         latent_dim=latent_dim)
 
     my_model.summary(print_fn=logger.info)
+
+    load_pretrained_layers(config=config, my_model=my_model)
 
     return my_model

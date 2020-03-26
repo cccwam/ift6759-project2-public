@@ -14,6 +14,7 @@ from libs.data_loaders.abstract_dataloader import AbstractDataloader
 
 logger = logging.getLogger(__name__)
 
+
 def main(
         config_path: typing.AnyStr,
         tensorboard_tracking_folder: typing.AnyStr
@@ -132,7 +133,7 @@ def train_models(
                         # Fileformat must be hdf5, otherwise bug
                         # https://github.com/tensorflow/tensorflow/issues/34127
                         checkpoints_path = str(tensorboard_log_dir) + "/" + (tensorboard_experiment_name +
-                                                                  ".{epoch:02d}-{val_loss:.2f}.hdf5")
+                                                                             ".{epoch:02d}-{val_loss:.2f}.hdf5")
                         logger.info(f"Start variation id: " + str(tensorboard_log_dir))
                     else:
                         tensorboard_log_dir, checkpoints_path = None, None

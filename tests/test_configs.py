@@ -1,5 +1,6 @@
-import jsonschema
 import os
+
+import jsonschema
 
 from libs import helpers
 

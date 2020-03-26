@@ -26,13 +26,13 @@ class AbstractDataloader:
               batch_size):
         raise NotImplementedError()
 
-    # TODO is it needed ?
+    # TODO is it needed ? To be done in anoter PR
     @property
     @abstractmethod
     def get_token_to_word(self):
         raise NotImplementedError()
 
-    # TODO is it needed ?
+    # TODO is it needed ? To be done in anoter PR
     def decode(self, tokens):
         mapped_tokens = [self.get_token_to_word[t] for t in tokens]
         return " ".join(mapped_tokens)
