@@ -5,12 +5,12 @@ from functools import partial
 import numpy as np
 import tensorflow as tf
 
-from libs.data_loaders import AbstractDataloader
+from libs.data_loaders.abstract_dataloader import AbstractMonolingualDataloader
 
 logger = logging.getLogger(__name__)
 
 
-class MonolingualDataloaderWord(AbstractDataloader):
+class MonolingualDataloaderWord(AbstractMonolingualDataloader):
     """
         Dataset for monolingual corpora at word level.
 

@@ -14,7 +14,6 @@ from libs.data_loaders.abstract_dataloader import AbstractDataloader
 
 logger = logging.getLogger(__name__)
 
-
 def main(
         config_path: typing.AnyStr,
         tensorboard_tracking_folder: typing.AnyStr
@@ -227,9 +226,9 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.verbose:
-        logger.setLevel(logging.DEBUG)
+        logging.getLogger().setLevel(logging.DEBUG)
     else:
-        logger.setLevel(logging.INFO)
+        logging.getLogger().setLevel(logging.INFO)
 
     logger.info("Start")
 

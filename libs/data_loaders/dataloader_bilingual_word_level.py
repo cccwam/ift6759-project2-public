@@ -5,12 +5,12 @@ from functools import partial
 import numpy as np
 import tensorflow as tf
 
-from libs.data_loaders import AbstractDataloader
+from libs.data_loaders.abstract_dataloader import AbstractBilingualDataloader
 
 logger = logging.getLogger(__name__)
 
 
-class BilingualDataloaderWord(AbstractDataloader):
+class BilingualDataloaderWord(AbstractBilingualDataloader):
     """
         Dataset for bilingual corpora at word level.
 
@@ -47,11 +47,14 @@ class BilingualDataloaderWord(AbstractDataloader):
         with open(self._preprocessed_data_path / "token_to_word_en.pickle", 'rb') as handle:
             self._token_to_word_en: dict = pickle.load(handle)
 
-        if self._vocab_size is not None:
-            logger.debug("Vocab size limited to " + str(self._vocab_size))
-            # To limit the output vocab size
-            self._token_to_word_fr = {k: v for i, (k, v) in enumerate(self._token_to_word_fr.items())
-                                      if i < self._vocab_size}
+        logger.debug("Vocab size for English limited to " + str(self._vocab_size_source))
+        # To limit the output vocab size
+        self._token_to_word_en = {k: v for i, (k, v) in enumerate(self._token_to_word_en.items())
+                                  if i < self._vocab_size_source}
+        logger.debug("Vocab size for French limited to " + str(self._vocab_size_target))
+        # To limit the output vocab size
+        self._token_to_word_fr = {k: v for i, (k, v) in enumerate(self._token_to_word_fr.items())
+                                  if i < self._vocab_size_target}
 
         logger.debug(f"{str(self.__class__.__name__)} English samples: {len(self._en_numericalized)}")
         logger.debug(f"{str(self.__class__.__name__)} French samples: {len(self._fr_numericalized)})")
@@ -74,17 +77,17 @@ class BilingualDataloaderWord(AbstractDataloader):
                          self._fr_numericalized)
 
         ds = tf.data.Dataset.from_generator(my_gen,
-                                            output_types=((tf.int32, tf.int32), tf.int32),
+                                            output_types=((tf.float32, tf.float32), tf.float32),
                                             output_shapes=((tf.TensorShape([None]), tf.TensorShape([None])),
                                                            tf.TensorShape([None])))
         ds = ds.prefetch(tf.data.experimental.AUTOTUNE)
-        if self._vocab_size is not None:
-            # Only to test performance with lower vocab size (and GPU mem)
-            ds = ds.map(lambda x, y: ((tf.minimum(x[0], self._vocab_size - 1),
-                                       tf.minimum([1], self._vocab_size - 1)),
-                                      tf.minimum(y, self._vocab_size - 1)))
 
-        ds = ds.padded_batch(batch_size=batch_size, padded_shapes=(([self._seq_length], [self._seq_length]),
-                                                                   self._seq_length))
+        # Only to test performance with lower vocab size (and GPU mem)
+        ds = ds.map(lambda x, y: ((tf.minimum(x[0], self._vocab_size_source - 1),
+                                   tf.minimum(x[1], self._vocab_size_target - 1)),
+                                  tf.minimum(y, self._vocab_size_target - 1)))
+
+        ds = ds.padded_batch(batch_size=batch_size, padded_shapes=(([self._seq_length_target], [self._seq_length_target]),
+                                                                   self._seq_length_target))
 
         self._build_all_dataset(ds, batch_size)

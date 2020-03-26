@@ -6,6 +6,7 @@ import tensorflow as tf
 logger = logging.getLogger(__name__)
 
 
+# noinspection DuplicatedCode
 def builder(
         config: typing.Dict[typing.AnyStr, typing.Any]):
     # noinspection PyShadowingNames
