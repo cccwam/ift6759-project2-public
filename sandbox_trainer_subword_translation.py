@@ -15,6 +15,8 @@ TextLineDataset = tf.data.TextLineDataset
 # Data loading into TextLineDataset #
 #####################################
 
+print("Starting data loading procedure")
+
 # For now loading data path from a config file in home folder...
 cfg_name = 'ift6759_project2_sandbox_cfg.json'
 with open(os.path.join(os.environ['HOME'], cfg_name)) as file_cfg:
@@ -23,20 +25,25 @@ path_data = cfg_dict['path_data']
 
 # All the data files we will be using
 path_trad_en_train = os.path.join(path_data, 'original', 'train.lang1.train')
+path_trad_en_test = os.path.join(path_data, 'original', 'train.lang1.test')
 path_unal_en_train = os.path.join(path_data, 'tokenized_default_no_punc', 'unaligned.en.train')
 path_trad_en_val = os.path.join(path_data, 'original', 'train.lang1.validation')
 path_unal_en_val = os.path.join(path_data, 'tokenized_default_no_punc', 'unaligned.en.validation')
 path_trad_fr_train = os.path.join(path_data, 'original', 'train.lang2.train')
+path_trad_fr_test = os.path.join(path_data, 'original', 'train.lang2.test')
 path_unal_fr_train = os.path.join(path_data, 'tokenized_keep_case', 'unaligned.fr.train')
 path_trad_fr_val = os.path.join(path_data, 'original', 'train.lang2.validation')
-path_unal_fr_val = os.path.join(path_data, 'tokenized_keep_case', 'unaligned.fr.validation')
+path_unal_fr_val = os.path.join(path_data, 'tokenized_keep_caseun'
+                                           '', 'unaligned.fr.validation')
 # Create all TextLineDataset objects
 datasets = {
     'sentences_translation_en_train': TextLineDataset([path_trad_en_train]),
+    'sentences_translation_en_test': TextLineDataset([path_trad_en_test]),
     'sentences_all_en_train': TextLineDataset([path_trad_en_train, path_unal_en_train]),
     'sentences_translation_en_validation': TextLineDataset([path_trad_en_val]),
     'sentences_all_en_validation': TextLineDataset([path_trad_en_val, path_unal_en_val]),
     'sentences_translation_fr_train': TextLineDataset([path_trad_fr_train]),
+    'sentences_translation_fr_test': TextLineDataset([path_trad_fr_test]),
     'sentences_all_fr_train': TextLineDataset([path_trad_fr_train, path_unal_fr_train]),
     'sentences_translation_fr_validation': TextLineDataset([path_trad_fr_val]),
     'sentences_all_fr_validation': TextLineDataset([path_trad_fr_val, path_unal_fr_val]),
@@ -130,55 +137,20 @@ val_dataset = (val_preprocessed
 # d_model = 128
 # dff = 512
 # num_heads = 8
-num_layers = 4
+num_layers = 3
 d_model = 128
 dff = 512
-num_heads = 8  # must be a divisor of d_model
-dropout_rate = 0.3
+num_heads = 4  # must be a divisor of d_model
+dropout_rate = 0.2
 
 input_vocab_size = tokenizer_en.vocab_size + 2
 target_vocab_size = tokenizer_fr.vocab_size + 2
-
-learning_rate = transformer.CustomSchedule(d_model)
-
-optimizer = tf.keras.optimizers.Adam(learning_rate, beta_1=0.9, beta_2=0.98,
-                                     epsilon=1e-9)
-
-loss_object = tf.keras.losses.SparseCategoricalCrossentropy(
-    from_logits=True, reduction='none')
-
-
-def loss_function(real, pred):
-    mask = tf.math.logical_not(tf.math.equal(real, 0))
-    loss_ = loss_object(real, pred)
-
-    mask = tf.cast(mask, dtype=loss_.dtype)
-    loss_ *= mask
-
-    return tf.reduce_mean(loss_)
-
-
-train_loss = tf.keras.metrics.Mean(name='train_loss')
-train_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(
-    name='train_accuracy')
 
 transformer0 = transformer.Transformer(
     num_layers, d_model, num_heads, dff, input_vocab_size, target_vocab_size,
     pe_input=input_vocab_size, pe_target=target_vocab_size, rate=dropout_rate)
 
-checkpoint_path = "../checkpoints/train"
-
-ckpt = tf.train.Checkpoint(transformer=transformer0,
-                           optimizer=optimizer)
-
-ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_path, max_to_keep=5)
-
-# if a checkpoint exists, restore the latest checkpoint.
-if ckpt_manager.latest_checkpoint:
-    ckpt.restore(ckpt_manager.latest_checkpoint)
-    print('Latest checkpoint restored!!')
-
-EPOCHS = 150
+EPOCHS = 75
 
 # The @tf.function trace-compiles train_step into a TF graph for faster
 # execution. The function specializes to the precise shape of the argument
@@ -186,59 +158,11 @@ EPOCHS = 150
 # batch sizes (the last batch is smaller), use input_signature to specify
 # more generic shapes.
 
-train_step_signature = [
-    tf.TensorSpec(shape=(None, None), dtype=tf.int64),
-    tf.TensorSpec(shape=(None, None), dtype=tf.int64),
-]
-
-
-@tf.function(input_signature=train_step_signature)
-def train_step(inp, tar):
-    tar_inp = tar[:, :-1]
-    tar_real = tar[:, 1:]
-
-    enc_padding_mask, combined_mask, dec_padding_mask = \
-        transformer.create_masks(inp, tar_inp)
-
-    with tf.GradientTape() as tape:
-        predictions, _ = transformer0(inp, tar_inp,
-                                      True,
-                                      enc_padding_mask,
-                                      combined_mask,
-                                      dec_padding_mask)
-        loss = loss_function(tar_real, predictions)
-
-    gradients = tape.gradient(loss, transformer0.trainable_variables)
-    optimizer.apply_gradients(zip(gradients, transformer0.trainable_variables))
-
-    train_loss(loss)
-    train_accuracy(tar_real, predictions)
-
-
-for epoch in range(EPOCHS):
-    start = time.time()
-
-    train_loss.reset_states()
-    train_accuracy.reset_states()
-
-    # inp -> portuguese, tar -> english
-    for (batch, (inp, tar)) in enumerate(train_dataset):
-        train_step(inp, tar)
-
-        if batch % 50 == 0:
-            print('Epoch {} Batch {} Loss {:.4f} Accuracy {:.4f}'.format(
-                epoch + 1, batch, train_loss.result(), train_accuracy.result()))
-
-    if (epoch + 1) % 5 == 0:
-        ckpt_save_path = ckpt_manager.save()
-        print('Saving checkpoint for epoch {} at {}'.format(epoch + 1,
-                                                            ckpt_save_path))
-
-    print('Epoch {} Loss {:.4f} Accuracy {:.4f}'.format(epoch + 1,
-                                                        train_loss.result(),
-                                                        train_accuracy.result()))
-
-    print('Time taken for 1 epoch: {} secs\n'.format(time.time() - start))
+train = False
+if train:
+    transformer0.fit(train_dataset, epochs=EPOCHS)
+else:
+    transformer0.load_checkpoint()
 
 
 def evaluate(inp_sentence):
@@ -255,7 +179,7 @@ def evaluate(inp_sentence):
     output = tf.expand_dims(decoder_input, 0)
 
     # This limit in i should be MAX_LENGTH, but no longer using it so...
-    for i in range(1000):
+    for i in range(100):
         enc_padding_mask, combined_mask, dec_padding_mask = \
             transformer.create_masks(encoder_input, output)
 
@@ -292,6 +216,20 @@ def translate(sentence, plot=''):
     print('Input: {}'.format(sentence))
     print('Predicted translation: {}'.format(predicted_sentence))
 
+    return predicted_sentence
+
 
 translate("total privatization then a complete break with the state and the local authorities is not a step forward but a step back")
 print("Real translation: La privatisation totale , le désengagement de l' État et des collectivités publiques n' est alors pas un progrès , mais une régression .")
+
+#all test set:
+with open('tmp_results.txt', 'w') as file_out:
+    # hack to reduce nb of predictions
+    with open('tmp_targets.txt', 'w') as file_targets:
+        for i, (eng_sent, fr_target) in enumerate(zip(datasets['sentences_translation_en_test'], datasets['sentences_translation_fr_test'])):
+            if i > 20:
+                break
+            file_targets.write(fr_target.numpy().decode())
+            file_targets.write('\n')
+            file_out.write(translate(eng_sent.numpy()))
+            file_out.write('\n')

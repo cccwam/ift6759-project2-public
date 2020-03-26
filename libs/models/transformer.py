@@ -1,4 +1,7 @@
 # Code source: https://www.tensorflow.org/tutorials/text/transformer
+import os
+import time
+
 import tensorflow as tf
 import numpy as np
 
@@ -174,47 +177,6 @@ class DecoderLayer(tf.keras.layers.Layer):
         return out3, attn_weights_block1, attn_weights_block2
 
 
-class LanguageModelLayer(tf.keras.layers.Layer):
-    def __init__(self, d_model, num_heads, dff, rate=0.1):
-        super(LanguageModelLayer, self).__init__()
-
-        self.mha1 = MultiHeadAttention(d_model, num_heads)
-        self.mha2 = MultiHeadAttention(d_model, num_heads)
-
-        self.ffn = point_wise_feed_forward_network(d_model, dff)
-
-        self.layernorm1 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
-        self.layernorm2 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
-        self.layernorm3 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
-
-        self.dropout1 = tf.keras.layers.Dropout(rate)
-        self.dropout2 = tf.keras.layers.Dropout(rate)
-        self.dropout3 = tf.keras.layers.Dropout(rate)
-
-    def call(self, x, training, look_ahead_mask, padding_mask):
-        # enc_output.shape == (batch_size, input_seq_len, d_model)
-
-        attn1, attn_weights_block1 = self.mha1(x, x, x, look_ahead_mask)
-        # attn1 has shape (batch_size, target_seq_len, d_model)
-        attn1 = self.dropout1(attn1, training=training)
-        out1 = self.layernorm1(attn1 + x)
-
-        # Here I am improvising...
-        attn2, attn_weights_block2 = self.mha2(
-            out1, out1, out1, padding_mask)
-        # attn2 has shape (batch_size, target_seq_len, d_model)
-        attn2 = self.dropout2(attn2, training=training)
-        out2 = self.layernorm2(attn2 + out1)
-        # out2 has shape (batch_size, target_seq_len, d_model)
-
-        ffn_output = self.ffn(out2)  # (batch_size, target_seq_len, d_model)
-        ffn_output = self.dropout3(ffn_output, training=training)
-        out3 = self.layernorm3(ffn_output + out2)
-        # out3 has shape (batch_size, target_seq_len, d_model)
-
-        return out3, attn_weights_block1, attn_weights_block2
-
-
 def get_angles(pos, i, d_model):
     angle_rates = 1 / np.power(10000, (2 * (i // 2)) / np.float32(d_model))
     return pos * angle_rates
@@ -307,44 +269,6 @@ class Decoder(tf.keras.layers.Layer):
         return x, attention_weights
 
 
-class LanguageModel(tf.keras.layers.Layer):
-    def __init__(self, num_layers, d_model, num_heads, dff, vocab_size,
-                 maximum_position_encoding, rate=0.1):
-        super(LanguageModel, self).__init__()
-
-        self.d_model = d_model
-        self.num_layers = num_layers
-
-        self.embedding = tf.keras.layers.Embedding(vocab_size, d_model)
-        self.pos_encoding = positional_encoding(maximum_position_encoding,
-                                                d_model)
-
-        self.lm_layers = [LanguageModelLayer(d_model, num_heads, dff, rate)
-                           for _ in range(num_layers)]
-        self.dropout = tf.keras.layers.Dropout(rate)
-
-    def call(self, x, training, look_ahead_mask, padding_mask):
-        seq_len = tf.shape(x)[1]
-        attention_weights = {}
-
-        x = self.embedding(x)  # (batch_size, target_seq_len, d_model)
-        x *= tf.math.sqrt(tf.cast(self.d_model, tf.float32))
-        x += self.pos_encoding[:, :seq_len, :]
-
-        x = self.dropout(x, training=training)
-
-        for i in range(self.num_layers):
-            x, block1, block2 = self.lm_layers[i](x, training,
-                                                  look_ahead_mask,
-                                                  padding_mask)
-
-            attention_weights['decoder_layer{}_block1'.format(i + 1)] = block1
-            attention_weights['decoder_layer{}_block2'.format(i + 1)] = block2
-
-        # x.shape == (batch_size, target_seq_len, d_model)
-        return x, attention_weights
-
-
 class Transformer(tf.keras.Model):
     def __init__(self, num_layers, d_model, num_heads, dff, input_vocab_size,
                  target_vocab_size, pe_input, pe_target, rate=0.1):
@@ -357,6 +281,12 @@ class Transformer(tf.keras.Model):
                                target_vocab_size, pe_target, rate)
 
         self.final_layer = tf.keras.layers.Dense(target_vocab_size)
+        self.lr = CustomSchedule(d_model)
+        self.optimizer = tf.keras.optimizers.Adam(
+            self.lr, beta_1=0.9, beta_2=0.98, epsilon=1e-9)
+        self.train_loss = tf.keras.metrics.Mean(name='train_loss')
+        self.train_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(
+            name='train_accuracy')
 
     def call(self, inp, tar, training, enc_padding_mask, look_ahead_mask,
              dec_padding_mask):
@@ -372,28 +302,92 @@ class Transformer(tf.keras.Model):
 
         return final_output, attention_weights
 
+    def loss_function(self, real, pred):
+        loss_object = tf.keras.losses.SparseCategoricalCrossentropy(
+            from_logits=True, reduction='none')
+        mask = tf.math.logical_not(tf.math.equal(real, 0))
+        loss_ = loss_object(real, pred)
 
-class HalfTransformer(tf.keras.Model):
-    def __init__(self, num_layers, d_model, num_heads, dff, vocab_size,
-                 pe_input, rate=0.1):
-        super(HalfTransformer, self).__init__()
+        mask = tf.cast(mask, dtype=loss_.dtype)
+        loss_ *= mask
 
-        self.lm = LanguageModel(num_layers, d_model, num_heads, dff,
-                                vocab_size, pe_input, rate)
+        return tf.reduce_mean(loss_)
 
-        self.final_layer = tf.keras.layers.Dense(vocab_size)
+    def load_checkpoint(self):
+        checkpoint_path = os.path.join(os.environ['HOME'],
+                                       "ift6759_p2_checkpoints/train")
+        ckpt = tf.train.Checkpoint(transformer=self,
+                                   optimizer=self.optimizer)
+        ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_path,
+                                                  max_to_keep=5)
+        # if a checkpoint exists, restore the latest checkpoint.
+        if ckpt_manager.latest_checkpoint:
+            ckpt.restore(ckpt_manager.latest_checkpoint)
+            print('Latest checkpoint restored!!')
 
-    def call(self, tar, training, enc_padding_mask, look_ahead_mask,
-             dec_padding_mask):
+        return ckpt_manager
 
-        # dec_output.shape == (batch_size, tar_seq_len, d_model)
-        lm_output, attention_weights = self.lm(
-            tar, training, look_ahead_mask, dec_padding_mask)
+    # ToDo replace train_dataset with x,y from usual fit signature
+    def fit(self, x=None, epochs=1, callbacks=None,
+            validation_data=None, validation_steps=None):
+        ckpt_manager = self.load_checkpoint()
 
-        final_output = self.final_layer(
-            lm_output)  # (batch_size, tar_seq_len, target_vocab_size)
+        train_step_signature = [
+            tf.TensorSpec(shape=(None, None), dtype=tf.int64),
+            tf.TensorSpec(shape=(None, None), dtype=tf.int64),
+        ]
 
-        return final_output, attention_weights
+        @tf.function(input_signature=train_step_signature)
+        def train_step(inp, tar):
+            tar_inp = tar[:, :-1]
+            tar_real = tar[:, 1:]
+
+            enc_padding_mask, combined_mask, dec_padding_mask = \
+                create_masks(inp, tar_inp)
+
+            with tf.GradientTape() as tape:
+                predictions, _ = self(inp, tar_inp,
+                                      True,
+                                      enc_padding_mask,
+                                      combined_mask,
+                                      dec_padding_mask)
+                loss = self.loss_function(tar_real, predictions)
+
+            gradients = tape.gradient(loss, self.trainable_variables)
+            self.optimizer.apply_gradients(
+                zip(gradients, self.trainable_variables))
+
+            self.train_loss(loss)
+            self.train_accuracy(tar_real, predictions)
+
+        for epoch in range(epochs):
+            start = time.time()
+
+            self.train_loss.reset_states()
+            self.train_accuracy.reset_states()
+
+            # inp -> portuguese, tar -> english
+            # ToDo replace train_dataset with x,y from usual fit signature
+            for (batch, (inp, tar)) in enumerate(x):
+                train_step(inp, tar)
+
+                if batch % 50 == 0:
+                    print(
+                        'Epoch {} Batch {} Loss {:.4f} Accuracy {:.4f}'.format(
+                            epoch + 1, batch, self.train_loss.result(),
+                            self.train_accuracy.result()))
+
+            if (epoch + 1) % 5 == 0:
+                ckpt_save_path = ckpt_manager.save()
+                print('Saving checkpoint for epoch {} at {}'.format(epoch + 1,
+                                                                    ckpt_save_path))
+
+            print('Epoch {} Loss {:.4f} Accuracy {:.4f}'.format(epoch + 1,
+                                                                self.train_loss.result(),
+                                                                self.train_accuracy.result()))
+
+            print(
+                'Time taken for 1 epoch: {} secs\n'.format(time.time() - start))
 
 
 class CustomSchedule(tf.keras.optimizers.schedules.LearningRateSchedule):
