@@ -409,8 +409,8 @@ class Transformer(tf.keras.Model):
                     self.train_accuracy.result()))
 
             if (epoch + 1) % validation_steps == 0:
-                self.train_loss.reset_states()
-                self.train_accuracy.reset_states()
+                self.validation_loss.reset_states()
+                self.validation_accuracy.reset_states()
 
                 for (batch, (inp0, tar0)) in enumerate(validation_data):
                     validation_step(inp0, tar0)

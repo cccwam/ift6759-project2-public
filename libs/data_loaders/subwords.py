@@ -1,4 +1,5 @@
 import os
+import json
 
 import tensorflow as tf
 import tensorflow_datasets as tfds
@@ -22,6 +23,12 @@ def subword_tokenizer(vocabulary_file, sentences, target_vocab_size=2**13,
             (sentence.numpy() for sentence in sentences),
             target_vocab_size=target_vocab_size)
         tokenizer.save_to_file(vocabulary_file)
+        all_tokens = []
+        for i in range(tokenizer.vocab_size):
+            all_tokens.append(tokenizer.decode([i]))
+        with open(vocabulary_file + '.json', 'w') as file_vocab:
+            file_vocab.write(json.dumps(all_tokens, indent=2))
+
     else:
         print(f"Loading precomputed subword vocabulary ({vocabulary_file})")
         tokenizer = tfds.features.text.SubwordTextEncoder.load_from_file(
