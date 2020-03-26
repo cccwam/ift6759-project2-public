@@ -1,6 +1,7 @@
 # Code source: https://www.tensorflow.org/tutorials/text/transformer
 import os
 import time
+import typing
 
 import tensorflow as tf
 import numpy as np
@@ -327,7 +328,6 @@ class Transformer(tf.keras.Model):
 
         return ckpt_manager
 
-    # ToDo replace train_dataset with x,y from usual fit signature
     def fit(self, x=None, epochs=1, callbacks=None,
             validation_data=None, validation_steps=None):
         ckpt_manager = self.load_checkpoint()
@@ -366,8 +366,6 @@ class Transformer(tf.keras.Model):
             self.train_loss.reset_states()
             self.train_accuracy.reset_states()
 
-            # inp -> portuguese, tar -> english
-            # ToDo replace train_dataset with x,y from usual fit signature
             for (batch, (inp, tar)) in enumerate(x):
                 train_step(inp, tar)
 
@@ -435,3 +433,30 @@ def create_masks(inp, tar):
     combined_mask = tf.maximum(dec_target_padding_mask, look_ahead_mask)
 
     return enc_padding_mask, combined_mask, dec_padding_mask
+
+
+def builder(
+        config: typing.Dict[typing.AnyStr, typing.Any],
+        input_vocab_size, target_vocab_size):
+    # noinspection PyShadowingNames,DuplicatedCode
+    dl_hparams = config["data_loader"]["hyper_params"]
+    model_hparams = config["model"]["hyper_params"]
+
+    # input_vocab_size = dl_hparams["vocab_size_source"]
+    #
+    # target_vocab_size = dl_hparams["vocab_size_target"]
+
+    name = model_hparams["name"]
+    num_layers = model_hparams["num_layers"]
+    d_model = model_hparams["d_model"]
+    num_heads = model_hparams["num_heads"]
+    dff = model_hparams["dff"]
+    dropout_rate = model_hparams["dropout_rate"]
+
+    transformer0 = Transformer(
+        num_layers, d_model, num_heads, dff, input_vocab_size,
+        target_vocab_size,
+        pe_input=input_vocab_size, pe_target=target_vocab_size,
+        rate=dropout_rate)
+
+    return transformer0
