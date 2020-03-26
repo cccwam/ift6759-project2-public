@@ -5,6 +5,8 @@ flake8
 pytest
 pytest-cov
 
+fire
+
 tensorflow_gpu==2.0.0 # Keep fixed
 pandas
 jsonschema
@@ -15,6 +17,7 @@ matplotlib
 numpy
 tensorboard
 jupyter
+scikit-learn
 
 spacy==2.2.2 # Version from Helios
 

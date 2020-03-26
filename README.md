@@ -92,8 +92,7 @@ Note: Read the section `Sbatch job example` above for information on how to run 
 
 ```
 python trainer.py \
-    --?? To be defined
-    --user_cfg_path configs/user/sample.json \
+    --config configs/user/sample.json \
     --tensorboard_tracking_folder /project/cq-training-1/project2/teams/team03/tensorboard/$USER
 ```
 

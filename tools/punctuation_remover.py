@@ -18,7 +18,7 @@ def main():
                         required=True)
 
     args = parser.parse_args()
-    logging.basicConfig(level=logging.INFO)
+    logger.basicConfig(level=logging.INFO)
 
     if not os.path.exists(args.output):
         os.makedirs(args.output)
