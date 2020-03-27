@@ -20,8 +20,6 @@ def my_numericalizer(data_path):
     Returns:
 
     """
-    logger.basicConfig(level=logging.INFO)
-
     data_path = Path(data_path)
 
     logger.info("Load all tokenized corpora")

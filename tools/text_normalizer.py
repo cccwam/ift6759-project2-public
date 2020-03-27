@@ -31,8 +31,6 @@ def my_tokenizer(data_path,
     Returns:
 
     """
-    logger.basicConfig(level=logging.INFO)
-
     data_path = Path(data_path)
     output_path = Path(output_path)
     output_path.mkdir(parents=True, exist_ok=True)
