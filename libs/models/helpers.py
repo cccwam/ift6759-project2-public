@@ -6,8 +6,8 @@ logger = logging.getLogger(__name__)
 
 
 def load_pretrained_layers(config: dict, my_model: tf.keras.Model):
-    if "pretrained_layers" in config["data_loader"]:
-        pretrained_layers = config["data_loader"]["pretrained_layers"]
+    if "pretrained_layers" in config["model"]["hyper_params"]:
+        pretrained_layers = config["model"]["hyper_params"]["pretrained_layers"]
         for pretrained_layer in pretrained_layers:
             logger.info(
                 f"Load pretrained layer {pretrained_layer['layer_name']} into {pretrained_layer['target_layer_name']}")

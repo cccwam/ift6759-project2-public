@@ -7,7 +7,14 @@
     "hyper_params": {
       "name": "SEQ2SEQ",
       "embedding_dim": 300,
-      "latent_dim": 256
+      "latent_dim": 256,
+      "pretrained_layers": [
+        {
+          "model_path": "/project/cq-training-1/project2/teams/team03/models/lstm_lm.builder_dataloader_monolingual_word_level.MonolingualDataloaderWord-2020-03-26T02:34:54.443020/0/lstm_lm.builder_dataloader_monolingual_word_level.MonolingualDataloaderWord.05-1.07.hdf5",
+          "layer_name": "EN_encoder/EN_encoder_lstm",
+          "target_layer_name": "SEQ2SEQ_encoder_lstm"
+        }
+      ]
     },
     "source": ""
   },
@@ -25,12 +32,7 @@
       "samples_for_test": 500,
       "samples_for_valid": 500,
       "samples_for_train": -1
-    },
-    "pretrained_layers": [
-      {"model_path": "/project/cq-training-1/project2/teams/team03/models/lstm_lm.builder_dataloader_monolingual_word_level.MonolingualDataloaderWord-2020-03-26T02:34:54.443020/0/lstm_lm.builder_dataloader_monolingual_word_level.MonolingualDataloaderWord.05-1.07.hdf5",
-      "layer_name": "EN_encoder/EN_encoder_lstm",
-      "target_layer_name": "SEQ2SEQ_encoder_lstm"}
-    ]
+    }
   },
   "trainer": {
     "hyper_params": {
