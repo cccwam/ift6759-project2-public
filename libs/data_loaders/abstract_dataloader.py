@@ -1,8 +1,11 @@
 from abc import abstractmethod, ABC
+from functools import partial
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List
+import numpy as np
 
 import tensorflow as tf
+from tokenizers import Encoding
 
 
 class AbstractDataloader:
@@ -66,6 +69,32 @@ class AbstractMonolingualDataloader(AbstractDataloader, ABC):
         assert self._vocab_size is not None, "vocab_size missing"
         self._seq_length: int = self._dl_hparams["seq_length"]
         assert self._seq_length is not None, "seq_length missing"
+
+
+    def _my_causal_lm_generator(self, source_numericalized):
+        raise NotImplementedError
+
+
+    def _hook_dataset_post_precessing(self, ds):
+        return ds
+
+    def build(self,
+              batch_size):
+
+        my_gen = partial(self._my_causal_lm_generator,
+                         source_numericalized=self._source_numericalized)
+
+        ds = tf.data.Dataset.from_generator(my_gen,
+                                            output_types=(tf.float32, tf.float32),
+                                            output_shapes=(tf.TensorShape([None]),
+                                                           tf.TensorShape([None])))
+        ds = ds.prefetch(tf.data.experimental.AUTOTUNE)
+        ds = self._hook_dataset_post_precessing(ds=ds)
+
+        ds = ds.padded_batch(batch_size=batch_size, padded_shapes=(self._seq_length, self._seq_length))
+
+        self._build_all_dataset(ds, batch_size)
+
 
 
 class AbstractBilingualDataloader(AbstractDataloader, ABC):

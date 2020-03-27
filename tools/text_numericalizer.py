@@ -5,6 +5,7 @@ from pathlib import Path
 import fire
 
 logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 
 def my_numericalizer(data_path):

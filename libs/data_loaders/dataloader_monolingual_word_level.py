@@ -1,6 +1,7 @@
 import logging
 import pickle
 from functools import partial
+from typing import List
 
 import numpy as np
 import tensorflow as tf
@@ -47,31 +48,18 @@ class MonolingualDataloaderWord(AbstractMonolingualDataloader):
 
         logger.debug(f"{str(self.__class__.__name__)} Samples: {len(self._source_numericalized)}")
 
-    @classmethod
-    def _my_causal_lm_generator(cls, source_numericalized):
+    def _my_causal_lm_generator(self, source_numericalized: List[str]):
         bos, eos = 1, 2  # BOS will be 1 and EOS will be 2, leaving MASK to 0 and UNK to 3
         for i in range(len(source_numericalized)):
             inputs = np.array([bos] + source_numericalized[i] + [eos])
             output = inputs[1:]
             yield (inputs, output)
 
-    def build(self,
-              batch_size):
-
-        my_gen = partial(MonolingualDataloaderWord._my_causal_lm_generator,
-                         self._source_numericalized)
-
-        ds = tf.data.Dataset.from_generator(my_gen,
-                                            output_types=(tf.float32, tf.float32),
-                                            output_shapes=(tf.TensorShape([None]),
-                                                           tf.TensorShape([None])))
-        ds = ds.prefetch(tf.data.experimental.AUTOTUNE)
+    def _hook_dataset_post_precessing(self, ds):
         if self._vocab_size is not None:
             logger.debug("Vocab size limited to " + str(self._vocab_size))
             # Only to test performance with lower vocab size (and GPU mem)
             ds = ds.map(lambda x, y: (tf.minimum(x, self._vocab_size - 1),
                                       tf.minimum(y, self._vocab_size - 1)))
+        return ds
 
-        ds = ds.padded_batch(batch_size=batch_size, padded_shapes=(self._seq_length, self._seq_length))
-
-        self._build_all_dataset(ds, batch_size)

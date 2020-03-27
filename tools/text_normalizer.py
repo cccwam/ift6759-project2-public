@@ -10,6 +10,7 @@ import tqdm
 from sklearn.utils import shuffle
 
 logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 
 def my_tokenizer(data_path,

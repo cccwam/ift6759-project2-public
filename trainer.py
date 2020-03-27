@@ -137,7 +137,7 @@ def train_models(
                         logger.info(f"Start variation id: " + str(tensorboard_log_dir))
                     else:
                         tensorboard_log_dir, checkpoints_path = None, None
-                        logger.info(f"Start variation id: f{tensorboard_experiment_id} {str(variation_num)}")
+                        logger.info(f"Start variation id: {tensorboard_experiment_id} {str(variation_num)}")
 
                     train_model(
                         model=model,

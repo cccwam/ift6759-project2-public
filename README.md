@@ -97,5 +97,15 @@ python trainer.py \
 ```
 
 * `??` To be defined
-* `user_cfg_path`: Path to the JSON config file used to store user model, dataloader and trainer parameters.
+* `config`: Path to the JSON config file used to store user model, dataloader and trainer parameters.
 * `tensorboard_tracking_folder`: Path where to store TensorBoard data and save trained model. 
+
+## Special requirements
+
+Our project is using HuggingFaces tokenizers and transformers libraries.
+To install them, please run
+
+
+```
+pip install --force tokenizers==0.6.0 and transformers==2.5.1
+```
