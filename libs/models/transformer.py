@@ -281,7 +281,13 @@ class Transformer(tf.keras.Model):
         self.decoder = Decoder(num_layers, d_model, num_heads, dff,
                                target_vocab_size, pe_target, rate)
 
+        # ToDo: is it ok to make a layer that will only be used in pretraining?
+        # It appears that it's ok, there's just a lot of warnings for the
+        # parameters for which there is no gradient.
+        self.left_lm_final_layer = tf.keras.layers.Dense(input_vocab_size)
+
         self.final_layer = tf.keras.layers.Dense(target_vocab_size)
+
         self.lr = CustomSchedule(d_model)
         self.optimizer = tf.keras.optimizers.Adam(
             self.lr, beta_1=0.9, beta_2=0.98, epsilon=1e-9)
@@ -292,14 +298,14 @@ class Transformer(tf.keras.Model):
         self.validation_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(
             name='validation_accuracy')
 
-    def call(self, inp, tar, training, enc_padding_mask, look_ahead_mask,
+    def call(self, enc_inp, dec_inp, training, enc_padding_mask, look_ahead_mask,
              dec_padding_mask):
-        enc_output = self.encoder(inp, training, enc_padding_mask)
+        enc_output = self.encoder(enc_inp, training, enc_padding_mask)
         # (batch_size, inp_seq_len, d_model)
 
         # dec_output.shape == (batch_size, tar_seq_len, d_model)
         dec_output, attention_weights = self.decoder(
-            tar, enc_output, training, look_ahead_mask, dec_padding_mask)
+            dec_inp, enc_output, training, look_ahead_mask, dec_padding_mask)
 
         final_output = self.final_layer(
             dec_output)  # (batch_size, tar_seq_len, target_vocab_size)
@@ -318,12 +324,13 @@ class Transformer(tf.keras.Model):
         return tf.reduce_mean(loss_)
 
     def load_checkpoint(self):
+        # ToDo customize checkpoint save directory
         checkpoint_path = os.path.join(os.environ['HOME'],
-                                       "ift6759_p2_checkpoints/train")
+                                       "ift6759_p2_checkpoints/translation")
         ckpt = tf.train.Checkpoint(transformer=self,
                                    optimizer=self.optimizer)
         ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_path,
-                                                  max_to_keep=5)
+                                                  max_to_keep=3)
         # if a checkpoint exists, restore the latest checkpoint.
         if ckpt_manager.latest_checkpoint:
             ckpt.restore(ckpt_manager.latest_checkpoint)
@@ -332,9 +339,8 @@ class Transformer(tf.keras.Model):
         return ckpt_manager
 
     def fit(self, x=None, epochs=1, callbacks=None,
-            validation_data=None, validation_steps=None):
-        # ToDo: we will not always want to reload checkpoints...
-        ckpt_manager = self.load_checkpoint()
+            validation_data=None, validation_steps=None, **kwargs):
+        ckpt_manager = kwargs['ckpt_manager']
 
         train_step_signature = [
             tf.TensorSpec(shape=(None, None), dtype=tf.int64),
@@ -346,15 +352,11 @@ class Transformer(tf.keras.Model):
             tar_inp = tar[:, :-1]
             tar_real = tar[:, 1:]
 
-            enc_padding_mask, combined_mask, dec_padding_mask = \
-                create_masks(inp, tar_inp)
+            enc_padding_mask, combined_mask, dec_padding_mask = create_masks(inp, tar_inp)
 
             with tf.GradientTape() as tape:
-                predictions, _ = self(inp, tar_inp,
-                                      True,
-                                      enc_padding_mask,
-                                      combined_mask,
-                                      dec_padding_mask)
+                predictions, _ = self(inp, tar_inp, True, enc_padding_mask,
+                                      combined_mask, dec_padding_mask)
                 loss = self.loss_function(tar_real, predictions)
 
             gradients = tape.gradient(loss, self.trainable_variables)
@@ -369,14 +371,11 @@ class Transformer(tf.keras.Model):
             tar_inp = tar[:, :-1]
             tar_real = tar[:, 1:]
 
-            enc_padding_mask, combined_mask, dec_padding_mask = \
-                create_masks(inp, tar_inp)
+            enc_padding_mask, combined_mask, dec_padding_mask = create_masks(
+                inp, tar_inp)
 
-            predictions, _ = self(inp, tar_inp,
-                                  True,
-                                  enc_padding_mask,
-                                  combined_mask,
-                                  dec_padding_mask)
+            predictions, _ = self.call(inp, tar_inp, True, enc_padding_mask,
+                                       combined_mask, dec_padding_mask)
             loss = self.loss_function(tar_real, predictions)
 
             self.validation_loss(loss)
@@ -398,6 +397,126 @@ class Transformer(tf.keras.Model):
                             self.train_accuracy.result()))
 
             if (epoch + 1) % 5 == 0:
+                ckpt_save_path = ckpt_manager.save()
+                print(
+                    'Saving checkpoint for epoch {} at {}'.format(
+                        epoch + 1, ckpt_save_path))
+
+            print(
+                'Epoch {} Loss {:.4f} Accuracy {:.4f}'.format(
+                    epoch + 1, self.train_loss.result(),
+                    self.train_accuracy.result()))
+
+            if (epoch + 1) % validation_steps == 0:
+                self.validation_loss.reset_states()
+                self.validation_accuracy.reset_states()
+
+                for (batch, (inp0, tar0)) in enumerate(validation_data):
+                    validation_step(inp0, tar0)
+
+                print(
+                    'Epoch {} Validation Loss {:.4f} Validation Accuracy {:.4f}'.format(
+                        epoch + 1, self.validation_loss.result(),
+                        self.validation_accuracy.result()))
+
+            print(
+                'Time taken for 1 epoch: {} secs\n'.format(time.time() - start))
+
+
+class TransformerLeftLM(Transformer):
+    def call(self, tar, training, enc_padding_mask, look_ahead_mask,
+             dec_padding_mask):
+
+        # dec_output.shape == (batch_size, tar_seq_len, d_model)
+        lm_output = self.encoder(
+            tar, training, look_ahead_mask)
+
+        dummy1, dummy2 = self.decoder(
+            tar, lm_output, training, look_ahead_mask, dec_padding_mask)
+
+        final_output = self.left_lm_final_layer(
+            lm_output)  # (batch_size, tar_seq_len, target_vocab_size)
+
+        return final_output
+
+    def load_checkpoint(self):
+        # ToDo customize checkpoint save directory
+        checkpoint_path = os.path.join(os.environ['HOME'],
+                                       "ift6759_p2_checkpoints/left_lm")
+        ckpt = tf.train.Checkpoint(transformer=self,
+                                   optimizer=self.optimizer)
+        ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_path,
+                                                  max_to_keep=3)
+        # if a checkpoint exists, restore the latest checkpoint.
+        if ckpt_manager.latest_checkpoint:
+            ckpt.restore(ckpt_manager.latest_checkpoint)
+            print('Latest checkpoint restored!!')
+
+        return ckpt_manager
+
+    def fit(self, x=None, epochs=1, callbacks=None, validation_data=None,
+            validation_steps=None, **kwargs):
+        ckpt_manager = kwargs['ckpt_manager']
+
+        train_step_signature = [
+            tf.TensorSpec(shape=(None, None), dtype=tf.int64),
+            tf.TensorSpec(shape=(None, None), dtype=tf.int64),
+        ]
+
+        @tf.function(input_signature=train_step_signature)
+        def train_step(inp, tar):
+            tar_inp = tar[:, :-1]
+            tar_real = tar[:, 1:]
+
+            enc_padding_mask, combined_mask, dec_padding_mask = create_masks(
+                inp, tar_inp)
+
+            with tf.GradientTape() as tape:
+                # ToDo for the left language model, we need to mask the
+                # first input, double check this?
+                predictions = self.call(tar_inp, True, combined_mask,
+                                        combined_mask, dec_padding_mask)
+                loss = self.loss_function(tar_real, predictions)
+
+            gradients = tape.gradient(loss, self.trainable_variables)
+            self.optimizer.apply_gradients(
+                zip(gradients, self.trainable_variables))
+
+            self.train_loss(loss)
+            self.train_accuracy(tar_real, predictions)
+
+        @tf.function(input_signature=train_step_signature)
+        def validation_step(inp, tar):
+            tar_inp = tar[:, :-1]
+            tar_real = tar[:, 1:]
+
+            enc_padding_mask, combined_mask, dec_padding_mask = create_masks(
+                inp, tar_inp)
+
+            # ToDo make sure mask is ok
+            predictions = self.call(tar_inp, True, combined_mask,
+                                    combined_mask, dec_padding_mask)
+            loss = self.loss_function(tar_real, predictions)
+
+            self.validation_loss(loss)
+            self.validation_accuracy(tar_real, predictions)
+
+        for epoch in range(epochs):
+            start = time.time()
+
+            self.train_loss.reset_states()
+            self.train_accuracy.reset_states()
+
+            for (batch, (inp0, tar0)) in enumerate(x):
+                train_step(inp0, tar0)
+
+                if batch % 50 == 0:
+                    print(
+                        'Epoch {} Batch {} Loss {:.4f} Accuracy {:.4f}'.format(
+                            epoch + 1, batch, self.train_loss.result(),
+                            self.train_accuracy.result()))
+
+            if (epoch + 1) % 2 == 0:
                 ckpt_save_path = ckpt_manager.save()
                 print(
                     'Saving checkpoint for epoch {} at {}'.format(
@@ -471,8 +590,7 @@ def create_masks(inp, tar):
     return enc_padding_mask, combined_mask, dec_padding_mask
 
 
-def builder(
-        config: typing.Dict[typing.AnyStr, typing.Any]):
+def builder(config: typing.Dict[typing.AnyStr, typing.Any], task='translation'):
     # noinspection PyShadowingNames,DuplicatedCode
     model_hparams = config["model"]["hyper_params"]
 
@@ -484,10 +602,14 @@ def builder(
     input_vocab_size = model_hparams["input_vocab_size"]
     target_vocab_size = model_hparams["target_vocab_size"]
 
-    transformer0 = Transformer(
-        num_layers, d_model, num_heads, dff, input_vocab_size,
-        target_vocab_size,
-        pe_input=input_vocab_size, pe_target=target_vocab_size,
-        rate=dropout_rate)
+    if task == 'translation':
+        transformer_method = Transformer
+    elif task == 'left_lm':
+        transformer_method = TransformerLeftLM
+    else:
+        raise NotImplementedError()
 
-    return transformer0
+    return transformer_method(
+        num_layers, d_model, num_heads, dff, input_vocab_size,
+        target_vocab_size, pe_input=input_vocab_size,
+        pe_target=target_vocab_size, rate=dropout_rate)

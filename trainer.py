@@ -198,8 +198,10 @@ def train_model(
 
     # Multi GPU setup
     # ToDo: The transformer has its own learning rate scheduler, this does not apply...
+    fit_kwargs = {}
     if hasattr(model, 'lr'):
         compiled_model = model
+        fit_kwargs['ckpt_manager'] = compiled_model.load_checkpoint()
     else:
         if mirrored_strategy is not None and mirrored_strategy.num_replicas_in_sync > 1:
             with mirrored_strategy.scope():
@@ -225,7 +227,8 @@ def train_model(
         epochs=epochs,
         callbacks=callbacks,
         validation_data=valid_dataset,
-        validation_steps=validation_steps
+        validation_steps=validation_steps,
+        **fit_kwargs
     )
 
 
