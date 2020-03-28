@@ -60,7 +60,7 @@ class AbstractMonolingualDataloaderSubword(AbstractMonolingualDataloader):
 
             self._tokenizer: BaseTokenizer = import_from(
                 "tokenizers",
-                tokenizer_algorithm
+                self._tokenizer_algorithm
             )(dropout=self._dropout)
 
             self._train_and_save(tokenizer_filename_prefix=tokenizer_filename_prefix,

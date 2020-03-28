@@ -75,7 +75,8 @@ class AbstractBilingualDataloaderWord(AbstractBilingualDataloader):
 class BilingualSeq2SeqDataloaderWord(AbstractBilingualDataloaderWord,
                                      AbstractBilingualSeq2SeqDataloader):
     """
-        Dataset for bilingual corpora at word level generating input sentence, target sentence and the shifted target sequence
+        Dataset for bilingual corpora at word level generating input sentence, target sentence
+        and the shifted target sequence
 
     """
 
