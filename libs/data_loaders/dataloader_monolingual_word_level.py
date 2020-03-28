@@ -59,8 +59,7 @@ class AbstractMonolingualDataloaderWord(AbstractMonolingualDataloader):
     def get_hparams(self):
         return f"vocab_size_{self._vocab_size}" + \
                f"_seq_length_{self._seq_length}" + \
-        f"_corpus_{self._preprocessed_data_path / self._monolingual_corpus_filename}"
-
+               f"_corpus_{self._preprocessed_data_path / self._monolingual_corpus_filename}"
 
 
 class MonolingualCausalLMDataloaderWord(AbstractMonolingualDataloaderWord,
@@ -80,9 +79,6 @@ class MonolingualCausalLMDataloaderWord(AbstractMonolingualDataloaderWord,
             inputs = np.array([bos] + source_numericalized[i] + [eos])
             output = inputs[1:]
             yield (inputs, output)
-
-
-
 
 
 class MonolingualTransformersLMDataloaderWord(AbstractMonolingualDataloaderWord,

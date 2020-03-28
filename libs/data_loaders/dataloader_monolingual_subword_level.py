@@ -5,8 +5,10 @@ from pathlib import Path
 from typing import List
 
 from tokenizers import (Encoding)
+from tokenizers.implementations import BaseTokenizer
 
-from libs.data_loaders.abstract_dataloader import AbstractMonolingualDataloader, AbstractMonolingualCausalLMDataloader, \
+from libs.data_loaders.abstract_dataloader import AbstractMonolingualDataloader, \
+    AbstractMonolingualCausalLMDataloader, \
     AbstractMonolingualTransformersLMDataloader
 from libs.helpers import import_from
 
@@ -126,7 +128,6 @@ class AbstractMonolingualDataloaderSubword(AbstractMonolingualDataloader):
                                                    tokenizer_algorithm=self._tokenizer_algorithm,
                                                    vocab_size=self._vocab_size,
                                                    dropout=self._dropout)
-
 
 
 class MonolingualCausalLMDataloaderSubword(AbstractMonolingualDataloaderSubword,

@@ -5,6 +5,7 @@ from pathlib import Path
 
 # ig
 import fire
+from tokenizers.implementations import BaseTokenizer
 
 from libs.helpers import import_from
 
@@ -26,7 +27,8 @@ def train_bpe_tokenizer(data_path,
     Args:
         data_path: Data path for inputs file (filename as provided by text_normalizer.py) and output files
         output_path: Output_path for the saved tokenizer model
-        tokenizer_algorithm: HuggingFaces implementation (ByteLevelBPETokenizer, CharBPETokenizer, SentencePieceBPETokenizer or BertWordPieceTokenizer)
+        tokenizer_algorithm: HuggingFaces implementation (ByteLevelBPETokenizer, CharBPETokenizer,
+        SentencePieceBPETokenizer or BertWordPieceTokenizer)
         vocab_size_fr: vocabulary size for the French (target)
         vocab_size_en: vocabulary size for the English (source)
         dropout: Dropout hyperparameter for the tokenizer

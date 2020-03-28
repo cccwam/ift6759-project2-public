@@ -42,21 +42,23 @@ class AbstractBilingualDataloaderSubword(AbstractBilingualDataloader):
         assert corpora_filenames is not None, "Missing corpora_filenames in config"
         assert len(corpora_filenames) == 2, "You should have only two languages"
 
-        self._tokenizer_source, self._en_numericalized = self._load_tokenizer(language=self._languages[0],
-                                                                              tokenizer_algorithm=self._tokenizer_algorithm,
-                                                                              vocab_size=self._vocab_size_source,
-                                                                              dropout=self._dropout,
-                                                                              pretrained_model_dir_path=pretrained_model_dir_path,
-                                                                              corpora_filenames=corpora_filenames[0],
-                                                                              corpus_filename="train_lang1_en_tokenized.pickle")
+        res = self._load_tokenizer(language=self._languages[0],
+                                   tokenizer_algorithm=self._tokenizer_algorithm,
+                                   vocab_size=self._vocab_size_source,
+                                   dropout=self._dropout,
+                                   pretrained_model_dir_path=pretrained_model_dir_path,
+                                   corpora_filenames=corpora_filenames[0],
+                                   corpus_filename="train_lang1_en_tokenized.pickle")
+        self._tokenizer_source, self._en_numericalized = res
 
-        self._tokenizer_source, self._fr_numericalized = self._load_tokenizer(language=self._languages[1],
-                                                                              tokenizer_algorithm=self._tokenizer_algorithm,
-                                                                              vocab_size=self._vocab_size_target,
-                                                                              dropout=self._dropout,
-                                                                              pretrained_model_dir_path=pretrained_model_dir_path,
-                                                                              corpora_filenames=corpora_filenames[0],
-                                                                              corpus_filename="train_lang2_fr_tokenized.pickle")
+        res = self._load_tokenizer(language=self._languages[1],
+                                   tokenizer_algorithm=self._tokenizer_algorithm,
+                                   vocab_size=self._vocab_size_target,
+                                   dropout=self._dropout,
+                                   pretrained_model_dir_path=pretrained_model_dir_path,
+                                   corpora_filenames=corpora_filenames[0],
+                                   corpus_filename="train_lang2_fr_tokenized.pickle")
+        self._tokenizer_source, self._fr_numericalized = res
 
     def _load_tokenizer(self,
                         language: str,
@@ -168,7 +170,8 @@ class AbstractBilingualDataloaderSubword(AbstractBilingualDataloader):
 class BilingualCausalLMDataloaderSubword(AbstractBilingualDataloaderSubword,
                                          AbstractBilingualSeq2SeqDataloader):
     """
-        Dataset for bilingual corpora at subword level generating input sentence, target sentence and the shifted target sequence
+        Dataset for bilingual corpora at subword level generating input sentence, target sentence
+        and the shifted target sequence
 
     """
 
