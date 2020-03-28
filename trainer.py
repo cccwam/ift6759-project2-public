@@ -66,6 +66,7 @@ def train_models(
 
     hp_model = hp.HParam('model_class', hp.Discrete([model_name]))
     hp_dataloader = hp.HParam('dataloader_class', hp.Discrete([data_loader_name]))
+    hp_dataloader_hparams = hp.HParam('dataloader_id', hp.Discrete([data_loader.get_hparams()]))
 
     tensorboard_experiment_name = model_name + "_" + data_loader_name
     if tensorboard_tracking_folder is not None:
@@ -97,10 +98,11 @@ def train_models(
             for dropout in hp_dropout.domain.values:
                 for patience in hp_patience.domain.values:
                     if dropout != -1.:
-                        hparams = {
+                        hparams = {  # TODO add model hparams + refactoring ?
                             hp_batch_size: hp_batch_size.domain.values[0],
                             hp_model: hp_model.domain.values[0],
                             hp_dataloader: hp_dataloader.domain.values[0],
+                            hp_dataloader_hparams: hp_dataloader_hparams.domain.values[0],
                             hp_epochs: epochs,
                             hp_dropout: dropout,
                             hp_learning_rate: learning_rate,
@@ -111,6 +113,7 @@ def train_models(
                             hp_batch_size: hp_batch_size.domain.values[0],
                             hp_model: hp_model.domain.values[0],
                             hp_dataloader: hp_dataloader.domain.values[0],
+                            hp_dataloader_hparams: hp_dataloader_hparams.domain.values[0],
                             hp_epochs: epochs,
                             hp_learning_rate: learning_rate,
                             hp_patience: patience,

@@ -14,7 +14,7 @@
   "data_loader": {
     "definition": {
       "module": "libs.data_loaders.dataloader_bilingual_word_level",
-      "name": "BilingualDataloaderWord"
+      "name": "BilingualSeq2SeqDataloaderWord"
     },
     "hyper_params": {
       "preprocessed_data_path": "/project/cq-training-1/project2/teams/team03/data/word_level_24032020",

@@ -1,11 +1,9 @@
 from abc import abstractmethod, ABC
 from functools import partial
 from pathlib import Path
-from typing import Optional, List
-import numpy as np
+from typing import Optional
 
 import tensorflow as tf
-from tokenizers import Encoding
 
 
 class AbstractDataloader:
@@ -27,6 +25,10 @@ class AbstractDataloader:
     @abstractmethod
     def build(self,
               batch_size):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_hparams(self):
         raise NotImplementedError()
 
     # TODO is it needed ? To be done in anoter PR
@@ -62,7 +64,6 @@ class AbstractDataloader:
 class AbstractMonolingualDataloader(AbstractDataloader, ABC):
 
     def __init__(self, config: dict):
-
         super(AbstractMonolingualDataloader, self).__init__(config=config)
 
         self._vocab_size: int = self._dl_hparams["vocab_size"]
@@ -70,35 +71,55 @@ class AbstractMonolingualDataloader(AbstractDataloader, ABC):
         self._seq_length: int = self._dl_hparams["seq_length"]
         assert self._seq_length is not None, "seq_length missing"
 
+        self._output_types = None
 
-    def _my_causal_lm_generator(self, source_numericalized):
+    @abstractmethod
+    def _my_generator(self, source_numericalized):
         raise NotImplementedError
-
 
     def _hook_dataset_post_precessing(self, ds):
         return ds
 
     def build(self,
               batch_size):
-
-        my_gen = partial(self._my_causal_lm_generator,
+        my_gen = partial(self._my_generator,
                          source_numericalized=self._source_numericalized)
 
+        assert self._output_types is not None, "Missing output_types"
+        assert self._output_types is not None, "Missing output_types"
         ds = tf.data.Dataset.from_generator(my_gen,
-                                            output_types=(tf.float32, tf.float32),
-                                            output_shapes=(tf.TensorShape([None]),
-                                                           tf.TensorShape([None])))
+                                            output_types=self._output_types,
+                                            output_shapes=self._output_shapes)
         ds = ds.prefetch(tf.data.experimental.AUTOTUNE)
         ds = self._hook_dataset_post_precessing(ds=ds)
 
-        ds = ds.padded_batch(batch_size=batch_size, padded_shapes=(self._seq_length, self._seq_length))
+        ds = ds.padded_batch(batch_size=batch_size, padded_shapes=self._padded_shapes, drop_remainder=True)
 
         self._build_all_dataset(ds, batch_size)
 
 
+class AbstractMonolingualCausalLMDataloader:
+
+    # noinspection PyUnusedLocal
+    def __init__(self, config: dict):
+        self._output_types = (tf.float32, tf.float32)
+        self._output_shapes = (tf.TensorShape([None]),
+                               tf.TensorShape([None]))
+        self._padded_shapes = (self._seq_length, self._seq_length)
+
+
+class AbstractMonolingualTransformersLMDataloader:
+
+    # noinspection PyUnusedLocal
+    def __init__(self, config: dict):
+        self._output_types = (tf.float32,)
+        self._output_shapes = (tf.TensorShape([None]),)
+        self._padded_shapes = (self._seq_length,)
+
 
 class AbstractBilingualDataloader(AbstractDataloader, ABC):
 
+    # noinspection PyUnusedLocal
     def __init__(self, config: dict):
         super(AbstractBilingualDataloader, self).__init__(config=config)
 
@@ -111,3 +132,55 @@ class AbstractBilingualDataloader(AbstractDataloader, ABC):
         assert self._vocab_size_target is not None, "vocab_size_target missing"
         self._seq_length_target: int = self._dl_hparams["seq_length_target"]
         assert self._seq_length_target is not None, "seq_length_target missing"
+
+        self._en_numericalized = None
+        self._fr_numericalized = None
+
+    def _hook_dataset_post_precessing(self, ds):
+        return ds
+
+    @abstractmethod
+    def _my_generator(self, source_numericalized, target_numericalized):
+        raise NotImplementedError
+
+    def build(self,
+              batch_size):
+        my_gen = partial(self._my_generator,
+                         self._en_numericalized,
+                         self._fr_numericalized)
+
+        ds = tf.data.Dataset.from_generator(my_gen,
+                                            output_types=((tf.float32, tf.float32), tf.float32),
+                                            output_shapes=((tf.TensorShape([None]), tf.TensorShape([None])),
+                                                           tf.TensorShape([None])))
+        ds = ds.prefetch(tf.data.experimental.AUTOTUNE)
+
+        ds = self._hook_dataset_post_precessing(ds=ds)
+
+        ds = ds.padded_batch(batch_size=batch_size,
+                             padded_shapes=(([self._seq_length_source],
+                                             [self._seq_length_target]),
+                                            self._seq_length_target),
+                             drop_remainder=True)
+
+        self._build_all_dataset(ds, batch_size)
+
+
+class AbstractBilingualSeq2SeqDataloader:
+
+    # noinspection PyUnusedLocal
+    def __init__(self, config: dict):
+        self._output_types = ((tf.float32, tf.float32), tf.float32)
+        self._output_shapes = ((tf.TensorShape([None]), tf.TensorShape([None])),
+                               tf.TensorShape([None]))
+        self._padded_shapes = ((self._seq_length_source, self._seq_length_target),
+                               self._seq_length_target)
+
+
+class AbstractBilingualTransformersDataloader:
+
+    # noinspection PyUnusedLocal
+    def __init__(self, config: dict):
+        self._output_types = (tf.float32, tf.float32)
+        self._output_shapes = (tf.TensorShape([None]), tf.TensorShape([None]))
+        self._padded_shapes = (self._seq_length_source, self._seq_length_target)

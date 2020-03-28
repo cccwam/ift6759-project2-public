@@ -1,13 +1,10 @@
 import logging
 import pickle
-from pathlib import Path
-# ig
-from tokenizers import (ByteLevelBPETokenizer,
-                        CharBPETokenizer,
-                        SentencePieceBPETokenizer,
-                        BertWordPieceTokenizer)
-import fire
 import tempfile
+from pathlib import Path
+
+# ig
+import fire
 
 from libs.helpers import import_from
 

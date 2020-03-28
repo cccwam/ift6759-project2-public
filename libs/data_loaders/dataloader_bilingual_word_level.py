@@ -1,16 +1,18 @@
 import logging
 import pickle
-from functools import partial
+from typing import List
 
 import numpy as np
 import tensorflow as tf
+from tokenizers import Encoding
 
-from libs.data_loaders.abstract_dataloader import AbstractBilingualDataloader
+from libs.data_loaders.abstract_dataloader import AbstractBilingualDataloader, \
+    AbstractBilingualTransformersDataloader, AbstractBilingualSeq2SeqDataloader
 
 logger = logging.getLogger(__name__)
 
 
-class BilingualDataloaderWord(AbstractBilingualDataloader):
+class AbstractBilingualDataloaderWord(AbstractBilingualDataloader):
     """
         Dataset for bilingual corpora at word level.
 
@@ -26,8 +28,7 @@ class BilingualDataloaderWord(AbstractBilingualDataloader):
     """
 
     def __init__(self, config: dict):
-
-        super(BilingualDataloaderWord, self).__init__(config=config)
+        super(AbstractBilingualDataloaderWord, self).__init__(config=config)
 
         with open(self._preprocessed_data_path / "train_lang1_en_numericalized.pickle", 'rb') as handle:
             self._en_numericalized = pickle.load(handle)
@@ -59,36 +60,52 @@ class BilingualDataloaderWord(AbstractBilingualDataloader):
         logger.debug(f"{str(self.__class__.__name__)} English samples: {len(self._en_numericalized)}")
         logger.debug(f"{str(self.__class__.__name__)} French samples: {len(self._fr_numericalized)})")
 
-    @classmethod
-    def _my_generator(cls, en_numericalized, fr_numericalized):
-        bos, eos = 1, 2  # BOS will be 1 and EOS will be 2, leaving MASK to 0 and UNK to 3
-        for i in range(len(en_numericalized)):
-            en = np.array([bos] + en_numericalized[i] + [eos])
-            fr = np.array([bos] + fr_numericalized[i] + [eos])
-            inputs = (en, fr)
-            output = fr[1:]
-            yield (inputs, output)
-
-    def build(self,
-              batch_size):
-
-        my_gen = partial(BilingualDataloaderWord._my_generator,
-                         self._en_numericalized,
-                         self._fr_numericalized)
-
-        ds = tf.data.Dataset.from_generator(my_gen,
-                                            output_types=((tf.float32, tf.float32), tf.float32),
-                                            output_shapes=((tf.TensorShape([None]), tf.TensorShape([None])),
-                                                           tf.TensorShape([None])))
-        ds = ds.prefetch(tf.data.experimental.AUTOTUNE)
-
+    def _hook_dataset_post_precessing(self, ds):
         # Only to test performance with lower vocab size (and GPU mem)
         ds = ds.map(lambda x, y: ((tf.minimum(x[0], self._vocab_size_source - 1),
                                    tf.minimum(x[1], self._vocab_size_target - 1)),
                                   tf.minimum(y, self._vocab_size_target - 1)))
+        return ds
 
-        ds = ds.padded_batch(batch_size=batch_size, padded_shapes=(([self._seq_length_target],
-                                                                    [self._seq_length_target]),
-                                                                   self._seq_length_target))
+    def get_hparams(self):
+        return f"vocab_size_{self._vocab_size_source},{self._vocab_size_target}" + \
+               f"_seq_length_{self._seq_length_source},{self._seq_length_target}"
 
-        self._build_all_dataset(ds, batch_size)
+
+class BilingualSeq2SeqDataloaderWord(AbstractBilingualDataloaderWord,
+                                     AbstractBilingualSeq2SeqDataloader):
+    """
+        Dataset for bilingual corpora at word level generating input sentence, target sentence and the shifted target sequence
+
+    """
+
+    def __init__(self, config: dict):
+        AbstractBilingualDataloaderWord.__init__(self, config=config)
+        AbstractBilingualSeq2SeqDataloader.__init__(self, config=config)
+
+    def _my_generator(self, source_numericalized: List, target_numericalized: List):
+        bos, eos = 1, 2  # BOS will be 1 and EOS will be 2, leaving MASK to 0 and UNK to 3
+        for i in range(len(source_numericalized)):
+            en = np.array([bos] + source_numericalized[i] + [eos])
+            fr = np.array([bos] + target_numericalized[i] + [eos])
+            inputs = (en, fr)
+            output = fr[1:]
+            yield (inputs, output)
+
+
+class BilingualTransformersDataloaderWord(AbstractBilingualDataloaderWord,
+                                          AbstractBilingualTransformersDataloader):
+    """
+        Dataset for bilingual corpora at word level generating only input sentence and target sentence
+
+    """
+
+    def __init__(self, config: dict):
+        AbstractBilingualDataloaderWord.__init__(self, config=config)
+        AbstractBilingualTransformersDataloader.__init__(self, config=config)
+
+    def _my_generator(self, source_numericalized: List[Encoding], target_numericalized: List[Encoding]):
+        for i in range(len(source_numericalized)):
+            en = source_numericalized[i].ids
+            fr = target_numericalized[i].ids
+            yield (en, fr)
