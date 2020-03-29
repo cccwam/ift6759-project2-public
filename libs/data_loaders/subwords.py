@@ -73,7 +73,7 @@ class SubwordDataLoader:
         - vocab_size + 1 for EOS
     """
 
-    def __init__(self, config: dict):
+    def __init__(self, config: dict, **kwargs):
         self.config = config
         self.training_dataset = None
         self.validation_dataset = None
@@ -136,10 +136,10 @@ class SubwordDataLoader:
         }
 
         self.tokenizer_en = subword_tokenizer(
-            vocabulary_name_en, datasets['sentences_translation_en_train'])
+            vocabulary_name_en, datasets['sentences_all_en_train'])
         self.input_vocab_size = self.tokenizer_en.vocab_size + 2
         self.tokenizer_fr = subword_tokenizer(
-            vocabulary_name_fr, datasets['sentences_translation_fr_train'])
+            vocabulary_name_fr, datasets['sentences_all_fr_train'])
         self.target_vocab_size = self.tokenizer_fr.vocab_size + 2
 
         if mode == 'en':

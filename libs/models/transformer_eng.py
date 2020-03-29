@@ -6,6 +6,7 @@ import typing
 import tensorflow as tf
 
 from libs.models import transformer
+from libs.helpers import loss_function_for_transformer as loss_function
 
 
 class TransformerLeftLM(tf.keras.Model):
@@ -42,18 +43,6 @@ class TransformerLeftLM(tf.keras.Model):
             lm_output)  # (batch_size, tar_seq_len, target_vocab_size)
 
         return final_output
-
-    # ToDo move loss function to helpers
-    def loss_function(self, real, pred):
-        loss_object = tf.keras.losses.SparseCategoricalCrossentropy(
-            from_logits=True, reduction='none')
-        mask = tf.math.logical_not(tf.math.equal(real, 0))
-        loss_ = loss_object(real, pred)
-
-        mask = tf.cast(mask, dtype=loss_.dtype)
-        loss_ *= mask
-
-        return tf.reduce_mean(loss_)
 
     def load_checkpoint(self):
         # ToDo customize checkpoint save directory
@@ -92,7 +81,7 @@ class TransformerLeftLM(tf.keras.Model):
                 # first input, double check this?
                 predictions = self.call(tar_inp, True, combined_mask,
                                         combined_mask, dec_padding_mask)
-                loss = self.loss_function(tar_real, predictions)
+                loss = loss_function(tar_real, predictions)
 
             gradients = tape.gradient(loss, self.trainable_variables)
             self.optimizer.apply_gradients(
@@ -112,7 +101,7 @@ class TransformerLeftLM(tf.keras.Model):
             # ToDo make sure mask is ok
             predictions = self.call(tar_inp, True, combined_mask,
                                     combined_mask, dec_padding_mask)
-            loss = self.loss_function(tar_real, predictions)
+            loss = loss_function(tar_real, predictions)
 
             self.validation_loss(loss)
             self.validation_accuracy(tar_real, predictions)
