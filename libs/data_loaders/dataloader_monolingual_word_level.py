@@ -27,7 +27,11 @@ class AbstractMonolingualDataloaderWord(AbstractMonolingualDataloader):
     """
 
     def __init__(self, config: dict):
+        """
+        MonolingualDataloaderWord
 
+        :param config: The configuration dictionary. It must follow configs/user/schema.json
+        """
         super(AbstractMonolingualDataloaderWord, self).__init__(config=config)
 
         self._monolingual_corpus_filename: str = self._dl_hparams["monolingual_corpus_filename"]
