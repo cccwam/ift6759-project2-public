@@ -29,6 +29,7 @@
   },
   "trainer": {
     "hyper_params": {
+      "metrics": ["sparse_accuracy", "perplexity"],
       "lr_rate": [
         3e-3
       ],

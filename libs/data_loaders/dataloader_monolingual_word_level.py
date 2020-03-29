@@ -1,5 +1,6 @@
 import logging
 import pickle
+from abc import ABC
 from typing import List
 
 import numpy as np
@@ -11,7 +12,7 @@ from libs.data_loaders.abstract_dataloader import AbstractMonolingualDataloader,
 logger = logging.getLogger(__name__)
 
 
-class AbstractMonolingualDataloaderWord(AbstractMonolingualDataloader):
+class AbstractMonolingualDataloaderWord(AbstractMonolingualDataloader, ABC):
     """
         Dataset for monolingual corpora at word level.
 
@@ -25,6 +26,7 @@ class AbstractMonolingualDataloaderWord(AbstractMonolingualDataloader):
         - 2 for EOS
         - 3 for UNKNOWN
     """
+
 
     def __init__(self, config: dict):
 
@@ -46,6 +48,7 @@ class AbstractMonolingualDataloaderWord(AbstractMonolingualDataloader):
             self._word_to_token = {k: v for i, (k, v) in enumerate(self._word_to_token.items())
                                    if i < self._vocab_size}
 
+        self._token_to_word: dict = {v: k for k, v in self._word_to_token.items()}
         logger.debug(f"{str(self.__class__.__name__)} Samples: {len(self._source_numericalized)}")
 
     def _hook_dataset_post_precessing(self, ds):
@@ -60,6 +63,10 @@ class AbstractMonolingualDataloaderWord(AbstractMonolingualDataloader):
         return f"vocab_size_{self._vocab_size}" + \
                f"_seq_length_{self._seq_length}" + \
                f"_corpus_{self._preprocessed_data_path / self._monolingual_corpus_filename}"
+
+    def decode(self, tokens):
+        mapped_tokens = [self._word_to_token[t] for t in tokens]
+        return " ".join(mapped_tokens)
 
 
 class MonolingualCausalLMDataloaderWord(AbstractMonolingualDataloaderWord,

@@ -31,16 +31,9 @@ class AbstractDataloader:
     def get_hparams(self):
         raise NotImplementedError()
 
-    # TODO is it needed ? To be done in anoter PR
-    @property
     @abstractmethod
-    def get_token_to_word(self):
-        raise NotImplementedError()
-
-    # TODO is it needed ? To be done in anoter PR
     def decode(self, tokens):
-        mapped_tokens = [self.get_token_to_word[t] for t in tokens]
-        return " ".join(mapped_tokens)
+        raise NotImplementedError
 
     def _build_all_dataset(self, ds: tf.data.Dataset, batch_size: int):
         self.test_dataset = ds.take(int(self._samples_for_test / batch_size))

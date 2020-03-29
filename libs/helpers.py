@@ -4,9 +4,13 @@ import os
 import uuid
 from datetime import datetime
 from pathlib import Path
+from typing import List
 
 import jsonschema
 import tensorflow as tf
+import sacrebleu
+
+from libs.data_loaders import AbstractDataloader
 
 logger = logging.getLogger(__name__)
 
@@ -125,13 +129,45 @@ def get_tensorboard_experiment_id(experiment_name, tensorboard_tracking_folder: 
     return tensorboard_tracking_folder / model_sub_folder
 
 
-def compile_model(model, learning_rate):
+def compile_model(model, learning_rate, dataloader:AbstractDataloader, metrics: List[str] = None):
     """
+    TODO review doc
         Helper function to compile a new model at each variation of the experiment
     :param learning_rate:
     :param model:
     :return:
     """
+
+    def perplexity(y_true, y_pred):
+        """
+        The perplexity metric.
+        https://stackoverflow.com/questions/44697318/how-to-implement-perplexity-in-keras
+        https://stackoverflow.com/questions/41881308/how-to-calculate-perplexity-of-rnn-in-tensorflow
+        https://github.com/keras-team/keras/issues/8267
+        """
+        cross_entropy = tf.keras.backend.sparse_categorical_crossentropy(y_true, y_pred)
+        perplexity = tf.keras.backend.exp(cross_entropy)
+        return perplexity
+
+    def bleu(y_true, y_pred):
+        bleu_scores = []
+        for i in range(y_true.shape[0]):
+            pred_sentence = dataloader.decode(y_pred[i])
+            true_sentence = dataloader.decode(y_true[i])
+            bleu_scores += [sacrebleu.corpus_bleu(pred_sentence, true_sentence).score]
+
+        return np.mean(bleu_scores)
+
+    mapping = {
+        "perplexity": perplexity,  # For language model task
+        "bleu": bleu,  # For translation task
+        "sparse_accuracy": tf.keras.metrics.SparseCategoricalAccuracy(),  # Generic for classification
+    }
+
+    if metrics is None:
+        metrics = []
+    else:
+        metrics = [mapping[m] for m in metrics]
 
     model_instance = model
 
@@ -144,7 +180,7 @@ def compile_model(model, learning_rate):
     model_instance.compile(
         optimizer=optimizer,
         loss=tf.keras.losses.SparseCategoricalCrossentropy(),
-        metrics=[tf.keras.metrics.SparseCategoricalAccuracy()]
+        metrics=metrics
     )
     return model_instance
 

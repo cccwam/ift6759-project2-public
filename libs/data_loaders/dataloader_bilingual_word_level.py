@@ -1,5 +1,6 @@
 import logging
 import pickle
+from abc import ABC
 from typing import List
 
 import numpy as np
@@ -12,7 +13,7 @@ from libs.data_loaders.abstract_dataloader import AbstractBilingualDataloader, \
 logger = logging.getLogger(__name__)
 
 
-class AbstractBilingualDataloaderWord(AbstractBilingualDataloader):
+class AbstractBilingualDataloaderWord(AbstractBilingualDataloader, ABC):
     """
         Dataset for bilingual corpora at word level.
 
@@ -70,6 +71,10 @@ class AbstractBilingualDataloaderWord(AbstractBilingualDataloader):
     def get_hparams(self):
         return f"vocab_size_{self._vocab_size_source},{self._vocab_size_target}" + \
                f"_seq_length_{self._seq_length_source},{self._seq_length_target}"
+
+    def decode(self, tokens):
+        mapped_tokens = [self._token_to_word_en[t] for t in tokens]
+        return " ".join(mapped_tokens)
 
 
 class BilingualSeq2SeqDataloaderWord(AbstractBilingualDataloaderWord,

@@ -8,6 +8,7 @@ from pathlib import Path
 
 import tensorflow as tf
 from tensorboard.plugins.hparams import api as hp
+from typing import List
 
 from libs import helpers
 from libs.data_loaders.abstract_dataloader import AbstractDataloader
@@ -89,7 +90,6 @@ def train_models(
     hp_patience = hp.HParam('patience', hp.Discrete(trainer_hyper_params["patience"]))
 
     data_loader.build(batch_size=hp_batch_size.domain.values[0])
-    training_dataset, valid_dataset = data_loader.training_dataset, data_loader.valid_dataset
 
     # Main loop to iterate over all possible hyper parameters
     variation_num = 0
@@ -135,14 +135,13 @@ def train_models(
 
                     train_model(
                         model=model,
-                        training_dataset=training_dataset,
-                        valid_dataset=valid_dataset,
-                        validation_steps=data_loader.validation_steps,
+                        dataloader=data_loader,
                         tensorboard_log_dir=tensorboard_log_dir,
                         hparams=hparams,
                         mirrored_strategy=mirrored_strategy,
                         epochs=epochs,
                         learning_rate=learning_rate,
+                        metrics=trainer_hyper_params["metrics"],
                         patience=patience,
                         checkpoints_path=checkpoints_path
                     )
@@ -154,20 +153,19 @@ def train_models(
 
 def train_model(
         model: tf.keras.Model,
-        training_dataset: tf.data.Dataset,
-        valid_dataset: tf.data.Dataset,
-        validation_steps: int,
+        dataloader: AbstractDataloader,
         tensorboard_log_dir: str,
         hparams,
         mirrored_strategy,
         epochs: int,
         learning_rate: float,
+        metrics:List[str],
         patience: int,
         checkpoints_path: str
 ):
     """
     The training loop for a single model
-
+TODO review
     :param model: The tf.keras.Model to train
     :param training_dataset: The training dataset
     :param valid_dataset: The validation dataset to evaluate training progress
@@ -185,9 +183,15 @@ def train_model(
     # Multi GPU setup
     if mirrored_strategy is not None and mirrored_strategy.num_replicas_in_sync > 1:
         with mirrored_strategy.scope():
-            compiled_model = helpers.compile_model(model, learning_rate=learning_rate)
+            compiled_model = helpers.compile_model(model=model,
+                                                   dataloader=dataloader,
+                                                   metrics=metrics,
+                                                   learning_rate=learning_rate)
     else:
-        compiled_model = helpers.compile_model(model, learning_rate=learning_rate)
+        compiled_model = helpers.compile_model(model=model,
+                                               dataloader=dataloader,
+                                               metrics=metrics,
+                                               learning_rate=learning_rate)
 
     if tensorboard_log_dir is not None:
         # Workaround for https://github.com/tensorflow/tensorboard/issues/2412
@@ -203,11 +207,11 @@ def train_model(
     ]
 
     compiled_model.fit(
-        training_dataset,
+        dataloader.training_dataset,
         epochs=epochs,
         callbacks=callbacks,
-        validation_data=valid_dataset,
-        validation_steps=validation_steps
+        validation_data=dataloader.valid_dataset,
+        validation_steps=dataloader.validation_steps
     )
 
 

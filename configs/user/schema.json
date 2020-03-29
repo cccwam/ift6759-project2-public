@@ -105,6 +105,9 @@
             "lr_rate": {
               "type": "array"
             },
+            "metrics": {
+              "type": "array"
+            },
             "batch_size": {
               "type": "array"
             },
@@ -117,6 +120,7 @@
           },
           "required": [
             "lr_rate",
+            "metrics",
             "epochs",
             "batch_size",
             "patience"
