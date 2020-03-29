@@ -25,6 +25,8 @@ Team members:
 In this project, we utilise a user configuration file schema can be found at configs/user/schema.json. All in all, it
 contains the following configurable properties:
 
+**TODO: REVIEW**
+
 * model
     * definition:
         * module: The Python module that contains the definition for the model that should be used
@@ -96,6 +98,5 @@ python trainer.py \
     --tensorboard_tracking_folder /project/cq-training-1/project2/teams/team03/tensorboard/$USER
 ```
 
-* `??` To be defined
-* `user_cfg_path`: Path to the JSON config file used to store user model, dataloader and trainer parameters.
+* `user_cfg_path`: Path to the JSON config file that follows configs/user/schema.json.
 * `tensorboard_tracking_folder`: Path where to store TensorBoard data and save trained model. 
