@@ -86,7 +86,9 @@ class AbstractMonolingualDataloader(AbstractDataloader, ABC):
                          source_numericalized=self._source_numericalized)
 
         assert self._output_types is not None, "Missing output_types"
-        assert self._output_types is not None, "Missing output_types"
+        assert self._output_shapes is not None, "Missing _output_shapes"
+        assert self._padded_shapes is not None, "Missing _padded_shapes"
+
         ds = tf.data.Dataset.from_generator(my_gen,
                                             output_types=self._output_types,
                                             output_shapes=self._output_shapes)
@@ -149,18 +151,19 @@ class AbstractBilingualDataloader(AbstractDataloader, ABC):
                          self._en_numericalized,
                          self._fr_numericalized)
 
+        assert self._output_types is not None, "Missing output_types"
+        assert self._output_shapes is not None, "Missing _output_shapes"
+        assert self._padded_shapes is not None, "Missing _padded_shapes"
+
         ds = tf.data.Dataset.from_generator(my_gen,
-                                            output_types=((tf.float32, tf.float32), tf.float32),
-                                            output_shapes=((tf.TensorShape([None]), tf.TensorShape([None])),
-                                                           tf.TensorShape([None])))
+                                            output_types=self._output_types,
+                                            output_shapes=self._output_shapes)
         ds = ds.prefetch(tf.data.experimental.AUTOTUNE)
 
         ds = self._hook_dataset_post_precessing(ds=ds)
 
         ds = ds.padded_batch(batch_size=batch_size,
-                             padded_shapes=(([self._seq_length_source],
-                                             [self._seq_length_target]),
-                                            self._seq_length_target),
+                             padded_shapes=self._padded_shapes,
                              drop_remainder=True)
 
         self._build_all_dataset(ds, batch_size)
