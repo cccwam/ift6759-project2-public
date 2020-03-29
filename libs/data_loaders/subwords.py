@@ -150,6 +150,12 @@ class SubwordDataLoader:
             sentences_translation_both_validation = tf.data.Dataset.zip(
                 (datasets['sentences_all_en_validation'].take(5000),
                  datasets['sentences_all_en_validation'].take(5000)))
+            # sentences_translation_both_train = tf.data.Dataset.zip(
+            #     (datasets['sentences_all_en_train'],
+            #      datasets['sentences_all_en_train']))
+            # sentences_translation_both_validation = tf.data.Dataset.zip(
+            #     (datasets['sentences_all_en_validation'],
+            #      datasets['sentences_all_en_validation']))
         else:
             sentences_translation_both_train = tf.data.Dataset.zip(
                 (datasets['sentences_translation_en_train'],

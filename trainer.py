@@ -197,15 +197,19 @@ def train_model(
     """
 
     # Multi GPU setup
-    # ToDo: The transformer has its own learning rate scheduler, this does not apply...
+    # ToDo: Is using the model 'lr' attribute a good way to bypass compile_model?
     fit_kwargs = {}
-    if hasattr(model, 'lr'):
-        compiled_model = model
-        fit_kwargs['ckpt_manager'] = compiled_model.load_checkpoint()
-    else:
-        if mirrored_strategy is not None and mirrored_strategy.num_replicas_in_sync > 1:
-            with mirrored_strategy.scope():
+    if mirrored_strategy is not None and mirrored_strategy.num_replicas_in_sync > 1:
+        with mirrored_strategy.scope():
+            if hasattr(model, 'lr'):
+                compiled_model = model
+                fit_kwargs['ckpt_manager'] = compiled_model.load_checkpoint()
+            else:
                 compiled_model = helpers.compile_model(model, learning_rate=learning_rate)
+    else:
+        if hasattr(model, 'lr'):
+            compiled_model = model
+            fit_kwargs['ckpt_manager'] = compiled_model.load_checkpoint()
         else:
             compiled_model = helpers.compile_model(model, learning_rate=learning_rate)
 

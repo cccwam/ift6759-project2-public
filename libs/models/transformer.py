@@ -516,7 +516,7 @@ class TransformerLeftLM(Transformer):
                             epoch + 1, batch, self.train_loss.result(),
                             self.train_accuracy.result()))
 
-            if (epoch + 1) % 2 == 0:
+            if (epoch + 1) % 5 == 0:
                 ckpt_save_path = ckpt_manager.save()
                 print(
                     'Saving checkpoint for epoch {} at {}'.format(
@@ -590,7 +590,7 @@ def create_masks(inp, tar):
     return enc_padding_mask, combined_mask, dec_padding_mask
 
 
-def builder(config: typing.Dict[typing.AnyStr, typing.Any], task='translation'):
+def builder(config: typing.Dict[typing.AnyStr, typing.Any]):
     # noinspection PyShadowingNames,DuplicatedCode
     model_hparams = config["model"]["hyper_params"]
 
@@ -602,14 +602,7 @@ def builder(config: typing.Dict[typing.AnyStr, typing.Any], task='translation'):
     input_vocab_size = model_hparams["input_vocab_size"]
     target_vocab_size = model_hparams["target_vocab_size"]
 
-    if task == 'translation':
-        transformer_method = Transformer
-    elif task == 'left_lm':
-        transformer_method = TransformerLeftLM
-    else:
-        raise NotImplementedError()
-
-    return transformer_method(
+    return Transformer(
         num_layers, d_model, num_heads, dff, input_vocab_size,
         target_vocab_size, pe_input=input_vocab_size,
         pe_target=target_vocab_size, rate=dropout_rate)
