@@ -7,7 +7,13 @@ import tensorflow as tf
 
 class AbstractDataloader:
 
-    def __init__(self, config: dict):
+    # TODO: Implement the usage of raw_english_test_set_file_path. See TODO in evaluator.py's generate_predictions()
+    def __init__(self, config: dict, raw_english_test_set_file_path: str):
+        """
+        AbstractDataloader
+
+        :param config: The configuration dictionary. It must follow configs/user/schema.json
+        """
         self._dl_hparams = config["data_loader"]["hyper_params"]
 
         self._preprocessed_data_path = Path(self._dl_hparams["preprocessed_data_path"])

@@ -26,7 +26,11 @@ class BilingualDataloaderWord(AbstractBilingualDataloader):
     """
 
     def __init__(self, config: dict):
+        """
+        BilingualDataloaderWord
 
+        :param config: The configuration dictionary. It must follow configs/user/schema.json
+        """
         super(BilingualDataloaderWord, self).__init__(config=config)
 
         with open(self._preprocessed_data_path / "train_lang1_en_numericalized.pickle", 'rb') as handle:

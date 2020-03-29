@@ -22,7 +22,7 @@ def main(
     """
     Train a model
 
-    :param config_path: path to the JSON config file used to store user model, dataloader and trainer parameters
+    :param config_path: path to the JSON config file that follows configs/user/schema.json
     :param tensorboard_tracking_folder: path where to store TensorBoard data and save trained model
     """
     user_config_dict = helpers.load_dict(config_path)
@@ -46,7 +46,7 @@ def train_models(
     # TODO review doc
     Train the possible combinations of models based on the hyper parameters defined in  config
 
-    :param config: A dictionary of the user configuration json file which contains the hyper parameters
+    :param config: The configuration dictionary. It must follow configs/user/schema.json
     :param tensorboard_tracking_folder: The TensorBoard tracking folder
     """
     model_dict = config['model']
@@ -239,7 +239,7 @@ def train_model(
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', type=str, default=None,
-                        help='path to the JSON config file used to store user model, dataloader and trainer parameters')
+                        help='path to the JSON config that follows configs/user/schema.json')
     parser.add_argument('-t', '--tensorboard_tracking_folder', type=str, default=None,
                         help='path where to store TensorBoard data and save trained model')
     parser.add_argument("-v", "--verbose", help="increase output verbosity",
