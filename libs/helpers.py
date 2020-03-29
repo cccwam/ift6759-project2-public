@@ -173,6 +173,7 @@ def get_mirrored_strategy():
     logger.debug("------------")
     return mirrored_strategy
 
+
 def loss_function_for_transformer(real, pred):
     loss_object = tf.keras.losses.SparseCategoricalCrossentropy(
         from_logits=True, reduction='none')
