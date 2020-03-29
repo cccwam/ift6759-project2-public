@@ -38,6 +38,7 @@ def generate_predictions(input_file_path: str, pred_file_path: str):
     for mini_batch in test_dataset.batch(batch_size):
         # Outputs are mini_batch[:, 1]
         model_inputs = mini_batch[:, 0]
+        # TODO: Use the dataloader's decode function to get a list of tokens instead of text before calling predict()
         predictions = model.predict(model_inputs)
         if isinstance(predictions, tf.Tensor):
             predictions = predictions.numpy()
