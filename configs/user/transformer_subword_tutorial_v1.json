@@ -22,7 +22,8 @@
     "hyper_params": {
       "preprocessed_data_path": "/project/cq-training-1/project2/teams/team03/data/split_01",
       "vocabulary_name_en": "/project/cq-training-1/project2/teams/team03/data/subword_tutorial_vocab/subword_vocabulary_en",
-      "vocabulary_name_fr": "/project/cq-training-1/project2/teams/team03/data/subword_tutorial_vocab/subword_vocabulary_fr"
+      "vocabulary_name_fr": "/project/cq-training-1/project2/teams/team03/data/subword_tutorial_vocab/subword_vocabulary_fr",
+      "mode": "translation"
     },
     "pretrained_layers": [
       {"model_path": "",
