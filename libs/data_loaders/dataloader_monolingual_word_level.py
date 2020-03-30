@@ -34,8 +34,8 @@ class AbstractMonolingualDataloaderWord(AbstractMonolingualDataloader, ABC):
 
         :param config: The configuration dictionary. It must follow configs/user/schema.json
         """
-        AbstractMonolingualDataloaderWord.__init__(self, config=config,
-                                                   raw_english_test_set_file_path=raw_english_test_set_file_path)
+        AbstractMonolingualDataloader.__init__(self, config=config,
+                                               raw_english_test_set_file_path=raw_english_test_set_file_path)
 
         self._folder: Path = Path(self._preprocessed_data_path["folder"])
         assert self._folder.exists()

@@ -53,6 +53,13 @@ class AbstractDataloader:
             # Useful to train models more quickly
             self.training_dataset = self.training_dataset.take(int(self._samples_for_train / batch_size))
 
+# TF bug https://github.com/tensorflow/tensorflow/issues/28782
+#        self.test_dataset = self.test_dataset.cache()
+#        self.training_dataset = self.training_dataset.cache()
+#        self.valid_dataset = self.valid_dataset.cache()
+
+
+
     @property
     def validation_steps(self):
         assert self._validation_steps is not None, "You must call build before"
@@ -62,8 +69,8 @@ class AbstractDataloader:
 class AbstractMonolingualDataloader(AbstractDataloader, ABC):
 
     def __init__(self, config: dict, raw_english_test_set_file_path: str):
-        AbstractMonolingualDataloader.__init__(self, config=config,
-                                               raw_english_test_set_file_path=raw_english_test_set_file_path)
+        AbstractDataloader.__init__(self, config=config,
+                                    raw_english_test_set_file_path=raw_english_test_set_file_path)
 
         self._vocab_size: int = self._dl_hparams["vocab_size"]
         assert self._vocab_size is not None, "vocab_size missing"
@@ -91,8 +98,6 @@ class AbstractMonolingualDataloader(AbstractDataloader, ABC):
         ds = tf.data.Dataset.from_generator(my_gen,
                                             output_types=self._output_types,
                                             output_shapes=self._output_shapes)
-        ds = ds.cache()
-
         ds = self._hook_dataset_post_precessing(ds=ds)
 
         ds = ds.padded_batch(batch_size=batch_size,
@@ -162,8 +167,6 @@ class AbstractBilingualDataloader(AbstractDataloader, ABC):
         ds = tf.data.Dataset.from_generator(my_gen,
                                             output_types=self._output_types,
                                             output_shapes=self._output_shapes)
-        ds = ds.cache()
-
         ds = self._hook_dataset_post_precessing(ds=ds)
 
         ds = ds.padded_batch(batch_size=batch_size,

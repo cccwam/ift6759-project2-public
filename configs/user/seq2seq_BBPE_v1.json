@@ -57,6 +57,7 @@
   },
   "trainer": {
     "hyper_params": {
+      "metrics": ["sparse_accuracy", "bleu"],
       "lr_rate": [
         3e-3
       ],

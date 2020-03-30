@@ -26,14 +26,14 @@
       "seq_length": 128,
       "samples_for_test": 0,
       "samples_for_valid": 5000,
-      "samples_for_train": 1000
+      "samples_for_train": 100000
     }
   },
   "trainer": {
     "hyper_params": {
       "metrics": ["sparse_accuracy", "perplexity"],
       "lr_rate": [
-        3e-3
+        3e-2
       ],
       "epochs": [
         5
