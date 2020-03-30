@@ -20,8 +20,6 @@ class TransformerLeftLM(tf.keras.Model):
 
         self.left_lm_final_layer = tf.keras.layers.Dense(input_vocab_size)
 
-        self.final_layer = tf.keras.layers.Dense(target_vocab_size)
-
         self.lr = transformer.CustomSchedule(d_model)
         self.optimizer = tf.keras.optimizers.Adam(
             self.lr, beta_1=0.9, beta_2=0.98, epsilon=1e-9)

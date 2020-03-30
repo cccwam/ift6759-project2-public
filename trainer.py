@@ -163,8 +163,8 @@ def train_models(
         model.save(helpers.generate_model_name(config))
     except NotImplementedError:
         model.save_weights(
-            helpers.generate_model_name(config).rstrip('.hdf5'),
-            save_format='tf')
+            helpers.generate_model_name(config).rstrip('.hdf5') + '.h5',
+            save_format='h5')
 
 
 def train_model(

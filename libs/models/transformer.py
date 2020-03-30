@@ -7,6 +7,7 @@ import tensorflow as tf
 import numpy as np
 
 from libs.helpers import loss_function_for_transformer as loss_function
+from libs.models.helpers import load_pretrained_layers
 
 
 def scaled_dot_product_attention(q, k, v, mask):
@@ -237,7 +238,7 @@ class Encoder(tf.keras.layers.Layer):
 class Decoder(tf.keras.layers.Layer):
     def __init__(self, num_layers, d_model, num_heads, dff, target_vocab_size,
                  maximum_position_encoding, rate=0.1):
-        super(Decoder, self).__init__()
+        super(Decoder, self).__init__(name='TransformerDecoder')
 
         self.d_model = d_model
         self.num_layers = num_layers
@@ -282,11 +283,6 @@ class Transformer(tf.keras.Model):
 
         self.decoder = Decoder(num_layers, d_model, num_heads, dff,
                                target_vocab_size, pe_target, rate)
-
-        # ToDo: is it ok to make a layer that will only be used in pretraining?
-        # It appears that it's ok, there's just a lot of warnings for the
-        # parameters for which there is no gradient.
-        self.left_lm_final_layer = tf.keras.layers.Dense(input_vocab_size)
 
         self.final_layer = tf.keras.layers.Dense(target_vocab_size)
 
@@ -473,7 +469,11 @@ def builder(config: typing.Dict[typing.AnyStr, typing.Any]):
     input_vocab_size = model_hparams["input_vocab_size"]
     target_vocab_size = model_hparams["target_vocab_size"]
 
-    return Transformer(
+    transformer_tl = Transformer(
         num_layers, d_model, num_heads, dff, input_vocab_size,
         target_vocab_size, pe_input=input_vocab_size,
         pe_target=target_vocab_size, rate=dropout_rate)
+
+    load_pretrained_layers(config, transformer_tl)
+
+    return transformer_tl

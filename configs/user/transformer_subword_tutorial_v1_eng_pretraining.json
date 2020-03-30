@@ -10,7 +10,9 @@
       "d_model": 128,
       "num_heads": 4,
       "dff": 512,
-      "dropout_rate": 0.2
+      "dropout_rate": 0.2,
+      "input_vocab_size": 8186,
+      "target_vocab_size": 8159
     },
     "source": ""
   },
@@ -24,12 +26,7 @@
       "vocabulary_name_en": "/project/cq-training-1/project2/teams/team03/data/subword_tutorial_vocab/subword_vocabulary_en",
       "vocabulary_name_fr": "/project/cq-training-1/project2/teams/team03/data/subword_tutorial_vocab/subword_vocabulary_fr",
       "mode": "en"
-    },
-    "pretrained_layers": [
-      {"model_path": "",
-      "layer_name": "",
-      "target_layer_name": ""}
-    ]
+    }
   },
   "trainer": {
     "hyper_params": {
