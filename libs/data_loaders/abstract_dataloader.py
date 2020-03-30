@@ -69,8 +69,8 @@ class AbstractDataloader:
 class AbstractMonolingualDataloader(AbstractDataloader, ABC):
 
     def __init__(self, config: dict, raw_english_test_set_file_path: str):
-        super(AbstractMonolingualDataloader, self).__init__(config=config,
-                                                            raw_english_test_set_file_path=raw_english_test_set_file_path)
+        AbstractMonolingualDataloader.__init__(self, config=config,
+                                               raw_english_test_set_file_path=raw_english_test_set_file_path)
 
         self._vocab_size: int = self._dl_hparams["vocab_size"]
         assert self._vocab_size is not None, "vocab_size missing"
