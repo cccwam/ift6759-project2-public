@@ -24,7 +24,9 @@
       "name": "BilingualSeq2SeqDataloaderWord"
     },
     "hyper_params": {
-      "preprocessed_data_path": "/project/cq-training-1/project2/teams/team03/data/word_level_24032020",
+      "preprocessed_data_path": {
+        "folder": "/project/cq-training-1/project2/teams/team03/data/word_level_24032020"
+      },
       "vocab_size_source": 10000,
       "seq_length_source": 128,
       "vocab_size_target": 10000,

@@ -1,5 +1,6 @@
 import logging
 import pickle
+from pathlib import Path
 from typing import List
 
 import numpy as np
@@ -27,30 +28,34 @@ class AbstractBilingualDataloaderWord(AbstractBilingualDataloader):
         - 3 for UNKNOWN
     """
 
-    def __init__(self, config: dict):
+    def __init__(self, config: dict, raw_english_test_set_file_path: str):
         """
         BilingualDataloaderWord
 
         :param config: The configuration dictionary. It must follow configs/user/schema.json
         """
-        super(AbstractBilingualDataloaderWord, self).__init__(config=config)
+        AbstractBilingualDataloader.__init__(self, config=config,
+                                             raw_english_test_set_file_path=raw_english_test_set_file_path)
 
-        with open(self._preprocessed_data_path / "train_lang1_en_numericalized.pickle", 'rb') as handle:
+        self._folder: Path = Path(self._preprocessed_data_path["folder"])
+        assert self._folder.exists()
+
+        with open(str(self._folder / "train_lang1_en_numericalized.pickle"), 'rb') as handle:
             self._en_numericalized = pickle.load(handle)
 
-        with open(self._preprocessed_data_path / "train_lang2_fr_numericalized.pickle", 'rb') as handle:
+        with open(str(self._folder / "train_lang2_fr_numericalized.pickle"), 'rb') as handle:
             self._fr_numericalized = pickle.load(handle)
 
-        with open(self._preprocessed_data_path / "word_to_token_en.pickle", 'rb') as handle:
+        with open(str(self._folder / "word_to_token_en.pickle"), 'rb') as handle:
             self._word_to_token_en: dict = pickle.load(handle)
 
-        with open(self._preprocessed_data_path / "word_to_token_fr.pickle", 'rb') as handle:
+        with open(str(self._folder / "word_to_token_fr.pickle"), 'rb') as handle:
             self._word_to_token_fr: dict = pickle.load(handle)
 
-        with open(self._preprocessed_data_path / "token_to_word_fr.pickle", 'rb') as handle:
+        with open(str(self._folder / "token_to_word_fr.pickle"), 'rb') as handle:
             self._token_to_word_fr: dict = pickle.load(handle)
 
-        with open(self._preprocessed_data_path / "token_to_word_en.pickle", 'rb') as handle:
+        with open(str(self._folder / "token_to_word_en.pickle"), 'rb') as handle:
             self._token_to_word_en: dict = pickle.load(handle)
 
         logger.debug("Vocab size for English limited to " + str(self._vocab_size_source))
@@ -85,8 +90,9 @@ class BilingualSeq2SeqDataloaderWord(AbstractBilingualDataloaderWord,
 
     """
 
-    def __init__(self, config: dict):
-        AbstractBilingualDataloaderWord.__init__(self, config=config)
+    def __init__(self, config: dict, raw_english_test_set_file_path: str):
+        AbstractBilingualDataloaderWord.__init__(self, config=config,
+                                                 raw_english_test_set_file_path=raw_english_test_set_file_path)
         AbstractBilingualSeq2SeqDataloader.__init__(self, config=config)
 
     def _my_generator(self, source_numericalized: List, target_numericalized: List):
@@ -106,8 +112,9 @@ class BilingualTransformersDataloaderWord(AbstractBilingualDataloaderWord,
 
     """
 
-    def __init__(self, config: dict):
-        AbstractBilingualDataloaderWord.__init__(self, config=config)
+    def __init__(self, config: dict, raw_english_test_set_file_path: str):
+        AbstractBilingualDataloaderWord.__init__(self, config=config,
+                                                 raw_english_test_set_file_path=raw_english_test_set_file_path)
         AbstractBilingualTransformersDataloader.__init__(self, config=config)
 
     def _my_generator(self, source_numericalized: List[Encoding], target_numericalized: List[Encoding]):

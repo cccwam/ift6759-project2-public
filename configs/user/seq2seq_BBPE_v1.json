@@ -17,21 +17,32 @@
       "name": "BilingualCausalLMDataloaderSubword"
     },
     "hyper_params": {
-      "preprocessed_data_path": "/project/cq-training-1/project2/teams/team03/data/word_level_24032020",
-      "bilingual_corpus_filenames": ["train_lang1_en_tokenized.pickle", "train_lang2_fr_tokenized.pickle"],
+      "preprocessed_data_path": {
+        "folder": "/project/cq-training-1/project2/teams/team03/data/word_level_24032020",
+        "bilingual_corpus_filenames": [
+          "train_lang1_en_tokenized.pickle",
+          "train_lang2_fr_tokenized.pickle"
+        ],
+        "languages": [
+          "BOTH",
+          "BOTH"
+        ],
+        "corpora_filenames": [
+          [
+            "unaligned_en_tokenized.pickle",
+            "unaligned_fr_tokenized.pickle",
+            "train_lang1_en_tokenized.pickle",
+            "train_lang2_fr_tokenized.pickle"
+          ],
+          [
+            "unaligned_en_tokenized.pickle",
+            "unaligned_fr_tokenized.pickle",
+            "train_lang1_en_tokenized.pickle",
+            "train_lang2_fr_tokenized.pickle"
+          ]
+        ]
+      },
       "pretrained_model_dir_path": "/project/cq-training-1/project2/teams/team03/models/pretokenizers",
-      "languages": ["BOTH", "BOTH"],
-      "corpora_filenames": [[
-        "unaligned_en_tokenized.pickle",
-        "unaligned_fr_tokenized.pickle",
-        "train_lang1_en_tokenized.pickle",
-        "train_lang2_fr_tokenized.pickle"
-      ],[
-        "unaligned_en_tokenized.pickle",
-        "unaligned_fr_tokenized.pickle",
-        "train_lang1_en_tokenized.pickle",
-        "train_lang2_fr_tokenized.pickle"
-      ]],
       "tokenizer_algorithm": "ByteLevelBPETokenizer",
       "tmp_path": "/tmp",
       "dropout": 0.1,

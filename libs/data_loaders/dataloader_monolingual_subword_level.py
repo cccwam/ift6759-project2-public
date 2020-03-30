@@ -22,18 +22,25 @@ class AbstractMonolingualDataloaderSubword(AbstractMonolingualDataloader):
 
     """
 
-    def __init__(self, config: dict):
+    def __init__(self, config: dict, raw_english_test_set_file_path: str):
 
-        super(AbstractMonolingualDataloaderSubword, self).__init__(config=config)
+        super(AbstractMonolingualDataloaderSubword, self).__init__(config=config,
+                                                                   raw_english_test_set_file_path=raw_english_test_set_file_path)
+
+        self._folder: Path = Path(self._preprocessed_data_path["folder"])
+        assert self._folder.exists()
+
+        self._language: str = self._preprocessed_data_path["language"]
+        assert self._language is not None, "Missing language in config"
+
+        monolingual_corpus_filename: str = self._preprocessed_data_path["monolingual_corpus_filename"]
+        assert monolingual_corpus_filename is not None, "Missing monolingual_corpus_filename in config"
 
         pretrained_model_dir_path: str = self._dl_hparams["pretrained_model_dir_path"]
         assert pretrained_model_dir_path is not None, "Missing pretrained_model_dir_path in config"
 
         self._tokenizer_algorithm: str = self._dl_hparams["tokenizer_algorithm"]
         assert self._tokenizer_algorithm is not None, "Missing tokenizer_algorithm in config"
-
-        self._language: str = self._dl_hparams["language"]
-        assert self._language is not None, "Missing language in config"
 
         self._dropout: float = self._dl_hparams["dropout"]
         assert self._dropout is not None, "Missing dropout in config"
@@ -68,10 +75,7 @@ class AbstractMonolingualDataloaderSubword(AbstractMonolingualDataloader):
 
         logger.info("Load monolingual dataset")
 
-        monolingual_corpus_filename: str = self._dl_hparams["monolingual_corpus_filename"]
-        assert monolingual_corpus_filename is not None, "Missing monolingual_corpus_filename in config"
-
-        with open(self._preprocessed_data_path / monolingual_corpus_filename, 'rb') as handle:
+        with open(str(self._folder / monolingual_corpus_filename), 'rb') as handle:
             monolingual_corpus = pickle.load(handle)
             monolingual_corpus = [" ".join(s) for s in monolingual_corpus]
 
@@ -80,7 +84,7 @@ class AbstractMonolingualDataloaderSubword(AbstractMonolingualDataloader):
         logger.debug(f"{str(self.__class__.__name__)} Samples: {len(self._source_numericalized)}")
 
     def _train_and_save(self, tokenizer_filename_prefix: str, pretrained_model_dir_path: str):
-        corpora_filenames: List[str] = self._dl_hparams["corpora_filenames"]
+        corpora_filenames: List[str] = self._preprocessed_data_path["corpora_filenames"]
         assert corpora_filenames is not None, "Missing corpora_filenames in config"
 
         tmp_path: str = self._dl_hparams["tmp_path"]
@@ -137,8 +141,9 @@ class MonolingualCausalLMDataloaderSubword(AbstractMonolingualDataloaderSubword,
 
     """
 
-    def __init__(self, config: dict):
-        AbstractMonolingualDataloaderSubword.__init__(self, config=config)
+    def __init__(self, config: dict, raw_english_test_set_file_path: str):
+        AbstractMonolingualDataloaderSubword.__init__(self, config=config,
+                                                      raw_english_test_set_file_path=raw_english_test_set_file_path)
         AbstractMonolingualCausalLMDataloader.__init__(self, config=config)
 
     def _my_generator(self, source_numericalized: List[Encoding]):
@@ -155,8 +160,9 @@ class MonolingualTransformersLMDataloaderSubword(AbstractMonolingualDataloaderSu
 
     """
 
-    def __init__(self, config: dict):
-        AbstractMonolingualDataloaderSubword.__init__(self, config=config)
+    def __init__(self, config: dict, raw_english_test_set_file_path: str):
+        AbstractMonolingualDataloaderSubword.__init__(self, config=config,
+                                                      raw_english_test_set_file_path=raw_english_test_set_file_path)
         AbstractMonolingualTransformersLMDataloader.__init__(self, config=config)
 
     def _my_generator(self, source_numericalized: List[Encoding]):

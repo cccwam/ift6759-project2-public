@@ -1,6 +1,5 @@
 from abc import abstractmethod, ABC
 from functools import partial
-from pathlib import Path
 from typing import Optional
 
 import tensorflow as tf
@@ -17,7 +16,7 @@ class AbstractDataloader:
         """
         self._dl_hparams = config["data_loader"]["hyper_params"]
 
-        self._preprocessed_data_path = Path(self._dl_hparams["preprocessed_data_path"])
+        self._preprocessed_data_path = self._dl_hparams["preprocessed_data_path"]
 
         self._samples_for_test: int = self._dl_hparams["samples_for_test"]
         self._samples_for_valid: int = self._dl_hparams["samples_for_valid"]
@@ -69,8 +68,9 @@ class AbstractDataloader:
 
 class AbstractMonolingualDataloader(AbstractDataloader, ABC):
 
-    def __init__(self, config: dict):
-        super(AbstractMonolingualDataloader, self).__init__(config=config)
+    def __init__(self, config: dict, raw_english_test_set_file_path: str):
+        super(AbstractMonolingualDataloader, self).__init__(config=config,
+                                                            raw_english_test_set_file_path=raw_english_test_set_file_path)
 
         self._vocab_size: int = self._dl_hparams["vocab_size"]
         assert self._vocab_size is not None, "vocab_size missing"
@@ -98,10 +98,14 @@ class AbstractMonolingualDataloader(AbstractDataloader, ABC):
         ds = tf.data.Dataset.from_generator(my_gen,
                                             output_types=self._output_types,
                                             output_shapes=self._output_shapes)
-        ds = ds.prefetch(tf.data.experimental.AUTOTUNE)
+        ds = ds.cache()
+
         ds = self._hook_dataset_post_precessing(ds=ds)
 
-        ds = ds.padded_batch(batch_size=batch_size, padded_shapes=self._padded_shapes, drop_remainder=True)
+        ds = ds.padded_batch(batch_size=batch_size,
+                             padded_shapes=self._padded_shapes,
+                             drop_remainder=True)
+        ds = ds.prefetch(tf.data.experimental.AUTOTUNE)
 
         self._build_all_dataset(ds, batch_size)
 
@@ -128,8 +132,9 @@ class AbstractMonolingualTransformersLMDataloader:
 class AbstractBilingualDataloader(AbstractDataloader, ABC):
 
     # noinspection PyUnusedLocal
-    def __init__(self, config: dict):
-        super(AbstractBilingualDataloader, self).__init__(config=config)
+    def __init__(self, config: dict, raw_english_test_set_file_path: str):
+        super(AbstractBilingualDataloader, self).__init__(config=config,
+                                                          raw_english_test_set_file_path=raw_english_test_set_file_path)
 
         self._vocab_size_source: int = self._dl_hparams["vocab_size_source"]
         assert self._vocab_size_source is not None, "vocab_size_source missing"
@@ -164,13 +169,14 @@ class AbstractBilingualDataloader(AbstractDataloader, ABC):
         ds = tf.data.Dataset.from_generator(my_gen,
                                             output_types=self._output_types,
                                             output_shapes=self._output_shapes)
-        ds = ds.prefetch(tf.data.experimental.AUTOTUNE)
+        ds = ds.cache()
 
         ds = self._hook_dataset_post_precessing(ds=ds)
 
         ds = ds.padded_batch(batch_size=batch_size,
                              padded_shapes=self._padded_shapes,
                              drop_remainder=True)
+        ds = ds.prefetch(tf.data.experimental.AUTOTUNE)
 
         self._build_all_dataset(ds, batch_size)
 

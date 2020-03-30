@@ -17,9 +17,11 @@
       "name": "MonolingualCausalLMDataloaderWord"
     },
     "hyper_params": {
-      "preprocessed_data_path": "/project/cq-training-1/project2/teams/team03/data/word_level_24032020",
-      "monolingual_corpus_filename": "unaligned_fr_numericalized.pickle",
-      "word_to_token_filename": "word_to_token_fr.pickle",
+      "preprocessed_data_path": {
+        "folder": "/project/cq-training-1/project2/teams/team03/data/word_level_24032020",
+        "monolingual_corpus_filename": "unaligned_fr_numericalized.pickle",
+        "word_to_token_filename": "word_to_token_fr.pickle"
+      },
       "vocab_size": 10000,
       "seq_length": 128,
       "samples_for_test": 0,
