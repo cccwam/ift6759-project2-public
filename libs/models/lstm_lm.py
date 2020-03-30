@@ -8,7 +8,15 @@ logger = logging.getLogger(__name__)
 
 # noinspection DuplicatedCode
 def builder(
-        config: typing.Dict[typing.AnyStr, typing.Any]):
+        config: typing.Dict[typing.AnyStr, typing.Any]
+):
+    """
+    builder
+
+    :param config: The configuration dictionary. It must follow configs/user/schema.json
+    :return: tf.keras.Model
+    """
+
     # noinspection PyShadowingNames
     def my_lstm_encoder(name: str,
                         seq_length: int,

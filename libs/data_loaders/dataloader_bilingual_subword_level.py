@@ -21,9 +21,21 @@ class AbstractBilingualDataloaderSubword(AbstractBilingualDataloader):
 
     """
 
-    def __init__(self, config: dict):
+    def __init__(self, config: dict, raw_english_test_set_file_path: str):
 
-        super(AbstractBilingualDataloaderSubword, self).__init__(config=config)
+        AbstractBilingualDataloader.__init__(self, config=config,
+                                             raw_english_test_set_file_path=raw_english_test_set_file_path)
+
+        self._folder: Path = Path(self._preprocessed_data_path["folder"])
+        assert self._folder.exists()
+
+        self._languages: List[str] = self._preprocessed_data_path["languages"]
+        assert self._languages is not None, "Missing languages in config"
+        assert len(self._languages) == 2, "You should have only two languages"
+
+        corpora_filenames: List[List[str]] = self._preprocessed_data_path["corpora_filenames"]
+        assert corpora_filenames is not None, "Missing corpora_filenames in config"
+        assert len(corpora_filenames) == 2, "You should have only two languages"
 
         pretrained_model_dir_path: str = self._dl_hparams["pretrained_model_dir_path"]
         assert pretrained_model_dir_path is not None, "Missing pretrained_model_dir_path in config"
@@ -31,16 +43,8 @@ class AbstractBilingualDataloaderSubword(AbstractBilingualDataloader):
         self._tokenizer_algorithm: str = self._dl_hparams["tokenizer_algorithm"]
         assert self._tokenizer_algorithm is not None, "Missing tokenizer_algorithm in config"
 
-        self._languages: List[str] = self._dl_hparams["languages"]
-        assert self._languages is not None, "Missing languages in config"
-        assert len(self._languages) == 2, "You should have only two languages"
-
         self._dropout: float = self._dl_hparams["dropout"]
         assert self._dropout is not None, "Missing dropout in config"
-
-        corpora_filenames: List[List[str]] = self._dl_hparams["corpora_filenames"]
-        assert corpora_filenames is not None, "Missing corpora_filenames in config"
-        assert len(corpora_filenames) == 2, "You should have only two languages"
 
         res = self._load_tokenizer(language=self._languages[0],
                                    tokenizer_algorithm=self._tokenizer_algorithm,
@@ -100,7 +104,7 @@ class AbstractBilingualDataloaderSubword(AbstractBilingualDataloader):
 
         logger.info("Load dataset for lang {language}")
 
-        with open(self._preprocessed_data_path / corpus_filename, 'rb') as handle:
+        with open(str(self._folder / corpus_filename), 'rb') as handle:
             corpus = pickle.load(handle)
             corpus = [" ".join(s) for s in corpus]
 
@@ -122,7 +126,7 @@ class AbstractBilingualDataloaderSubword(AbstractBilingualDataloader):
 
         corpora = []
         for corpus_filename in corpora_filenames:
-            with open(self._preprocessed_data_path / corpus_filename, 'rb') as handle:
+            with open(str(self._folder / corpus_filename), 'rb') as handle:
                 corpus = pickle.load(handle)
                 corpora += [" ".join(l) for l in corpus]
 
@@ -175,8 +179,9 @@ class BilingualCausalLMDataloaderSubword(AbstractBilingualDataloaderSubword,
 
     """
 
-    def __init__(self, config: dict):
-        AbstractBilingualDataloaderSubword.__init__(self, config=config)
+    def __init__(self, config: dict, raw_english_test_set_file_path: str):
+        AbstractBilingualDataloaderSubword.__init__(self, config=config,
+                                                    raw_english_test_set_file_path=raw_english_test_set_file_path)
         AbstractBilingualSeq2SeqDataloader.__init__(self, config=config)
 
     def _my_generator(self, source_numericalized: List[Encoding], target_numericalized: List[Encoding]):
@@ -195,8 +200,9 @@ class BilingualTransformersDataloaderSubword(AbstractBilingualDataloaderSubword,
 
     """
 
-    def __init__(self, config: dict):
-        AbstractBilingualDataloaderSubword.__init__(self, config=config)
+    def __init__(self, config: dict, raw_english_test_set_file_path: str):
+        AbstractBilingualDataloaderSubword.__init__(self, config=config,
+                                                    raw_english_test_set_file_path=raw_english_test_set_file_path)
         AbstractBilingualTransformersDataloader.__init__(self, config=config)
 
     def _my_generator(self, source_numericalized: List[Encoding], target_numericalized: List[Encoding]):

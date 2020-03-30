@@ -1,6 +1,7 @@
 import logging
 import pickle
 from abc import ABC
+from pathlib import Path
 from typing import List
 
 import numpy as np
@@ -27,20 +28,26 @@ class AbstractMonolingualDataloaderWord(AbstractMonolingualDataloader, ABC):
         - 3 for UNKNOWN
     """
 
+    def __init__(self, config: dict, raw_english_test_set_file_path: str):
+        """
+        MonolingualDataloaderWord
 
-    def __init__(self, config: dict):
+        :param config: The configuration dictionary. It must follow configs/user/schema.json
+        """
+        AbstractMonolingualDataloaderWord.__init__(self, config=config,
+                                                   raw_english_test_set_file_path=raw_english_test_set_file_path)
 
-        super(AbstractMonolingualDataloaderWord, self).__init__(config=config)
-
-        self._monolingual_corpus_filename: str = self._dl_hparams["monolingual_corpus_filename"]
+        self._folder: Path = Path(self._preprocessed_data_path["folder"])
+        assert self._folder.exists()
+        self._monolingual_corpus_filename: str = self._preprocessed_data_path["monolingual_corpus_filename"]
         assert self._monolingual_corpus_filename is not None, "Missing monolingual_corpus_filename in config"
-        word_to_token_filename: str = self._dl_hparams["word_to_token_filename"]
+        word_to_token_filename: str = self._preprocessed_data_path["word_to_token_filename"]
         assert word_to_token_filename is not None, "Missing word_to_token_filename in config"
 
-        with open(self._preprocessed_data_path / self._monolingual_corpus_filename, 'rb') as handle:
+        with open(str(self._folder / self._monolingual_corpus_filename), 'rb') as handle:
             self._source_numericalized = pickle.load(handle)
 
-        with open(self._preprocessed_data_path / word_to_token_filename, 'rb') as handle:
+        with open(str(self._folder / word_to_token_filename), 'rb') as handle:
             self._word_to_token: dict = pickle.load(handle)
 
         if self._vocab_size is not None:
@@ -62,7 +69,7 @@ class AbstractMonolingualDataloaderWord(AbstractMonolingualDataloader, ABC):
     def get_hparams(self):
         return f"vocab_size_{self._vocab_size}" + \
                f"_seq_length_{self._seq_length}" + \
-               f"_corpus_{self._preprocessed_data_path / self._monolingual_corpus_filename}"
+               f"_corpus_{self._folder / self._monolingual_corpus_filename}"
 
     def decode(self, tokens):
         mapped_tokens = [self._word_to_token[t] for t in tokens]
@@ -76,8 +83,9 @@ class MonolingualCausalLMDataloaderWord(AbstractMonolingualDataloaderWord,
 
     """
 
-    def __init__(self, config: dict):
-        AbstractMonolingualDataloaderWord.__init__(self, config=config)
+    def __init__(self, config: dict, raw_english_test_set_file_path: str):
+        AbstractMonolingualDataloaderWord.__init__(self, config=config,
+                                                   raw_english_test_set_file_path=raw_english_test_set_file_path)
         AbstractMonolingualCausalLMDataloader.__init__(self, config=config)
 
     def _my_generator(self, source_numericalized: List):
@@ -95,8 +103,9 @@ class MonolingualTransformersLMDataloaderWord(AbstractMonolingualDataloaderWord,
 
     """
 
-    def __init__(self, config: dict):
-        AbstractMonolingualDataloaderWord.__init__(self, config=config)
+    def __init__(self, config: dict, raw_english_test_set_file_path: str):
+        AbstractMonolingualDataloaderWord.__init__(self, config=config,
+                                                   raw_english_test_set_file_path=raw_english_test_set_file_path)
         AbstractMonolingualTransformersLMDataloader.__init__(self, config=config)
 
     def _my_generator(self, source_numericalized: List):
