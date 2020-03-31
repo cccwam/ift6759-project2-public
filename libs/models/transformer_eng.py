@@ -146,14 +146,15 @@ class TransformerLeftLM(tf.keras.Model):
 def builder(config: typing.Dict[typing.AnyStr, typing.Any]):
     # noinspection PyShadowingNames,DuplicatedCode
     model_hparams = config["model"]["hyper_params"]
+    dl_hparams = config["data_loader"]["hyper_params"]
 
     num_layers = model_hparams["num_layers"]
     d_model = model_hparams["d_model"]
     num_heads = model_hparams["num_heads"]
     dff = model_hparams["dff"]
     dropout_rate = model_hparams["dropout_rate"]
-    vocab_size_source = model_hparams["vocab_size_source"]
-    vocab_size_target = model_hparams["vocab_size_target"]
+    vocab_size_source = dl_hparams["vocab_size_source"]
+    vocab_size_target = dl_hparams["vocab_size_target"]
 
     return TransformerLeftLM(
         num_layers, d_model, num_heads, dff, vocab_size_source,

@@ -88,6 +88,7 @@ def train_models(
     hp_learning_rate = hp.HParam('learning_rate', hp.Discrete(trainer_hyper_params["lr_rate"]))
     hp_patience = hp.HParam('patience', hp.Discrete(trainer_hyper_params["patience"]))
 
+    # ToDo Better way to differentiate different data loading logic
     if 'mode' in config['data_loader']['hyper_params']:
         data_loader.build(batch_size=hp_batch_size.domain.values[0], mode=config['data_loader']['hyper_params']['mode'])
     else:
@@ -161,6 +162,7 @@ def train_models(
                     variation_num += 1
 
     # Save final model
+    # ToDo Use better logic for models that support .save and those that don't
     try:
         model.save(helpers.generate_model_name(config))
     except NotImplementedError:
@@ -201,16 +203,20 @@ def train_model(
 
     # Multi GPU setup
     # ToDo: Is using the model 'lr' attribute a good way to bypass compile_model?
+    # Since the transformer uses a custom learning rate scheduler, the
+    # logic in compile_model does not apply here.
     fit_kwargs = {}
     if mirrored_strategy is not None and mirrored_strategy.num_replicas_in_sync > 1:
         with mirrored_strategy.scope():
             if hasattr(model, 'lr'):
+                # ToDo better checkpoint handling
                 compiled_model = model
                 fit_kwargs['ckpt_manager'] = compiled_model.load_checkpoint()
             else:
                 compiled_model = helpers.compile_model(model, learning_rate=learning_rate)
     else:
         if hasattr(model, 'lr'):
+            # ToDo better checkpoint handling
             compiled_model = model
             fit_kwargs['ckpt_manager'] = compiled_model.load_checkpoint()
         else:

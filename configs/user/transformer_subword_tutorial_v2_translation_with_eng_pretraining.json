@@ -11,8 +11,6 @@
       "num_heads": 8,
       "dff": 1024,
       "dropout_rate": 0.2,
-      "vocab_size_source": 8186,
-      "vocab_size_target": 8159,
       "pretrained_layers": [
         {
           "model_config_path": "/project/cq-training-1/project2/teams/team03/models/transformers/transformer_subword_tutorial_v2_eng_pretraining.json",
@@ -39,7 +37,9 @@
       "mode": "translation",
       "samples_for_test": 0,
       "samples_for_valid": 0,
-      "samples_for_train": 0
+      "samples_for_train": 0,
+      "vocab_size_source": 8186,
+      "vocab_size_target": 8159
     }
   },
   "trainer": {
