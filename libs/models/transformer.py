@@ -7,6 +7,7 @@ import tensorflow as tf
 import numpy as np
 
 from libs.helpers import loss_function_for_transformer as loss_function
+from libs.helpers import get_online_data_loader
 from libs.models.helpers import load_pretrained_layers
 
 
@@ -238,7 +239,7 @@ class Encoder(tf.keras.layers.Layer):
 class Decoder(tf.keras.layers.Layer):
     def __init__(self, num_layers, d_model, num_heads, dff, target_vocab_size,
                  maximum_position_encoding, rate=0.1):
-        super(Decoder, self).__init__(name='TransformerDecoder')
+        super(Decoder, self).__init__()
 
         self.d_model = d_model
         self.num_layers = num_layers
@@ -474,6 +475,19 @@ def builder(config: typing.Dict[typing.AnyStr, typing.Any]):
         target_vocab_size, pe_input=input_vocab_size,
         pe_target=target_vocab_size, rate=dropout_rate)
 
-    load_pretrained_layers(config, transformer_tl)
+    if "pretrained_layers" in config["model"]["hyper_params"]:
+        print("Entering pretraining procedure")
+        print("Retrieving data loader")
+        task_data_loader = get_online_data_loader(config)
+        task_data_loader.build(
+            batch_size=64, mode=config['data_loader']['hyper_params']['mode'])
+        training_dataset, valid_dataset = \
+            task_data_loader.training_dataset, task_data_loader.valid_dataset
+        print("Initial fit on 1 batch to build main task model")
+        transformer_tl.fit(
+            training_dataset.take(1), validation_steps=2, ckpt_manager=None)
+        print("Loading pretrained layers")
+        load_pretrained_layers(config, transformer_tl)
+        print("Completed loading weights from pretrained model")
 
     return transformer_tl
