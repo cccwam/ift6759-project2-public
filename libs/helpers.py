@@ -115,6 +115,7 @@ def prepare_model(
         else:
             raise FileNotFoundError(f'Error: The file {default_model_path} does not exist.')
 
+    # ToDo Better handling of models that support .load_model vs those who don't
     try:
         model = tf.keras.models.load_model(model_source)
     except ValueError:
