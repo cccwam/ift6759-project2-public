@@ -83,6 +83,7 @@ class AbstractBilingualDataloaderWord(AbstractBilingualDataloader, ABC):
                f"_seq_length_{self._seq_length_source},{self._seq_length_target}"
 
     def decode(self, tokens):
+        print("here", tokens, self._token_to_word_en)
         mapped_tokens = [self._token_to_word_en[t] for t in tokens]
         return " ".join(mapped_tokens)
 

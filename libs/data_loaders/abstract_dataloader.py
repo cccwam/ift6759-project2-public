@@ -1,8 +1,11 @@
+import logging
 from abc import abstractmethod, ABC
 from functools import partial
 from typing import Optional
 
 import tensorflow as tf
+
+logger = logging.getLogger(__name__)
 
 
 class AbstractDataloader:
@@ -53,12 +56,10 @@ class AbstractDataloader:
             # Useful to train models more quickly
             self.training_dataset = self.training_dataset.take(int(self._samples_for_train / batch_size))
 
-# TF bug https://github.com/tensorflow/tensorflow/issues/28782
-#        self.test_dataset = self.test_dataset.cache()
-#        self.training_dataset = self.training_dataset.cache()
-#        self.valid_dataset = self.valid_dataset.cache()
-
-
+    # TF bug https://github.com/tensorflow/tensorflow/issues/28782
+    #        self.test_dataset = self.test_dataset.cache()
+    #        self.training_dataset = self.training_dataset.cache()
+    #        self.valid_dataset = self.valid_dataset.cache()
 
     @property
     def validation_steps(self):

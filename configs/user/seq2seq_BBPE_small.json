@@ -52,12 +52,15 @@
       "seq_length_target": 512,
       "samples_for_test": 500,
       "samples_for_valid": 500,
-      "samples_for_train": -1
+      "samples_for_train": 500
     }
   },
   "trainer": {
     "hyper_params": {
-      "metrics": ["sparse_accuracy", "bleu"],
+      "metrics": [
+        "sparse_accuracy",
+        "bleu"
+      ],
       "lr_rate": [
         3e-3
       ],

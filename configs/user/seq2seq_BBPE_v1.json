@@ -57,12 +57,16 @@
   },
   "trainer": {
     "hyper_params": {
-      "metrics": ["sparse_accuracy", "bleu"],
+      "metrics": [
+        "sparse_accuracy",
+        "bleu"
+      ],
       "lr_rate": [
-        3e-3
+        3e-3,
+        3e-2
       ],
       "epochs": [
-        5
+        50
       ],
       "batch_size": [
         64

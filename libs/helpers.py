@@ -8,9 +8,9 @@ from typing import List
 
 import jsonschema
 import tensorflow as tf
-import sacrebleu
 
 from libs.data_loaders import AbstractDataloader
+from libs.metrics import perplexity, BleuIntervalEvaluation
 
 logger = logging.getLogger(__name__)
 
@@ -141,60 +141,42 @@ def get_tensorboard_experiment_id(experiment_name, tensorboard_tracking_folder: 
     return tensorboard_tracking_folder / model_sub_folder
 
 
-def compile_model(model, learning_rate, dataloader:AbstractDataloader, metrics: List[str] = None):
+def compile_model(model, learning_rate, dataloader: AbstractDataloader, metrics: List[str] = None):
     """
-    TODO review doc
         Helper function to compile a new model at each variation of the experiment
     :param learning_rate:
-    :param model:
-    :return:
+    :param dataloader: dataloader
+    :param model: model to be compiled
+    :param metrics: list of metrics
+    :return: compiled model and additional callbacks (for metrics which are too slow to run on training set)
     """
-
-    def perplexity(y_true, y_pred):
-        """
-        The perplexity metric.
-        https://stackoverflow.com/questions/44697318/how-to-implement-perplexity-in-keras
-        https://stackoverflow.com/questions/41881308/how-to-calculate-perplexity-of-rnn-in-tensorflow
-        https://github.com/keras-team/keras/issues/8267
-        """
-        cross_entropy = tf.keras.backend.sparse_categorical_crossentropy(y_true, y_pred)
-        perplexity = tf.keras.backend.exp(cross_entropy)
-        return perplexity
-
-    def bleu(y_true, y_pred):
-        bleu_scores = []
-        for i in range(y_true.shape[0]):
-            pred_sentence = dataloader.decode(y_pred[i])
-            true_sentence = dataloader.decode(y_true[i])
-            bleu_scores += [sacrebleu.corpus_bleu(pred_sentence, true_sentence).score]
-
-        return np.mean(bleu_scores)
 
     mapping = {
         "perplexity": perplexity,  # For language model task
-        "bleu": bleu,  # For translation task
+        #        "bleu_eager_mode": bleu_eager_mode,  # For translation task but it's too slow to run during training
         "sparse_accuracy": tf.keras.metrics.SparseCategoricalAccuracy(),  # Generic for classification
     }
 
-    if metrics is None:
-        metrics = []
-    else:
-        metrics = [mapping[m] for m in metrics]
-
-    model_instance = model
+    metric_funcs, additional_callbacks = [], []
+    for metric in metrics:
+        if metric == "bleu":
+            # Special case
+            #  To be called only on end of epoch because it's too slow
+            additional_callbacks += [BleuIntervalEvaluation(dataloader=dataloader)]
+        else:
+            metric_funcs += [mapping[metric]]
 
     optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
 
     # TODO to review this
     #   Likely that we should have more than 1 loss
     #   Also we should be able to optimizer
-    # Add also BLEU
-    model_instance.compile(
+    model.compile(
         optimizer=optimizer,
         loss=tf.keras.losses.SparseCategoricalCrossentropy(),
-        metrics=metrics
+        metrics=metric_funcs
     )
-    return model_instance
+    return model, additional_callbacks
 
 
 def get_module_name(module_dictionary):

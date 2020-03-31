@@ -36,7 +36,7 @@
       "seq_length": 512,
       "samples_for_test": 0,
       "samples_for_valid": 5000,
-      "samples_for_train": 100000
+      "samples_for_train": 5000
     }
   },
   "trainer": {
