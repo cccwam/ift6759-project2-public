@@ -73,15 +73,17 @@ class SubwordDataLoader:
         - vocab_size + 1 for EOS
     """
 
-    def __init__(self, config: dict, **kwargs):
+    def __init__(self, config: dict, raw_english_test_set_file_path=None, **kwargs):
         self.config = config
         self.training_dataset = None
         self.validation_dataset = None
+        self.test_dataset = None
         self.tokenizer_en = None
         self.tokenizer_fr = None
         self.vocab_size_source = None
         self.vocab_size_target = None
         self.validation_steps = 1
+        self.raw_english_test_set_file_path = raw_english_test_set_file_path
 
     def build(self, batch_size, mode='translate'):
         dl_hparams = self.config["data_loader"]["hyper_params"]
@@ -108,8 +110,7 @@ class SubwordDataLoader:
                                           'unaligned.fr.train')
         path_trad_fr_val = os.path.join(path_data, 'original',
                                         'train.lang2.validation')
-        path_unal_fr_val = os.path.join(path_data, 'tokenized_keep_case'
-                                                   '',
+        path_unal_fr_val = os.path.join(path_data, 'tokenized_keep_case',
                                         'unaligned.fr.validation')
         # Create all TextLineDataset objects
         datasets = {
@@ -134,6 +135,8 @@ class SubwordDataLoader:
             'sentences_all_fr_validation': TextLineDataset(
                 [path_trad_fr_val, path_unal_fr_val]),
         }
+        if self.raw_english_test_set_file_path:
+            self.test_dataset = TextLineDataset([self.raw_english_test_set_file_path])
 
         self.tokenizer_en = subword_tokenizer(
             vocabulary_name_en, datasets['sentences_all_en_train'])

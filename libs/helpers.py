@@ -115,7 +115,26 @@ def prepare_model(
         else:
             raise FileNotFoundError(f'Error: The file {default_model_path} does not exist.')
 
-    return tf.keras.models.load_model(model_source)
+    # ToDo Better handling of models that support .load_model vs those who don't
+    try:
+        model = tf.keras.models.load_model(model_source)
+    except ValueError:
+        print("Retrieving data loader for task")
+        data_loader = get_online_data_loader(config)
+        data_loader.build(
+            batch_size=64,
+            mode=config['data_loader']['hyper_params']['mode'])
+        training_dataset, _ = \
+            data_loader.training_dataset, data_loader.valid_dataset
+        model = get_online_model(config)
+        print("Initial fit on 1 batch to build model")
+        model.fit(
+            training_dataset.take(1), validation_steps=2,
+            ckpt_manager=None)
+        print("Loading weights")
+        model.load_weights(model_source)
+
+    return model
 
 
 def generate_model_name(config):
