@@ -98,5 +98,15 @@ python trainer.py \
     --tensorboard_tracking_folder /project/cq-training-1/project2/teams/team03/tensorboard/$USER
 ```
 
-* `user_cfg_path`: Path to the JSON config file that follows configs/user/schema.json.
+* `config`: Path to the JSON config file used to store user model, dataloader and trainer parameters and  that follows configs/user/schema.json.
 * `tensorboard_tracking_folder`: Path where to store TensorBoard data and save trained model. 
+
+## Special requirements
+
+Our project is using HuggingFaces tokenizers and transformers libraries.
+To install them, please run
+
+
+```
+pip install --force tokenizers==0.6.0 and transformers==2.5.1
+```

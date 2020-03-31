@@ -152,6 +152,7 @@ def compile_model(model, learning_rate):
     # TODO to review this
     #   Likely that we should have more than 1 loss
     #   Also we should be able to optimizer
+    # Add also BLEU
     model_instance.compile(
         optimizer=optimizer,
         loss=tf.keras.losses.SparseCategoricalCrossentropy(),

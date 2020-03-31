@@ -68,7 +68,7 @@
           "description": "The hyper-parameters to use for this data loader",
           "properties": {
             "preprocessed_data_path": {
-              "type": "string"
+              "type": "object"
             },
             "samples_for_test": {
               "type": "integer"
@@ -79,7 +79,6 @@
             "samples_for_train": {
               "type": "integer"
             }
-
           },
           "required": [
             "preprocessed_data_path",
@@ -87,23 +86,6 @@
             "samples_for_valid",
             "samples_for_train"
           ]
-        },
-        "pretrained_layers": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "model_path": {
-                "type": "string"
-              },
-              "layer_name": {
-                "type": "string"
-              },
-              "target_layer_name": {
-                "type": "string"
-              }
-            }
-          }
         }
       },
       "required": [

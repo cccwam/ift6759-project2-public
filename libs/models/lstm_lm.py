@@ -16,6 +16,7 @@ def builder(
     :param config: The configuration dictionary. It must follow configs/user/schema.json
     :return: tf.keras.Model
     """
+
     # noinspection PyShadowingNames
     def my_lstm_encoder(name: str,
                         seq_length: int,
