@@ -108,7 +108,7 @@ class SubwordDataLoader:
                                           'unaligned.fr.train')
         path_trad_fr_val = os.path.join(path_data, 'original',
                                         'train.lang2.validation')
-        path_unal_fr_val = os.path.join(path_data, 'tokenized_keep_caseun'
+        path_unal_fr_val = os.path.join(path_data, 'tokenized_keep_case'
                                                    '',
                                         'unaligned.fr.validation')
         # Create all TextLineDataset objects
@@ -144,18 +144,25 @@ class SubwordDataLoader:
 
         if mode == 'en':
             # ToDo use the whole dataset
-            sentences_translation_both_train = tf.data.Dataset.zip(
-                (datasets['sentences_all_en_train'].take(30000),
-                 datasets['sentences_all_en_train'].take(30000)))
-            sentences_translation_both_validation = tf.data.Dataset.zip(
-                (datasets['sentences_all_en_validation'].take(5000),
-                 datasets['sentences_all_en_validation'].take(5000)))
             # sentences_translation_both_train = tf.data.Dataset.zip(
-            #     (datasets['sentences_all_en_train'],
-            #      datasets['sentences_all_en_train']))
+            #     (datasets['sentences_all_en_train'].take(30000),
+            #      datasets['sentences_all_en_train'].take(30000)))
             # sentences_translation_both_validation = tf.data.Dataset.zip(
-            #     (datasets['sentences_all_en_validation'],
-            #      datasets['sentences_all_en_validation']))
+            #     (datasets['sentences_all_en_validation'].take(5000),
+            #      datasets['sentences_all_en_validation'].take(5000)))
+            sentences_translation_both_train = tf.data.Dataset.zip(
+                (datasets['sentences_all_en_train'],
+                 datasets['sentences_all_en_train']))
+            sentences_translation_both_validation = tf.data.Dataset.zip(
+                (datasets['sentences_all_en_validation'],
+                 datasets['sentences_all_en_validation']))
+        elif mode == 'fr':
+            sentences_translation_both_train = tf.data.Dataset.zip(
+                (datasets['sentences_all_en_train'],
+                 datasets['sentences_all_fr_train']))
+            sentences_translation_both_validation = tf.data.Dataset.zip(
+                (datasets['sentences_all_en_validation'],
+                 datasets['sentences_all_fr_validation']))
         else:
             sentences_translation_both_train = tf.data.Dataset.zip(
                 (datasets['sentences_translation_en_train'],

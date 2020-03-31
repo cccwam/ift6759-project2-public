@@ -119,7 +119,7 @@ class TransformerLeftLM(tf.keras.Model):
                             epoch + 1, batch, self.train_loss.result(),
                             self.train_accuracy.result()))
 
-            if (epoch + 1) % 5 == 0:
+            if (epoch + 1) % 2 == 0:
                 ckpt_save_path = ckpt_manager.save()
                 print(
                     'Saving checkpoint for epoch {} at {}'.format(
