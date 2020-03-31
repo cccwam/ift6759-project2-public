@@ -173,3 +173,15 @@ def get_mirrored_strategy():
     logger.debug('Number of used GPU devices: {}'.format(mirrored_strategy.num_replicas_in_sync))
     logger.debug("------------")
     return mirrored_strategy
+
+
+def loss_function_for_transformer(real, pred):
+    loss_object = tf.keras.losses.SparseCategoricalCrossentropy(
+        from_logits=True, reduction='none')
+    mask = tf.math.logical_not(tf.math.equal(real, 0))
+    loss_ = loss_object(real, pred)
+
+    mask = tf.cast(mask, dtype=loss_.dtype)
+    loss_ *= mask
+
+    return tf.reduce_mean(loss_)
