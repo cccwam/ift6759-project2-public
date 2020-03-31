@@ -10,9 +10,7 @@
       "d_model": 256,
       "num_heads": 8,
       "dff": 1024,
-      "dropout_rate": 0.2,
-      "vocab_size_source": 8186,
-      "vocab_size_target": 8159
+      "dropout_rate": 0.2
     },
     "source": ""
   },
@@ -30,7 +28,9 @@
       "mode": "en",
       "samples_for_test": 0,
       "samples_for_valid": 0,
-      "samples_for_train": 0
+      "samples_for_train": 0,
+      "vocab_size_source": 8186,
+      "vocab_size_target": 8159
     }
   },
   "trainer": {

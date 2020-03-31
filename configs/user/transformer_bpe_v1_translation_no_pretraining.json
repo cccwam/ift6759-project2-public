@@ -10,9 +10,7 @@
       "d_model": 128,
       "num_heads": 4,
       "dff": 512,
-      "dropout_rate": 0.2,
-      "vocab_size_source": 8000,
-      "vocab_size_target": 8000
+      "dropout_rate": 0.2
     },
     "source": ""
   },
