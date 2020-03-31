@@ -481,7 +481,7 @@ def builder(config: typing.Dict[typing.AnyStr, typing.Any]):
         task_data_loader = get_online_data_loader(config)
         task_data_loader.build(
             batch_size=64, mode=config['data_loader']['hyper_params']['mode'])
-        training_dataset, valid_dataset = \
+        training_dataset, _ = \
             task_data_loader.training_dataset, task_data_loader.valid_dataset
         print("Initial fit on 1 batch to build main task model")
         transformer_tl.fit(

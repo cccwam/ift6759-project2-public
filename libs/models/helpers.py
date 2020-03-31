@@ -23,7 +23,7 @@ def load_pretrained_layers(config: dict, my_model: tf.keras.Model):
                 pretrained_data_loader.build(
                     batch_size=64,
                     mode=pretrained_config['data_loader']['hyper_params']['mode'])
-                training_dataset, valid_dataset = \
+                training_dataset, _ = \
                     pretrained_data_loader.training_dataset, pretrained_data_loader.valid_dataset
                 pretrained_model = get_online_model(pretrained_config)
                 print("Initial fit on 1 batch to build pretraining model")
