@@ -5,7 +5,7 @@
       "name": "builder"
     },
     "hyper_params": {
-      "name": "TRANSFORMER_SUBWORD_TUTORIAL_V1_ENG",
+      "name": "TRANSFORMER_SUBWORD_TUTORIAL_V2_ENG",
       "num_layers": 5,
       "d_model": 256,
       "num_heads": 8,

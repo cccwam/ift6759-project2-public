@@ -15,8 +15,8 @@
       "vocab_size_target": 8159,
       "pretrained_layers": [
         {
-          "model_config_path": "/project/cq-training-1/project2/teams/team03/data/ift6759-project2/configs/user/transformer_subword_tutorial_v1_eng.local.json",
-          "model_path": "/project/cq-training-1/project2/teams/team03/data/libs.models.transformer_eng.builder.ee643a82eb334a75ba668d0af6ac3ed2.h5",
+          "model_config_path": "/project/cq-training-1/project2/teams/team03/models/transformers/transformer_subword_tutorial_v1_eng.json",
+          "model_path": "/project/cq-training-1/project2/teams/team03/models/transformers/libs.models.transformer_eng.TRANSFORMER_SUBWORD_TUTORIAL_V1_ENG.ee643a82eb334a75ba668d0af6ac3ed2.h5",
           "layer_name": "encoder_1",
           "target_layer_name": "encoder",
           "input_size": 8186
