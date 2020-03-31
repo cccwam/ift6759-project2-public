@@ -1,212 +1,212 @@
 [
-    {
-        "input_files": [
-            "/project/cq-training-1/project2/data/train.lang1",
-            "/project/cq-training-1/project2/data/train.lang2"
-        ],
-        "output_files": [
-            "/project/cq-training-1/project2/teams/team03/data/split_01/original/train.lang1",
-            "/project/cq-training-1/project2/teams/team03/data/split_01/original/train.lang2"
-        ],
-        "seed": 4236,
-        "split": [
-            80,
-            10,
-            10
-        ]
-    },
-    {
-        "input_files": [
-            "/project/cq-training-1/project2/data/unaligned.en"
-        ],
-        "output_files": [
-            "/project/cq-training-1/project2/teams/team03/data/split_01/original/unaligned.en"
-        ],
-        "seed": 3252,
-        "split": [
-            90,
-            10
-        ]
-    },
-    {
-        "input_files": [
-            "/project/cq-training-1/project2/data/unaligned.fr"
-        ],
-        "output_files": [
-            "/project/cq-training-1/project2/teams/team03/data/split_01/original/unaligned.fr"
-        ],
-        "seed": 1355,
-        "split": [
-            90,
-            10
-        ]
-    },
-    {
-        "input_files": [
-            "/project/cq-training-1/project2/data/train.lang1",
-            "/project/cq-training-1/project2/teams/team03/data/tokenized_default/train.lang2"
-        ],
-        "output_files": [
-            "/project/cq-training-1/project2/teams/team03/data/split_01/tokenized_default/train.lang1",
-            "/project/cq-training-1/project2/teams/team03/data/split_01/tokenized_default/train.lang2"
-        ],
-        "seed": 4236,
-        "split": [
-            80,
-            10,
-            10
-        ]
-    },
-    {
-        "input_files": [
-            "/project/cq-training-1/project2/teams/team03/data/tokenized_default/unaligned.en"
-        ],
-        "output_files": [
-            "/project/cq-training-1/project2/teams/team03/data/split_01/tokenized_default/unaligned.en"
-        ],
-        "seed": 3252,
-        "split": [
-            90,
-            10
-        ]
-    },
-    {
-        "input_files": [
-            "/project/cq-training-1/project2/teams/team03/data/tokenized_default/unaligned.fr"
-        ],
-        "output_files": [
-            "/project/cq-training-1/project2/teams/team03/data/split_01/tokenized_default/unaligned.fr"
-        ],
-        "seed": 1355,
-        "split": [
-            90,
-            10
-        ]
-    },
-    {
-        "input_files": [
-            "/project/cq-training-1/project2/data/train.lang1",
-            "/project/cq-training-1/project2/teams/team03/data/tokenized_default_no_punc/train.lang2"
-        ],
-        "output_files": [
-            "/project/cq-training-1/project2/teams/team03/data/split_01/tokenized_default_no_punc/train.lang1",
-            "/project/cq-training-1/project2/teams/team03/data/split_01/tokenized_default_no_punc/train.lang2"
-        ],
-        "seed": 4236,
-        "split": [
-            80,
-            10,
-            10
-        ]
-    },
-    {
-        "input_files": [
-            "/project/cq-training-1/project2/teams/team03/data/tokenized_default_no_punc/unaligned.en"
-        ],
-        "output_files": [
-            "/project/cq-training-1/project2/teams/team03/data/split_01/tokenized_default_no_punc/unaligned.en"
-        ],
-        "seed": 3252,
-        "split": [
-            90,
-            10
-        ]
-    },
-    {
-        "input_files": [
-            "/project/cq-training-1/project2/teams/team03/data/tokenized_default_no_punc/unaligned.fr"
-        ],
-        "output_files": [
-            "/project/cq-training-1/project2/teams/team03/data/split_01/tokenized_default_no_punc/unaligned.fr"
-        ],
-        "seed": 1355,
-        "split": [
-            90,
-            10
-        ]
-    },
-    {
-        "input_files": [
-            "/project/cq-training-1/project2/data/train.lang1",
-            "/project/cq-training-1/project2/teams/team03/data/tokenized_keep_case/train.lang2"
-        ],
-        "output_files": [
-            "/project/cq-training-1/project2/teams/team03/data/split_01/tokenized_keep_case/train.lang1",
-            "/project/cq-training-1/project2/teams/team03/data/split_01/tokenized_keep_case/train.lang2"
-        ],
-        "seed": 4236,
-        "split": [
-            80,
-            10,
-            10
-        ]
-    },
-    {
-        "input_files": [
-            "/project/cq-training-1/project2/teams/team03/data/tokenized_keep_case/unaligned.en"
-        ],
-        "output_files": [
-            "/project/cq-training-1/project2/teams/team03/data/split_01/tokenized_keep_case/unaligned.en"
-        ],
-        "seed": 3252,
-        "split": [
-            90,
-            10
-        ]
-    },
-    {
-        "input_files": [
-            "/project/cq-training-1/project2/teams/team03/data/tokenized_keep_case/unaligned.fr"
-        ],
-        "output_files": [
-            "/project/cq-training-1/project2/teams/team03/data/split_01/tokenized_keep_case/unaligned.fr"
-        ],
-        "seed": 1355,
-        "split": [
-            90,
-            10
-        ]
-    },
-    {
-        "input_files": [
-            "/project/cq-training-1/project2/data/train.lang1",
-            "/project/cq-training-1/project2/teams/team03/data/tokenized_keep_case_no_punc/train.lang2"
-        ],
-        "output_files": [
-            "/project/cq-training-1/project2/teams/team03/data/split_01/tokenized_keep_case_no_punc/train.lang1",
-            "/project/cq-training-1/project2/teams/team03/data/split_01/tokenized_keep_case_no_punc/train.lang2"
-        ],
-        "seed": 4236,
-        "split": [
-            80,
-            10,
-            10
-        ]
-    },
-    {
-        "input_files": [
-            "/project/cq-training-1/project2/teams/team03/data/tokenized_keep_case_no_punc/unaligned.en"
-        ],
-        "output_files": [
-            "/project/cq-training-1/project2/teams/team03/data/split_01/tokenized_keep_case_no_punc/unaligned.en"
-        ],
-        "seed": 3252,
-        "split": [
-            90,
-            10
-        ]
-    },
-    {
-        "input_files": [
-            "/project/cq-training-1/project2/teams/team03/data/tokenized_keep_case_no_punc/unaligned.fr"
-        ],
-        "output_files": [
-            "/project/cq-training-1/project2/teams/team03/data/split_01/tokenized_keep_case_no_punc/unaligned.fr"
-        ],
-        "seed": 1355,
-        "split": [
-            90,
-            10
-        ]
-    }
+  {
+    "input_files": [
+      "/project/cq-training-1/project2/data/train.lang1",
+      "/project/cq-training-1/project2/data/train.lang2"
+    ],
+    "output_files": [
+      "/project/cq-training-1/project2/teams/team03/data/split_01/original/train.lang1",
+      "/project/cq-training-1/project2/teams/team03/data/split_01/original/train.lang2"
+    ],
+    "seed": 4236,
+    "split": [
+      80,
+      10,
+      10
+    ]
+  },
+  {
+    "input_files": [
+      "/project/cq-training-1/project2/data/unaligned.en"
+    ],
+    "output_files": [
+      "/project/cq-training-1/project2/teams/team03/data/split_01/original/unaligned.en"
+    ],
+    "seed": 3252,
+    "split": [
+      90,
+      10
+    ]
+  },
+  {
+    "input_files": [
+      "/project/cq-training-1/project2/data/unaligned.fr"
+    ],
+    "output_files": [
+      "/project/cq-training-1/project2/teams/team03/data/split_01/original/unaligned.fr"
+    ],
+    "seed": 1355,
+    "split": [
+      90,
+      10
+    ]
+  },
+  {
+    "input_files": [
+      "/project/cq-training-1/project2/data/train.lang1",
+      "/project/cq-training-1/project2/teams/team03/data/tokenized_default/train.lang2"
+    ],
+    "output_files": [
+      "/project/cq-training-1/project2/teams/team03/data/split_01/tokenized_default/train.lang1",
+      "/project/cq-training-1/project2/teams/team03/data/split_01/tokenized_default/train.lang2"
+    ],
+    "seed": 4236,
+    "split": [
+      80,
+      10,
+      10
+    ]
+  },
+  {
+    "input_files": [
+      "/project/cq-training-1/project2/teams/team03/data/tokenized_default/unaligned.en"
+    ],
+    "output_files": [
+      "/project/cq-training-1/project2/teams/team03/data/split_01/tokenized_default/unaligned.en"
+    ],
+    "seed": 3252,
+    "split": [
+      90,
+      10
+    ]
+  },
+  {
+    "input_files": [
+      "/project/cq-training-1/project2/teams/team03/data/tokenized_default/unaligned.fr"
+    ],
+    "output_files": [
+      "/project/cq-training-1/project2/teams/team03/data/split_01/tokenized_default/unaligned.fr"
+    ],
+    "seed": 1355,
+    "split": [
+      90,
+      10
+    ]
+  },
+  {
+    "input_files": [
+      "/project/cq-training-1/project2/data/train.lang1",
+      "/project/cq-training-1/project2/teams/team03/data/tokenized_default_no_punc/train.lang2"
+    ],
+    "output_files": [
+      "/project/cq-training-1/project2/teams/team03/data/split_01/tokenized_default_no_punc/train.lang1",
+      "/project/cq-training-1/project2/teams/team03/data/split_01/tokenized_default_no_punc/train.lang2"
+    ],
+    "seed": 4236,
+    "split": [
+      80,
+      10,
+      10
+    ]
+  },
+  {
+    "input_files": [
+      "/project/cq-training-1/project2/teams/team03/data/tokenized_default_no_punc/unaligned.en"
+    ],
+    "output_files": [
+      "/project/cq-training-1/project2/teams/team03/data/split_01/tokenized_default_no_punc/unaligned.en"
+    ],
+    "seed": 3252,
+    "split": [
+      90,
+      10
+    ]
+  },
+  {
+    "input_files": [
+      "/project/cq-training-1/project2/teams/team03/data/tokenized_default_no_punc/unaligned.fr"
+    ],
+    "output_files": [
+      "/project/cq-training-1/project2/teams/team03/data/split_01/tokenized_default_no_punc/unaligned.fr"
+    ],
+    "seed": 1355,
+    "split": [
+      90,
+      10
+    ]
+  },
+  {
+    "input_files": [
+      "/project/cq-training-1/project2/data/train.lang1",
+      "/project/cq-training-1/project2/teams/team03/data/tokenized_keep_case/train.lang2"
+    ],
+    "output_files": [
+      "/project/cq-training-1/project2/teams/team03/data/split_01/tokenized_keep_case/train.lang1",
+      "/project/cq-training-1/project2/teams/team03/data/split_01/tokenized_keep_case/train.lang2"
+    ],
+    "seed": 4236,
+    "split": [
+      80,
+      10,
+      10
+    ]
+  },
+  {
+    "input_files": [
+      "/project/cq-training-1/project2/teams/team03/data/tokenized_keep_case/unaligned.en"
+    ],
+    "output_files": [
+      "/project/cq-training-1/project2/teams/team03/data/split_01/tokenized_keep_case/unaligned.en"
+    ],
+    "seed": 3252,
+    "split": [
+      90,
+      10
+    ]
+  },
+  {
+    "input_files": [
+      "/project/cq-training-1/project2/teams/team03/data/tokenized_keep_case/unaligned.fr"
+    ],
+    "output_files": [
+      "/project/cq-training-1/project2/teams/team03/data/split_01/tokenized_keep_case/unaligned.fr"
+    ],
+    "seed": 1355,
+    "split": [
+      90,
+      10
+    ]
+  },
+  {
+    "input_files": [
+      "/project/cq-training-1/project2/data/train.lang1",
+      "/project/cq-training-1/project2/teams/team03/data/tokenized_keep_case_no_punc/train.lang2"
+    ],
+    "output_files": [
+      "/project/cq-training-1/project2/teams/team03/data/split_01/tokenized_keep_case_no_punc/train.lang1",
+      "/project/cq-training-1/project2/teams/team03/data/split_01/tokenized_keep_case_no_punc/train.lang2"
+    ],
+    "seed": 4236,
+    "split": [
+      80,
+      10,
+      10
+    ]
+  },
+  {
+    "input_files": [
+      "/project/cq-training-1/project2/teams/team03/data/tokenized_keep_case_no_punc/unaligned.en"
+    ],
+    "output_files": [
+      "/project/cq-training-1/project2/teams/team03/data/split_01/tokenized_keep_case_no_punc/unaligned.en"
+    ],
+    "seed": 3252,
+    "split": [
+      90,
+      10
+    ]
+  },
+  {
+    "input_files": [
+      "/project/cq-training-1/project2/teams/team03/data/tokenized_keep_case_no_punc/unaligned.fr"
+    ],
+    "output_files": [
+      "/project/cq-training-1/project2/teams/team03/data/split_01/tokenized_keep_case_no_punc/unaligned.fr"
+    ],
+    "seed": 1355,
+    "split": [
+      90,
+      10
+    ]
+  }
 ]

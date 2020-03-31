@@ -5,6 +5,7 @@ from pathlib import Path
 import fire
 
 logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 
 def my_numericalizer(data_path):
@@ -20,8 +21,6 @@ def my_numericalizer(data_path):
     Returns:
 
     """
-    logger.basicConfig(level=logging.INFO)
-
     data_path = Path(data_path)
 
     logger.info("Load all tokenized corpora")
