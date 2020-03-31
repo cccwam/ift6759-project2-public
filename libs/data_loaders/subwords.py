@@ -79,13 +79,13 @@ class SubwordDataLoader:
         self.validation_dataset = None
         self.tokenizer_en = None
         self.tokenizer_fr = None
-        self.input_vocab_size = None
-        self.target_vocab_size = None
+        self.vocab_size_source = None
+        self.vocab_size_target = None
         self.validation_steps = 1
 
     def build(self, batch_size, mode='translate'):
         dl_hparams = self.config["data_loader"]["hyper_params"]
-        path_data = dl_hparams["preprocessed_data_path"]
+        path_data = dl_hparams["preprocessed_data_path"]["folder"]
         vocabulary_name_en = dl_hparams["vocabulary_name_en"]
         vocabulary_name_fr = dl_hparams["vocabulary_name_fr"]
 
@@ -137,25 +137,25 @@ class SubwordDataLoader:
 
         self.tokenizer_en = subword_tokenizer(
             vocabulary_name_en, datasets['sentences_all_en_train'])
-        self.input_vocab_size = self.tokenizer_en.vocab_size + 2
+        self.vocab_size_source = self.tokenizer_en.vocab_size + 2
         self.tokenizer_fr = subword_tokenizer(
             vocabulary_name_fr, datasets['sentences_all_fr_train'])
-        self.target_vocab_size = self.tokenizer_fr.vocab_size + 2
+        self.vocab_size_target = self.tokenizer_fr.vocab_size + 2
 
         if mode == 'en':
             # ToDo use the whole dataset
-            # sentences_translation_both_train = tf.data.Dataset.zip(
-            #     (datasets['sentences_all_en_train'].take(30000),
-            #      datasets['sentences_all_en_train'].take(30000)))
-            # sentences_translation_both_validation = tf.data.Dataset.zip(
-            #     (datasets['sentences_all_en_validation'].take(5000),
-            #      datasets['sentences_all_en_validation'].take(5000)))
             sentences_translation_both_train = tf.data.Dataset.zip(
-                (datasets['sentences_all_en_train'],
-                 datasets['sentences_all_en_train']))
+                (datasets['sentences_all_en_train'].take(30000),
+                 datasets['sentences_all_en_train'].take(30000)))
             sentences_translation_both_validation = tf.data.Dataset.zip(
-                (datasets['sentences_all_en_validation'],
-                 datasets['sentences_all_en_validation']))
+                (datasets['sentences_all_en_validation'].take(5000),
+                 datasets['sentences_all_en_validation'].take(5000)))
+            # sentences_translation_both_train = tf.data.Dataset.zip(
+            #     (datasets['sentences_all_en_train'],
+            #      datasets['sentences_all_en_train']))
+            # sentences_translation_both_validation = tf.data.Dataset.zip(
+            #     (datasets['sentences_all_en_validation'],
+            #      datasets['sentences_all_en_validation']))
         elif mode == 'fr':
             sentences_translation_both_train = tf.data.Dataset.zip(
                 (datasets['sentences_all_en_train'],
@@ -187,3 +187,6 @@ class SubwordDataLoader:
         self.valid_dataset = (
             val_preprocessed
             .padded_batch(batch_size, padded_shapes=([None], [None])))
+
+    def get_hparams(self):
+        return f"vocab_size_{self.vocab_size_source},{self.vocab_size_target}"

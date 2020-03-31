@@ -204,14 +204,14 @@ def positional_encoding(position, d_model):
 
 
 class Encoder(tf.keras.layers.Layer):
-    def __init__(self, num_layers, d_model, num_heads, dff, input_vocab_size,
+    def __init__(self, num_layers, d_model, num_heads, dff, vocab_size_source,
                  maximum_position_encoding, rate=0.1):
         super(Encoder, self).__init__()
 
         self.d_model = d_model
         self.num_layers = num_layers
 
-        self.embedding = tf.keras.layers.Embedding(input_vocab_size, d_model)
+        self.embedding = tf.keras.layers.Embedding(vocab_size_source, d_model)
         self.pos_encoding = positional_encoding(maximum_position_encoding,
                                                 self.d_model)
 
@@ -237,14 +237,14 @@ class Encoder(tf.keras.layers.Layer):
 
 
 class Decoder(tf.keras.layers.Layer):
-    def __init__(self, num_layers, d_model, num_heads, dff, target_vocab_size,
+    def __init__(self, num_layers, d_model, num_heads, dff, vocab_size_target,
                  maximum_position_encoding, rate=0.1):
         super(Decoder, self).__init__()
 
         self.d_model = d_model
         self.num_layers = num_layers
 
-        self.embedding = tf.keras.layers.Embedding(target_vocab_size, d_model)
+        self.embedding = tf.keras.layers.Embedding(vocab_size_target, d_model)
         self.pos_encoding = positional_encoding(maximum_position_encoding,
                                                 d_model)
 
@@ -275,17 +275,18 @@ class Decoder(tf.keras.layers.Layer):
 
 
 class Transformer(tf.keras.Model):
-    def __init__(self, num_layers, d_model, num_heads, dff, input_vocab_size,
-                 target_vocab_size, pe_input, pe_target, rate=0.1):
+    def __init__(self, num_layers, d_model, num_heads, dff, vocab_size_source,
+                 vocab_size_target, pe_input, pe_target, rate=0.1,
+                 model_name='Transformer'):
         super(Transformer, self).__init__()
 
         self.encoder = Encoder(num_layers, d_model, num_heads, dff,
-                               input_vocab_size, pe_input, rate)
+                               vocab_size_source, pe_input, rate)
 
         self.decoder = Decoder(num_layers, d_model, num_heads, dff,
-                               target_vocab_size, pe_target, rate)
+                               vocab_size_target, pe_target, rate)
 
-        self.final_layer = tf.keras.layers.Dense(target_vocab_size)
+        self.final_layer = tf.keras.layers.Dense(vocab_size_target)
 
         self.lr = CustomSchedule(d_model)
         self.optimizer = tf.keras.optimizers.Adam(
@@ -296,6 +297,7 @@ class Transformer(tf.keras.Model):
         self.validation_loss = tf.keras.metrics.Mean(name='validation_loss')
         self.validation_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(
             name='validation_accuracy')
+        self.model_name = model_name
 
     def call(self, enc_inp, dec_inp, training, enc_padding_mask, look_ahead_mask,
              dec_padding_mask):
@@ -307,14 +309,14 @@ class Transformer(tf.keras.Model):
             dec_inp, enc_output, training, look_ahead_mask, dec_padding_mask)
 
         final_output = self.final_layer(
-            dec_output)  # (batch_size, tar_seq_len, target_vocab_size)
+            dec_output)  # (batch_size, tar_seq_len, vocab_size_target)
 
         return final_output, attention_weights
 
     def load_checkpoint(self):
         # ToDo customize checkpoint save directory
-        checkpoint_path = os.path.join(os.environ['HOME'],
-                                       "ift6759_p2_checkpoints/translation")
+        checkpoint_path = os.path.join(
+            os.environ['HOME'], f"ift6759_p2_checkpoints/{self.model_name}")
         ckpt = tf.train.Checkpoint(transformer=self,
                                    optimizer=self.optimizer)
         ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_path,
@@ -330,12 +332,7 @@ class Transformer(tf.keras.Model):
             validation_data=None, validation_steps=None, **kwargs):
         ckpt_manager = kwargs['ckpt_manager']
 
-        train_step_signature = [
-            tf.TensorSpec(shape=(None, None), dtype=tf.int64),
-            tf.TensorSpec(shape=(None, None), dtype=tf.int64),
-        ]
-
-        @tf.function(input_signature=train_step_signature)
+        @tf.function(experimental_relax_shapes=True)
         def train_step(inp, tar):
             tar_inp = tar[:, :-1]
             tar_real = tar[:, 1:]
@@ -354,7 +351,7 @@ class Transformer(tf.keras.Model):
             self.train_loss(loss)
             self.train_accuracy(tar_real, predictions)
 
-        @tf.function(input_signature=train_step_signature)
+        @tf.function(experimental_relax_shapes=True)
         def validation_step(inp, tar):
             tar_inp = tar[:, :-1]
             tar_real = tar[:, 1:]
@@ -467,13 +464,14 @@ def builder(config: typing.Dict[typing.AnyStr, typing.Any]):
     num_heads = model_hparams["num_heads"]
     dff = model_hparams["dff"]
     dropout_rate = model_hparams["dropout_rate"]
-    input_vocab_size = model_hparams["input_vocab_size"]
-    target_vocab_size = model_hparams["target_vocab_size"]
+    vocab_size_source = model_hparams["vocab_size_source"]
+    vocab_size_target = model_hparams["vocab_size_target"]
 
     transformer_tl = Transformer(
-        num_layers, d_model, num_heads, dff, input_vocab_size,
-        target_vocab_size, pe_input=input_vocab_size,
-        pe_target=target_vocab_size, rate=dropout_rate)
+        num_layers, d_model, num_heads, dff, vocab_size_source,
+        vocab_size_target, pe_input=vocab_size_source,
+        pe_target=vocab_size_target, rate=dropout_rate,
+        model_name=model_hparams["name"])
 
     if "pretrained_layers" in config["model"]["hyper_params"]:
         print("Entering pretraining procedure")

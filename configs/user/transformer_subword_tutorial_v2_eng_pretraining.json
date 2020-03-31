@@ -11,8 +11,8 @@
       "num_heads": 8,
       "dff": 1024,
       "dropout_rate": 0.2,
-      "input_vocab_size": 8186,
-      "target_vocab_size": 8159
+      "vocab_size_source": 8186,
+      "vocab_size_target": 8159
     },
     "source": ""
   },
@@ -22,10 +22,15 @@
       "name": "SubwordDataLoader"
     },
     "hyper_params": {
-      "preprocessed_data_path": "/project/cq-training-1/project2/teams/team03/data/split_01",
+      "preprocessed_data_path": {
+        "folder": "/project/cq-training-1/project2/teams/team03/data/split_01"
+      },
       "vocabulary_name_en": "/project/cq-training-1/project2/teams/team03/data/subword_tutorial_vocab/subword_vocabulary_en",
       "vocabulary_name_fr": "/project/cq-training-1/project2/teams/team03/data/subword_tutorial_vocab/subword_vocabulary_fr",
-      "mode": "en"
+      "mode": "en",
+      "samples_for_test": 0,
+      "samples_for_valid": 0,
+      "samples_for_train": 0
     }
   },
   "trainer": {

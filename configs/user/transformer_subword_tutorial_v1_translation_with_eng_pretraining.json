@@ -11,14 +11,15 @@
       "num_heads": 4,
       "dff": 512,
       "dropout_rate": 0.2,
-      "input_vocab_size": 8186,
-      "target_vocab_size": 8159,
+      "vocab_size_source": 8186,
+      "vocab_size_target": 8159,
       "pretrained_layers": [
         {
           "model_config_path": "/project/cq-training-1/project2/teams/team03/data/ift6759-project2/configs/user/transformer_subword_tutorial_v1_eng.local.json",
           "model_path": "/project/cq-training-1/project2/teams/team03/data/libs.models.transformer_eng.builder.ee643a82eb334a75ba668d0af6ac3ed2.h5",
-          "layer_name": "TransformerEncoder",
-          "target_layer_name": "TransformerEncoder"
+          "layer_name": "encoder_1",
+          "target_layer_name": "encoder",
+          "input_size": 8186
         }
       ]
     },
@@ -30,10 +31,15 @@
       "name": "SubwordDataLoader"
     },
     "hyper_params": {
-      "preprocessed_data_path": "/project/cq-training-1/project2/teams/team03/data/split_01",
+      "preprocessed_data_path": {
+        "folder": "/project/cq-training-1/project2/teams/team03/data/split_01"
+      },
       "vocabulary_name_en": "/project/cq-training-1/project2/teams/team03/data/subword_tutorial_vocab/subword_vocabulary_en",
       "vocabulary_name_fr": "/project/cq-training-1/project2/teams/team03/data/subword_tutorial_vocab/subword_vocabulary_fr",
-      "mode": "translation"
+      "mode": "translation",
+      "samples_for_test": 0,
+      "samples_for_valid": 0,
+      "samples_for_train": 0
     }
   },
   "trainer": {

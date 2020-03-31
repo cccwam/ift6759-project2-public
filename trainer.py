@@ -88,11 +88,10 @@ def train_models(
     hp_learning_rate = hp.HParam('learning_rate', hp.Discrete(trainer_hyper_params["lr_rate"]))
     hp_patience = hp.HParam('patience', hp.Discrete(trainer_hyper_params["patience"]))
 
-    # ToDo mode= will not work with other data loaders unless they accept **kwags
-    data_loader.build(batch_size=hp_batch_size.domain.values[0], mode=config['data_loader']['hyper_params']['mode'])
-    if hasattr(data_loader, 'input_vocab_size'):
-        config['model']['hyper_params']['input_vocab_size'] = data_loader.input_vocab_size
-        config['model']['hyper_params']['target_vocab_size'] = data_loader.target_vocab_size
+    if 'mode' in config['data_loader']['hyper_params']:
+        data_loader.build(batch_size=hp_batch_size.domain.values[0], mode=config['data_loader']['hyper_params']['mode'])
+    else:
+        data_loader.build(batch_size=hp_batch_size.domain.values[0])
     training_dataset, valid_dataset = data_loader.training_dataset, data_loader.valid_dataset
 
     # Main loop to iterate over all possible hyper parameters
