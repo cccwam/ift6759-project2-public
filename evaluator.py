@@ -22,7 +22,10 @@ def generate_predictions(input_file_path: str, pred_file_path: str):
     from libs import helpers
     from libs.data_loaders.abstract_dataloader import AbstractDataloader
 
-    best_config = 'configs/user/lm_lstm_fr_v1.json'
+    # best_config = 'configs/user/lm_lstm_fr_v1.json'
+    best_config = helpers.load_dict('configs/user/transformer_subword_tutorial_v2_translation_with_eng_pretraining.local.json')
+    # ToDo make sure others don't use this
+    del best_config["model"]["hyper_params"]["pretrained_layers"]
     helpers.validate_user_config(best_config)
 
     # TODO: Edit our AbstractDataloader to support a raw_english_test_set_file_path. Currently it only supports
@@ -35,15 +38,38 @@ def generate_predictions(input_file_path: str, pred_file_path: str):
     test_dataset = data_loader.test_dataset
 
     all_predictions = []
-    for mini_batch in test_dataset.batch(batch_size):
-        # Outputs are mini_batch[:, 1]
-        model_inputs = mini_batch[:, 0]
-        # TODO: Use the dataloader's decode function to get a list of tokens instead of text before calling predict()
-        predictions = model.predict(model_inputs)
-        if isinstance(predictions, tf.Tensor):
-            predictions = predictions.numpy()
-        all_predictions.append(predictions)
-    all_predictions = np.concatenate(all_predictions, axis=0)
+    # ToDo better logic for using alternate data loader
+    if best_config["data_loader"]["definition"]["name"] == 'SubwordDataLoader':
+        for i, eng_sent in enumerate(test_dataset):
+            # ToDo better verbosity
+            print(i)
+            start_token = [data_loader.tokenizer_en.vocab_size]
+            end_token = [data_loader.tokenizer_en.vocab_size + 1]
+            inp_sentence = start_token + \
+                           data_loader.tokenizer_en.encode(eng_sent.numpy()) + \
+                           end_token
+            encoder_input = tf.expand_dims(inp_sentence, 0)
+
+            # as the target is english, the first word to the transformer should be the
+            # english start token.
+            decoder_input = [data_loader.tokenizer_fr.vocab_size]
+            transformer_output = tf.expand_dims(decoder_input, 0)
+            end_token = data_loader.tokenizer_fr.vocab_size + 1
+            result, attention_weights = model.evaluate(
+                encoder_input, transformer_output, end_token)
+            predicted_sentence = data_loader.tokenizer_fr.decode(
+                [j for j in result if j < data_loader.tokenizer_fr.vocab_size])
+            all_predictions.append(predicted_sentence)
+    else:
+        for mini_batch in test_dataset.batch(batch_size):
+            # Outputs are mini_batch[:, 1]
+            model_inputs = mini_batch[:, 0]
+            # TODO: Use the dataloader's decode function to get a list of tokens instead of text before calling predict()
+            predictions = model.predict(model_inputs)
+            if isinstance(predictions, tf.Tensor):
+                predictions = predictions.numpy()
+            all_predictions.append(predictions)
+        all_predictions = np.concatenate(all_predictions, axis=0)
 
     with open(pred_file_path, 'w+') as file_handler:
         for prediction in all_predictions:

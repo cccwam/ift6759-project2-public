@@ -93,6 +93,12 @@ def train_models(
     hp_patience = hp.HParam('patience', hp.Discrete(trainer_hyper_params["patience"]))
 
     data_loader.build(batch_size=hp_batch_size.domain.values[0])
+    # ToDo Better way to differentiate different data loading logic
+    if 'mode' in config['data_loader']['hyper_params']:
+        data_loader.build(batch_size=hp_batch_size.domain.values[0], mode=config['data_loader']['hyper_params']['mode'])
+    else:
+        data_loader.build(batch_size=hp_batch_size.domain.values[0])
+    training_dataset, valid_dataset = data_loader.training_dataset, data_loader.valid_dataset
 
     # Main loop to iterate over all possible hyper parameters
     variation_num = 0
@@ -154,7 +160,13 @@ def train_models(
                     variation_num += 1
 
     # Save final model
-    model.save(helpers.generate_model_name(config))
+    # ToDo Use better logic for models that support .save and those that don't
+    try:
+        model.save(helpers.generate_model_name(config))
+    except NotImplementedError:
+        model.save_weights(
+            helpers.generate_model_name(config).rstrip('.hdf5') + '.h5',
+            save_format='h5')
 
 
 def train_model(
@@ -183,6 +195,28 @@ def train_model(
     :param metrics: list of metrics
     """
 
+    # Multi GPU setup
+    # TODO from merge
+    # ToDo: Is using the model 'lr' attribute a good way to bypass compile_model?
+    # Since the transformer uses a custom learning rate scheduler, the
+    # logic in compile_model does not apply here.
+    fit_kwargs = {}
+    if mirrored_strategy is not None and mirrored_strategy.num_replicas_in_sync > 1:
+        with mirrored_strategy.scope():
+            if hasattr(model, 'lr'):
+                # ToDo better checkpoint handling
+                compiled_model = model
+                fit_kwargs['ckpt_manager'] = compiled_model.load_checkpoint()
+            else:
+                compiled_model = helpers.compile_model(model, learning_rate=learning_rate)
+    else:
+        if hasattr(model, 'lr'):
+            # ToDo better checkpoint handling
+            compiled_model = model
+            fit_kwargs['ckpt_manager'] = compiled_model.load_checkpoint()
+        else:
+            compiled_model = helpers.compile_model(model, learning_rate=learning_rate)
+
     if tensorboard_log_dir is not None:
 
         # For the BLEU score which is computed in a callback on epoch end
@@ -198,6 +232,7 @@ def train_model(
         callbacks = []
 
     # Multi GPU setup
+    # TODO from merge
     if mirrored_strategy is not None and mirrored_strategy.num_replicas_in_sync > 1:
         with mirrored_strategy.scope():
             compiled_model, additional_callbacks = helpers.compile_model(model=model,
@@ -217,7 +252,8 @@ def train_model(
         epochs=epochs,
         callbacks=callbacks,
         validation_data=dataloader.valid_dataset,
-        validation_steps=dataloader.validation_steps
+        validation_steps=dataloader.validation_steps,
+        **fit_kwargs
     )
 
 

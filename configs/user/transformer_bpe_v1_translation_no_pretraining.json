@@ -1,0 +1,77 @@
+{
+  "model": {
+    "definition": {
+      "module": "libs.models.transformer_eng",
+      "name": "builder"
+    },
+    "hyper_params": {
+      "name": "TRANSFORMER_BPE_V1_ENG",
+      "num_layers": 3,
+      "d_model": 128,
+      "num_heads": 4,
+      "dff": 512,
+      "dropout_rate": 0.2
+    },
+    "source": ""
+  },
+  "data_loader": {
+    "definition": {
+      "module": "libs.data_loaders.dataloader_bilingual_subword_level",
+      "name": "BilingualTransformersDataloaderSubword"
+    },
+    "hyper_params": {
+      "preprocessed_data_path": {
+        "folder": "/project/cq-training-1/project2/teams/team03/data/word_level_24032020",
+        "bilingual_corpus_filenames": [
+          "train_lang1_en_tokenized.pickle",
+          "train_lang2_fr_tokenized.pickle"
+        ],
+        "languages": [
+          "BOTH",
+          "BOTH"
+        ],
+        "corpora_filenames": [
+          [
+            "unaligned_en_tokenized.pickle",
+            "unaligned_fr_tokenized.pickle",
+            "train_lang1_en_tokenized.pickle",
+            "train_lang2_fr_tokenized.pickle"
+          ],
+          [
+            "unaligned_en_tokenized.pickle",
+            "unaligned_fr_tokenized.pickle",
+            "train_lang1_en_tokenized.pickle",
+            "train_lang2_fr_tokenized.pickle"
+          ]
+        ]
+      },
+      "pretrained_model_dir_path": "/project/cq-training-1/project2/teams/team03/models/pretokenizers",
+      "tokenizer_algorithm": "ByteLevelBPETokenizer",
+      "tmp_path": "/tmp",
+      "dropout": 0.1,
+      "vocab_size_source": 8000,
+      "seq_length_source": 512,
+      "vocab_size_target": 8000,
+      "seq_length_target": 512,
+      "samples_for_test": 500,
+      "samples_for_valid": 500,
+      "samples_for_train": -1
+    }
+  },
+  "trainer": {
+    "hyper_params": {
+      "lr_rate": [
+        3e-3
+      ],
+      "epochs": [
+        2
+      ],
+      "batch_size": [
+        64
+      ],
+      "patience": [
+        2
+      ]
+    }
+  }
+}
