@@ -93,12 +93,6 @@ def train_models(
     hp_patience = hp.HParam('patience', hp.Discrete(trainer_hyper_params["patience"]))
 
     data_loader.build(batch_size=hp_batch_size.domain.values[0])
-    # ToDo Better way to differentiate different data loading logic
-    if 'mode' in config['data_loader']['hyper_params']:
-        data_loader.build(batch_size=hp_batch_size.domain.values[0], mode=config['data_loader']['hyper_params']['mode'])
-    else:
-        data_loader.build(batch_size=hp_batch_size.domain.values[0])
-    training_dataset, valid_dataset = data_loader.training_dataset, data_loader.valid_dataset
 
     # Main loop to iterate over all possible hyper parameters
     variation_num = 0
@@ -154,6 +148,7 @@ def train_models(
                         epochs=epochs,
                         learning_rate=learning_rate,
                         loss=trainer_hyper_params["loss"],
+                        optimizer=trainer_hyper_params["optimizer"],
                         metrics=trainer_hyper_params["metrics"],
                         patience=patience,
                         checkpoints_path=checkpoints_path
@@ -178,7 +173,8 @@ def train_model(
         mirrored_strategy,
         epochs: int,
         learning_rate: float,
-        loss:str,
+        loss: str,
+        optimizer: str,
         metrics: List[str],
         patience: int,
         checkpoints_path: str
@@ -192,32 +188,12 @@ def train_model(
     :param mirrored_strategy: A tf.distribute.MirroredStrategy on how many GPUs to use during training
     :param epochs: The epochs hyper parameter
     :param learning_rate: The learning rate hyper parameter
+    :param loss: loss function name
+    :param optimizer: optimizer function name
     :param patience: The early stopping patience hyper parameter
     :param checkpoints_path: Path of where to store TensorFlow checkpoints
     :param metrics: list of metrics
     """
-
-    # Multi GPU setup
-    # TODO from merge
-    # ToDo: Is using the model 'lr' attribute a good way to bypass compile_model?
-    # Since the transformer uses a custom learning rate scheduler, the
-    # logic in compile_model does not apply here.
-    fit_kwargs = {}
-    if mirrored_strategy is not None and mirrored_strategy.num_replicas_in_sync > 1:
-        with mirrored_strategy.scope():
-            if hasattr(model, 'lr'):
-                # ToDo better checkpoint handling
-                compiled_model = model
-                fit_kwargs['ckpt_manager'] = compiled_model.load_checkpoint()
-            else:
-                compiled_model = helpers.compile_model(model, learning_rate=learning_rate)
-    else:
-        if hasattr(model, 'lr'):
-            # ToDo better checkpoint handling
-            compiled_model = model
-            fit_kwargs['ckpt_manager'] = compiled_model.load_checkpoint()
-        else:
-            compiled_model = helpers.compile_model(model, learning_rate=learning_rate)
 
     if tensorboard_log_dir is not None:
 
@@ -234,18 +210,19 @@ def train_model(
         callbacks = []
 
     # Multi GPU setup
-    # TODO from merge
     if mirrored_strategy is not None and mirrored_strategy.num_replicas_in_sync > 1:
         with mirrored_strategy.scope():
             compiled_model, additional_callbacks = helpers.compile_model(model=model,
                                                                          dataloader=dataloader,
                                                                          loss=loss,
+                                                                         optimizer=optimizer,
                                                                          metrics=metrics,
                                                                          learning_rate=learning_rate)
     else:
         compiled_model, additional_callbacks = helpers.compile_model(model=model,
                                                                      dataloader=dataloader,
                                                                      loss=loss,
+                                                                     optimizer=optimizer,
                                                                      metrics=metrics,
                                                                      learning_rate=learning_rate)
 
@@ -256,8 +233,7 @@ def train_model(
         epochs=epochs,
         callbacks=callbacks,
         validation_data=dataloader.valid_dataset,
-        validation_steps=dataloader.validation_steps,
-        **fit_kwargs
+        validation_steps=dataloader.validation_steps
     )
 
 

@@ -5,8 +5,8 @@ import typing
 
 import tensorflow as tf
 
-from libs.models import transformer
 from libs.helpers import loss_function_for_transformer as loss_function
+from libs.models import transformer
 
 
 class TransformerLeftLM(tf.keras.Model):

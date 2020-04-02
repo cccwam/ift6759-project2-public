@@ -9,13 +9,14 @@ from libs.losses import mlm_loss
 
 logger = logging.getLogger(__name__)
 
-# TODO adapt to mask language
+
 class BleuIntervalEvaluation(tf.keras.callbacks.Callback):
     def __init__(self, dataloader: AbstractDataloader, interval=1, nsamples=50):
         tf.keras.callbacks.Callback.__init__(self)
 
         self._interval = interval
         self._dataloader: AbstractDataloader = dataloader
+        # noinspection PyProtectedMember
         self._nsamples = min(nsamples, self._dataloader._samples_for_valid)
 
         if hasattr(self._dataloader.valid_dataset_for_callbacks, "_batch_size"):
@@ -54,7 +55,7 @@ class BleuIntervalEvaluation(tf.keras.callbacks.Callback):
             bleu_score = sacrebleu.corpus_bleu(pred_sentence, true_sentence).score
 
             # To display some examples in logs
-            if np.random.randint(low=0, high=self._nsamples // 10) == 0:
+            if np.random.randint(low=0, high=self._nsamples * self._batch_size * 4) == 0:
                 logger.info(f" BLEU Score {bleu_score} for {pred_sentence} - {true_sentence}")
 
             return tf.convert_to_tensor(bleu_score)
@@ -72,6 +73,7 @@ def perplexity(y_true, y_pred):
     """
     cross_entropy = tf.keras.backend.sparse_categorical_crossentropy(y_true, y_pred)
     return tf.keras.backend.exp(cross_entropy)
+
 
 def perplexity_mlm(y_true, y_pred):
     """

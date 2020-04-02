@@ -3,11 +3,11 @@ import os
 import time
 import typing
 
-import tensorflow as tf
 import numpy as np
+import tensorflow as tf
 
-from libs.helpers import loss_function_for_transformer as loss_function
 from libs.helpers import get_online_data_loader
+from libs.helpers import loss_function_for_transformer as loss_function
 from libs.models.helpers import load_pretrained_layers
 
 

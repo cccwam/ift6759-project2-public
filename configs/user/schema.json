@@ -104,6 +104,9 @@
             "loss": {
               "type": "string"
             },
+            "optimizer": {
+              "type": "string"
+            },
             "lr_rate": {
               "type": "array"
             },
@@ -123,6 +126,7 @@
           "required": [
             "lr_rate",
             "loss",
+            "optimizer",
             "metrics",
             "epochs",
             "batch_size",

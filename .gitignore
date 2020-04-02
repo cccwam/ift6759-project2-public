@@ -208,4 +208,4 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-/tools/seq2seq/
+/tools/bert/

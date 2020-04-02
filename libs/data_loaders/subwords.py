@@ -1,12 +1,13 @@
-import os
 import json
+import os
 
 import tensorflow as tf
 import tensorflow_datasets as tfds
+
 TextLineDataset = tf.data.TextLineDataset
 
 
-def subword_tokenizer(vocabulary_file, sentences, target_vocab_size=2**13,
+def subword_tokenizer(vocabulary_file, sentences, target_vocab_size=2 ** 13,
                       force_compute=False):
     """Subword tokenizer for given sentences
 
@@ -185,11 +186,11 @@ class SubwordDataLoader:
 
         self.training_dataset = (
             train_preprocessed
-            .padded_batch(batch_size, padded_shapes=([None], [None]))
-            .prefetch(tf.data.experimental.AUTOTUNE))
+                .padded_batch(batch_size, padded_shapes=([None], [None]))
+                .prefetch(tf.data.experimental.AUTOTUNE))
         self.valid_dataset = (
             val_preprocessed
-            .padded_batch(batch_size, padded_shapes=([None], [None])))
+                .padded_batch(batch_size, padded_shapes=([None], [None])))
 
     def get_hparams(self):
         return f"vocab_size_{self.vocab_size_source},{self.vocab_size_target}"

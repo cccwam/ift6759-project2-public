@@ -2,10 +2,10 @@ import logging
 from abc import ABC
 from typing import List
 
-from tokenizers import (Encoding)
+import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
-import numpy as np
+from tokenizers import (Encoding)
 
 from libs.data_loaders.abstract_dataloader import AbstractBilingualDataloader, AbstractBilingualSeq2SeqDataloader, \
     AbstractBilingualTransformersDataloader
@@ -110,6 +110,8 @@ class BilingualTranslationLMDataloaderSubword(AbstractBilingualDataloaderSubword
         self._padded_shapes = ((self._consolidated_seq, self._consolidated_seq, self._consolidated_seq),
                                self._consolidated_seq)
 
+    # TODO add monolingual corpus
+    # TODO add also label is translation or not
     def _my_generator(self, source_numericalized: List[Encoding], target_numericalized: List[Encoding]):
         for i in range(len(source_numericalized)):
             source = np.zeros([self._seq_length_source], dtype=int)
@@ -135,29 +137,69 @@ class BilingualTranslationLMDataloaderSubword(AbstractBilingualDataloaderSubword
 
             yield ((inputs, attention_masks, tokens_type_ids), output)
 
-
-    def _hook_dataset_post_precessing(self, ds:tf.data.Dataset):
+    def _hook_dataset_post_precessing(self, ds: tf.data.Dataset):
         # 10% nothing to do, 10% random word, 80% mask
         distrib_mask = tfp.distributions.Multinomial(total_count=3, probs=[0.1, 0.1, 0.8])
 
+        # Insipiration from https://www.tensorflow.org/guide/data#applying_arbitrary_python_logic
+        def _apply_mask_eager(inputs, output):
+            input_shape = tf.shape(inputs)
+            masks = distrib_mask.sample(input_shape, seed=42)  # TODO set seed
+            masks = tf.cast(masks, dtype=tf.int32)
+            inputs_masked = tf.where(tf.equal(masks[:, 2], 1), inputs, tf.zeros(input_shape, dtype=tf.int32))
+            output_masked = tf.where(tf.equal(masks[:, 0], 1), output, tf.zeros(input_shape, dtype=tf.int32))
+            return inputs_masked, output_masked
+
         def apply_mask(x, y):
             inputs, attention_masks, tokens_type_ids = x
-            input_shape = tf.shape(inputs)
-            masks = distrib_mask.sample(input_shape, seed=42) # TODO set seed
-            print(masks)
-            masks = tf.cast(masks, dtype=tf.int32)
-
-            inputs_masked = tf.where(tf.equal(masks[:, 2], 1), inputs, tf.zeros(input_shape, dtype=tf.int32))
-            y_masked = tf.where(tf.equal(masks[:, 0], 1), y, tf.zeros(input_shape, dtype=tf.int32))
+            inputs_masked, y_masked = tf.py_function(_apply_mask_eager, [inputs, y], [tf.int32, tf.int32])
 
             return (inputs_masked, attention_masks, tokens_type_ids), y_masked
 
         return ds.map(map_func=apply_mask)
 
+    def decode(self, tokens: List[int]):
+        return self._decode(tokens=tokens, tokenizer=self._tokenizer_target)
+
+
+class BilingualTranslationDataloaderSubword(AbstractBilingualDataloaderSubword):
+    """
+        TODO
+        Dataset for bilingual corpora at subword level generating input sentence, target sentence
+        and the shifted target sequence
+
+    """
+
+    def __init__(self, config: dict, raw_english_test_set_file_path: str):
+        AbstractBilingualDataloaderSubword.__init__(self, config=config,
+                                                    raw_english_test_set_file_path=raw_english_test_set_file_path)
+        self._output_types = ((tf.int32, tf.int32, tf.int32),
+                              tf.int32)
+        self._output_shapes = ((tf.TensorShape([None]), tf.TensorShape([None]), tf.TensorShape([None])),
+                               tf.TensorShape([None]))
+        self._consolidated_seq = self._seq_length_source + self._seq_length_target
+        self._padded_shapes = ((self._consolidated_seq, self._consolidated_seq, self._consolidated_seq),
+                               self._consolidated_seq)
+
+    def _my_generator(self, source_numericalized: List[Encoding], target_numericalized: List[Encoding]):
+        for i in range(len(source_numericalized)):
+            source = np.zeros([self._consolidated_seq], dtype=int)
+            source[:len(source_numericalized[i].ids)] = source_numericalized[i].ids
+
+            target = np.zeros([self._consolidated_seq], dtype=int)
+            target_start_idx = self._seq_length_source
+            target_end_idx = target_start_idx + len(target_numericalized[i].ids)
+            target[target_start_idx:target_end_idx] = target_numericalized[i].ids
+
+            attention_masks = np.zeros([self._consolidated_seq], dtype=int)
+            attention_masks[:len(source_numericalized[i].ids)] = 1
+
+            tokens_type_ids = tf.zeros([self._consolidated_seq], dtype=tf.int32)
+
+            yield ((source, attention_masks, tokens_type_ids), target)
 
     def decode(self, tokens: List[int]):
         return self._decode(tokens=tokens[self._seq_length_source:], tokenizer=self._tokenizer_target)
-
 
 
 class BilingualTransformersDataloaderSubword(AbstractBilingualDataloaderSubword,
@@ -177,5 +219,3 @@ class BilingualTransformersDataloaderSubword(AbstractBilingualDataloaderSubword,
             source = source_numericalized[i].ids
             target = target_numericalized[i].ids
             yield source, target
-
-

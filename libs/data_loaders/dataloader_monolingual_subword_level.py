@@ -2,15 +2,14 @@ import logging
 from abc import ABC
 from typing import List
 
+import tensorflow as tf
+import tensorflow_probability as tfp
 from tokenizers import (Encoding)
 
-from libs.data_loaders import AbstractDataloader
 from libs.data_loaders.abstract_dataloader import AbstractMonolingualDataloader, \
     AbstractMonolingualCausalLMDataloader, \
     AbstractMonolingualTransformersLMDataloader
 from libs.data_loaders.abstract_dataloader_huggingfaces import AbstractHuggingFacesTokenizer
-import tensorflow as tf
-import tensorflow_probability as tfp
 
 logger = logging.getLogger(__name__)
 
@@ -82,8 +81,9 @@ class MonolingualCausalLMDataloaderSubword(AbstractMonolingualDataloaderSubword,
             output = inputs[1:]
             yield (inputs, output)
 
+
 class MonolingualMaskLMDataloaderSubword(AbstractMonolingualDataloaderSubword,
-                                           AbstractMonolingualCausalLMDataloader):
+                                         AbstractMonolingualCausalLMDataloader):
     """
         Dataset for monolingual corpora at subword level generating input sentence and the shifted input sequence
 
@@ -101,18 +101,24 @@ class MonolingualMaskLMDataloaderSubword(AbstractMonolingualDataloaderSubword,
             # TODO add attention masks
             yield (inputs, inputs)
 
-
-    def _hook_dataset_post_precessing(self, ds:tf.data.Dataset):
+    # TODO refactoring because same as bilingual
+    def _hook_dataset_post_precessing(self, ds: tf.data.Dataset):
         # 10% nothing to do, 10% random word, 80% mask
         distrib_mask = tfp.distributions.Multinomial(total_count=3, probs=[0.1, 0.1, 0.8])
 
-        def apply_mask(x, y):
-            input_shape = tf.shape(x)
-            masks = distrib_mask.sample(input_shape, seed=42) # TODO set seed
-            x_masked = tf.where(tf.equal(masks[:, 2], 1), x, tf.zeros(input_shape))
-            y_masked = tf.where(tf.equal(masks[:, 0], 1), y, tf.zeros(input_shape))
+        # Insipiration from https://www.tensorflow.org/guide/data#applying_arbitrary_python_logic
+        def _apply_mask_eager(inputs, output):
+            input_shape = tf.shape(inputs)
+            masks = distrib_mask.sample(input_shape, seed=42)  # TODO set seed
+            masks = tf.cast(masks, dtype=tf.int32)
+            inputs_masked = tf.where(tf.equal(masks[:, 2], 1), inputs, tf.zeros(input_shape, dtype=tf.int32))
+            output_masked = tf.where(tf.equal(masks[:, 0], 1), output, tf.zeros(input_shape, dtype=tf.int32))
+            return inputs_masked, output_masked
 
-            return x_masked, y_masked
+        def apply_mask(x, y):
+            inputs_masked, y_masked = tf.py_function(_apply_mask_eager, [x, y], [tf.int32, tf.int32])
+
+            return inputs_masked, y_masked
 
         return ds.map(map_func=apply_mask)
 
@@ -132,5 +138,3 @@ class MonolingualTransformersLMDataloaderSubword(AbstractMonolingualDataloaderSu
     def _my_generator(self, source_numericalized: List[Encoding]):
         for i in range(len(source_numericalized)):
             yield source_numericalized[i].ids
-
-

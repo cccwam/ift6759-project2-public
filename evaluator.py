@@ -23,7 +23,8 @@ def generate_predictions(input_file_path: str, pred_file_path: str):
     from libs.data_loaders.abstract_dataloader import AbstractDataloader
 
     # best_config = 'configs/user/lm_lstm_fr_v1.json'
-    best_config = helpers.load_dict('configs/user/transformer_subword_tutorial_v2_translation_with_eng_pretraining.local.json')
+    best_config = helpers.load_dict(
+        'configs/user/transformer_subword_tutorial_v2_translation_with_eng_pretraining.local.json')
     # ToDo make sure others don't use this
     del best_config["model"]["hyper_params"]["pretrained_layers"]
     helpers.validate_user_config(best_config)

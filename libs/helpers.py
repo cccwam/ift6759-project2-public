@@ -161,14 +161,18 @@ def get_tensorboard_experiment_id(experiment_name, tensorboard_tracking_folder: 
     return tensorboard_tracking_folder / model_sub_folder
 
 
-def compile_model(model, learning_rate,
+def compile_model(model,
+                  learning_rate: float,
                   dataloader: AbstractDataloader,
-                  loss:str,
+                  loss: str,
+                  optimizer: str,
                   metrics: List[str] = None):
     """
         Helper function to compile a new model at each variation of the experiment
     :param learning_rate:
     :param dataloader: dataloader
+    :param loss: loss function name
+    :param optimizer: optimizer function name
     :param model: model to be compiled
     :param metrics: list of metrics
     :return: compiled model and additional callbacks (for metrics which are too slow to run on training set)
@@ -186,6 +190,11 @@ def compile_model(model, learning_rate,
         "mlm_loss": mlm_loss
     }
 
+    mapping_optimizer = {
+        "adam": tf.keras.optimizers.Adam(learning_rate=learning_rate),
+        "rmsprop": tf.keras.optimizers.RMSprop(learning_rate=learning_rate)
+    }
+
     metric_funcs, additional_callbacks = [], []
     for metric in metrics:
         if metric == "bleu":
@@ -195,11 +204,8 @@ def compile_model(model, learning_rate,
         else:
             metric_funcs += [mapping_metrics[metric]]
 
-    optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
+    optimizer = mapping_optimizer[optimizer]
 
-    # TODO to review this
-    #   Likely that we should have more than 1 loss
-    #   Also we should be able to optimizer
     model.compile(
         optimizer=optimizer,
         loss=mapping_loss[loss],

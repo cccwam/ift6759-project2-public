@@ -2,17 +2,13 @@ import logging
 import typing
 
 import tensorflow as tf
-
-from libs.models.helpers import load_pretrained_layers
-from transformers import BertConfig, TFBertModel, TFBertForMaskedLM
+from transformers import BertConfig, TFBertForMaskedLM
 
 logger = logging.getLogger(__name__)
 
 
-
 def builder(
         config: typing.Dict[typing.AnyStr, typing.Any]):
-
     dl_hparams = config["data_loader"]["hyper_params"]
     model_hparams = config["model"]["hyper_params"]
 
@@ -25,7 +21,6 @@ def builder(
     assert vocab_size_source == vocab_size_target, "vocab_size_source and vocab_size_target must be the same for BERT"
 
     consolidated_seq_length = seq_length_source + seq_length_target
-
 
     # For the config see https://github.com/google-research/bert
     name = model_hparams["name"]
@@ -42,13 +37,12 @@ def builder(
     # Initializing a model from the configuration
     bert_model = TFBertForMaskedLM(configuration)
 
-
     token_inputs = tf.keras.layers.Input(shape=(consolidated_seq_length,), dtype=tf.int32,
                                          name="BERT_token_inputs")
     attention_masks = tf.keras.layers.Input(shape=(consolidated_seq_length,), dtype=tf.int32,
-                                         name="BERT_attention_masks")
+                                            name="BERT_attention_masks")
     token_type_ids = tf.keras.layers.Input(shape=(consolidated_seq_length,), dtype=tf.int32,
-                                         name="BERT_token_token_type_ids")
+                                           name="BERT_token_token_type_ids")
     outputs = bert_model([token_inputs, attention_masks, token_type_ids])
 
     model = tf.keras.Model([token_inputs, attention_masks, token_type_ids], outputs, name=name)
