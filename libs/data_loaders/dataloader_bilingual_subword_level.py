@@ -3,6 +3,9 @@ from abc import ABC
 from typing import List
 
 from tokenizers import (Encoding)
+import tensorflow as tf
+import tensorflow_probability as tfp
+import numpy as np
 
 from libs.data_loaders.abstract_dataloader import AbstractBilingualDataloader, AbstractBilingualSeq2SeqDataloader, \
     AbstractBilingualTransformersDataloader
@@ -88,6 +91,75 @@ class BilingualCausalLMDataloaderSubword(AbstractBilingualDataloaderSubword,
             yield (inputs, output)
 
 
+class BilingualTranslationLMDataloaderSubword(AbstractBilingualDataloaderSubword):
+    """
+        TODO
+        Dataset for bilingual corpora at subword level generating input sentence, target sentence
+        and the shifted target sequence
+
+    """
+
+    def __init__(self, config: dict, raw_english_test_set_file_path: str):
+        AbstractBilingualDataloaderSubword.__init__(self, config=config,
+                                                    raw_english_test_set_file_path=raw_english_test_set_file_path)
+        self._output_types = ((tf.int32, tf.int32, tf.int32),
+                              tf.int32)
+        self._output_shapes = ((tf.TensorShape([None]), tf.TensorShape([None]), tf.TensorShape([None])),
+                               tf.TensorShape([None]))
+        self._consolidated_seq = self._seq_length_source + self._seq_length_target
+        self._padded_shapes = ((self._consolidated_seq, self._consolidated_seq, self._consolidated_seq),
+                               self._consolidated_seq)
+
+    def _my_generator(self, source_numericalized: List[Encoding], target_numericalized: List[Encoding]):
+        for i in range(len(source_numericalized)):
+            source = np.zeros([self._seq_length_source], dtype=int)
+            source[:len(source_numericalized[i].ids)] = source_numericalized[i].ids
+
+            target = np.zeros([self._seq_length_target], dtype=int)
+            target[:len(target_numericalized[i].ids)] = target_numericalized[i].ids
+
+            attention_masks = np.zeros([self._consolidated_seq], dtype=int)
+            attention_masks[:len(source_numericalized[i].ids)] = 1
+
+            sent_2_start_idx = len(source_numericalized[i].ids)
+            sent_2_end_idx = sent_2_start_idx + len(target_numericalized[i].ids)
+            attention_masks[sent_2_start_idx:sent_2_end_idx] = 1
+
+            tokens_type_ids = tf.concat(
+                [tf.zeros([self._seq_length_source], dtype=tf.int32),
+                 tf.ones([self._seq_length_target], dtype=tf.int32)]
+                , axis=-1)
+
+            inputs = tf.concat([source, target], axis=-1)
+            output = inputs
+
+            yield ((inputs, attention_masks, tokens_type_ids), output)
+
+
+    def _hook_dataset_post_precessing(self, ds:tf.data.Dataset):
+        # 10% nothing to do, 10% random word, 80% mask
+        distrib_mask = tfp.distributions.Multinomial(total_count=3, probs=[0.1, 0.1, 0.8])
+
+        def apply_mask(x, y):
+            inputs, attention_masks, tokens_type_ids = x
+            input_shape = tf.shape(inputs)
+            masks = distrib_mask.sample(input_shape, seed=42) # TODO set seed
+            print(masks)
+            masks = tf.cast(masks, dtype=tf.int32)
+
+            inputs_masked = tf.where(tf.equal(masks[:, 2], 1), inputs, tf.zeros(input_shape, dtype=tf.int32))
+            y_masked = tf.where(tf.equal(masks[:, 0], 1), y, tf.zeros(input_shape, dtype=tf.int32))
+
+            return (inputs_masked, attention_masks, tokens_type_ids), y_masked
+
+        return ds.map(map_func=apply_mask)
+
+
+    def decode(self, tokens: List[int]):
+        return self._decode(tokens=tokens[self._seq_length_source:], tokenizer=self._tokenizer_target)
+
+
+
 class BilingualTransformersDataloaderSubword(AbstractBilingualDataloaderSubword,
                                              AbstractBilingualTransformersDataloader):
     """
@@ -105,3 +177,5 @@ class BilingualTransformersDataloaderSubword(AbstractBilingualDataloaderSubword,
             source = source_numericalized[i].ids
             target = target_numericalized[i].ids
             yield source, target
+
+

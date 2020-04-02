@@ -43,7 +43,10 @@ class AbstractDataloader:
     def decode(self, tokens):
         raise NotImplementedError
 
-    def _build_all_dataset(self, ds: tf.data.Dataset, batch_size: int):
+    def _build_all_dataset(self, ds: tf.data.Dataset, ds_without_modification: tf.data.Dataset, batch_size: int):
+        ds_without_modification = ds_without_modification.skip(int(self._samples_for_test / batch_size))
+        self.valid_dataset_for_callbacks = ds_without_modification.take(int(self._samples_for_valid / batch_size))
+
         self.test_dataset = ds.take(int(self._samples_for_test / batch_size))
         ds = ds.skip(int(self._samples_for_test / batch_size))
         self.valid_dataset = ds.take(int(self._samples_for_valid / batch_size))
@@ -96,24 +99,29 @@ class AbstractMonolingualDataloader(AbstractDataloader, ABC):
         assert self._output_shapes is not None, "Missing _output_shapes"
         assert self._padded_shapes is not None, "Missing _padded_shapes"
 
-        ds = tf.data.Dataset.from_generator(my_gen,
+        ds_without_modification = tf.data.Dataset.from_generator(my_gen,
                                             output_types=self._output_types,
                                             output_shapes=self._output_shapes)
-        ds = self._hook_dataset_post_precessing(ds=ds)
+        ds = self._hook_dataset_post_precessing(ds=ds_without_modification)
 
         ds = ds.padded_batch(batch_size=batch_size,
                              padded_shapes=self._padded_shapes,
                              drop_remainder=True)
         ds = ds.prefetch(tf.data.experimental.AUTOTUNE)
 
-        self._build_all_dataset(ds, batch_size)
+        ds_without_modification = ds_without_modification.padded_batch(batch_size=batch_size,
+                             padded_shapes=self._padded_shapes,
+                             drop_remainder=True)
+        ds_without_modification = ds_without_modification.prefetch(tf.data.experimental.AUTOTUNE)
+
+        self._build_all_dataset(ds, ds_without_modification, batch_size)
 
 
 class AbstractMonolingualCausalLMDataloader:
 
     # noinspection PyUnusedLocal
     def __init__(self, config: dict):
-        self._output_types = (tf.float32, tf.float32)
+        self._output_types = (tf.float32, tf.float32) # TODO check if it works with int32
         self._output_shapes = (tf.TensorShape([None]),
                                tf.TensorShape([None]))
         self._padded_shapes = (self._seq_length, self._seq_length)
@@ -157,6 +165,7 @@ class AbstractBilingualDataloader(AbstractDataloader, ABC):
 
     def build(self,
               batch_size):
+
         my_gen = partial(self._my_generator,
                          self._en_numericalized,
                          self._fr_numericalized)
@@ -165,17 +174,22 @@ class AbstractBilingualDataloader(AbstractDataloader, ABC):
         assert self._output_shapes is not None, "Missing _output_shapes"
         assert self._padded_shapes is not None, "Missing _padded_shapes"
 
-        ds = tf.data.Dataset.from_generator(my_gen,
+        ds_without_modification = tf.data.Dataset.from_generator(my_gen,
                                             output_types=self._output_types,
                                             output_shapes=self._output_shapes)
-        ds = self._hook_dataset_post_precessing(ds=ds)
+        ds = self._hook_dataset_post_precessing(ds=ds_without_modification)
 
         ds = ds.padded_batch(batch_size=batch_size,
                              padded_shapes=self._padded_shapes,
                              drop_remainder=True)
         ds = ds.prefetch(tf.data.experimental.AUTOTUNE)
 
-        self._build_all_dataset(ds, batch_size)
+        ds_without_modification = ds_without_modification.padded_batch(batch_size=batch_size,
+                             padded_shapes=self._padded_shapes,
+                             drop_remainder=True)
+        ds_without_modification = ds_without_modification.prefetch(tf.data.experimental.AUTOTUNE)
+
+        self._build_all_dataset(ds, ds_without_modification, batch_size)
 
 
 class AbstractBilingualSeq2SeqDataloader:

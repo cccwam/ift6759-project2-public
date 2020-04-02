@@ -4,10 +4,13 @@ from typing import List
 
 from tokenizers import (Encoding)
 
+from libs.data_loaders import AbstractDataloader
 from libs.data_loaders.abstract_dataloader import AbstractMonolingualDataloader, \
     AbstractMonolingualCausalLMDataloader, \
     AbstractMonolingualTransformersLMDataloader
 from libs.data_loaders.abstract_dataloader_huggingfaces import AbstractHuggingFacesTokenizer
+import tensorflow as tf
+import tensorflow_probability as tfp
 
 logger = logging.getLogger(__name__)
 
@@ -79,6 +82,40 @@ class MonolingualCausalLMDataloaderSubword(AbstractMonolingualDataloaderSubword,
             output = inputs[1:]
             yield (inputs, output)
 
+class MonolingualMaskLMDataloaderSubword(AbstractMonolingualDataloaderSubword,
+                                           AbstractMonolingualCausalLMDataloader):
+    """
+        Dataset for monolingual corpora at subword level generating input sentence and the shifted input sequence
+
+    """
+
+    def __init__(self, config: dict, raw_english_test_set_file_path: str):
+        AbstractMonolingualDataloaderSubword.__init__(self, config=config,
+                                                      raw_english_test_set_file_path=raw_english_test_set_file_path)
+        AbstractMonolingualCausalLMDataloader.__init__(self, config=config)
+
+    def _my_generator(self, source_numericalized: List[Encoding]):
+        for i in range(len(source_numericalized)):
+            inputs = source_numericalized[i].ids
+
+            # TODO add attention masks
+            yield (inputs, inputs)
+
+
+    def _hook_dataset_post_precessing(self, ds:tf.data.Dataset):
+        # 10% nothing to do, 10% random word, 80% mask
+        distrib_mask = tfp.distributions.Multinomial(total_count=3, probs=[0.1, 0.1, 0.8])
+
+        def apply_mask(x, y):
+            input_shape = tf.shape(x)
+            masks = distrib_mask.sample(input_shape, seed=42) # TODO set seed
+            x_masked = tf.where(tf.equal(masks[:, 2], 1), x, tf.zeros(input_shape))
+            y_masked = tf.where(tf.equal(masks[:, 0], 1), y, tf.zeros(input_shape))
+
+            return x_masked, y_masked
+
+        return ds.map(map_func=apply_mask)
+
 
 class MonolingualTransformersLMDataloaderSubword(AbstractMonolingualDataloaderSubword,
                                                  AbstractMonolingualTransformersLMDataloader):
@@ -95,3 +132,5 @@ class MonolingualTransformersLMDataloaderSubword(AbstractMonolingualDataloaderSu
     def _my_generator(self, source_numericalized: List[Encoding]):
         for i in range(len(source_numericalized)):
             yield source_numericalized[i].ids
+
+

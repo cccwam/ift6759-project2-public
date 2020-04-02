@@ -5,28 +5,29 @@ import sacrebleu
 import tensorflow as tf
 
 from libs.data_loaders import AbstractDataloader
+from libs.losses import mlm_loss
 
 logger = logging.getLogger(__name__)
 
-
+# TODO adapt to mask language
 class BleuIntervalEvaluation(tf.keras.callbacks.Callback):
-    def __init__(self, dataloader: AbstractDataloader, interval=1, nsamples=250):
+    def __init__(self, dataloader: AbstractDataloader, interval=1, nsamples=50):
         tf.keras.callbacks.Callback.__init__(self)
 
         self._interval = interval
         self._dataloader: AbstractDataloader = dataloader
-        self._nsamples = nsamples
+        self._nsamples = min(nsamples, self._dataloader._samples_for_valid)
 
-        if hasattr(self._dataloader.valid_dataset, "_batch_size"):
+        if hasattr(self._dataloader.valid_dataset_for_callbacks, "_batch_size"):
             # noinspection PyProtectedMember
-            self._batch_size = self._dataloader.valid_dataset._batch_size
+            self._batch_size = self._dataloader.valid_dataset_for_callbacks._batch_size
         else:
             self._batch_size = 1
 
     def on_epoch_end(self, epoch, logs=None):
         if epoch % self._interval == 0:
             score = []
-            for x, y_true in self._dataloader.valid_dataset.take(self._nsamples // self._batch_size):
+            for x, y_true in self._dataloader.valid_dataset_for_callbacks.take(self._nsamples // self._batch_size):
                 y_pred = self.model.predict(x, verbose=0)
                 score += [self.bleu_graph_mode(y_true, y_pred)]
             score = np.mean(score)
@@ -54,7 +55,7 @@ class BleuIntervalEvaluation(tf.keras.callbacks.Callback):
 
             # To display some examples in logs
             if np.random.randint(low=0, high=self._nsamples // 10) == 0:
-                logger.debug(f" BLEU Score {bleu_score} for {pred_sentence} - {true_sentence}")
+                logger.info(f" BLEU Score {bleu_score} for {pred_sentence} - {true_sentence}")
 
             return tf.convert_to_tensor(bleu_score)
 
@@ -70,4 +71,11 @@ def perplexity(y_true, y_pred):
     https://github.com/keras-team/keras/issues/8267
     """
     cross_entropy = tf.keras.backend.sparse_categorical_crossentropy(y_true, y_pred)
+    return tf.keras.backend.exp(cross_entropy)
+
+def perplexity_mlm(y_true, y_pred):
+    """
+    The perplexity metric for mask language model
+    """
+    cross_entropy = mlm_loss(y_true, y_pred)
     return tf.keras.backend.exp(cross_entropy)

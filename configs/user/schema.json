@@ -101,6 +101,9 @@
         "hyper_params": {
           "type": "object",
           "properties": {
+            "loss": {
+              "type": "string"
+            },
             "lr_rate": {
               "type": "array"
             },
@@ -119,6 +122,7 @@
           },
           "required": [
             "lr_rate",
+            "loss",
             "metrics",
             "epochs",
             "batch_size",

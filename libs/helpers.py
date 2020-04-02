@@ -10,7 +10,8 @@ import jsonschema
 import tensorflow as tf
 
 from libs.data_loaders import AbstractDataloader
-from libs.metrics import perplexity, BleuIntervalEvaluation
+from libs.losses import mlm_loss
+from libs.metrics import perplexity, BleuIntervalEvaluation, perplexity_mlm
 
 logger = logging.getLogger(__name__)
 
@@ -160,7 +161,10 @@ def get_tensorboard_experiment_id(experiment_name, tensorboard_tracking_folder: 
     return tensorboard_tracking_folder / model_sub_folder
 
 
-def compile_model(model, learning_rate, dataloader: AbstractDataloader, metrics: List[str] = None):
+def compile_model(model, learning_rate,
+                  dataloader: AbstractDataloader,
+                  loss:str,
+                  metrics: List[str] = None):
     """
         Helper function to compile a new model at each variation of the experiment
     :param learning_rate:
@@ -170,10 +174,16 @@ def compile_model(model, learning_rate, dataloader: AbstractDataloader, metrics:
     :return: compiled model and additional callbacks (for metrics which are too slow to run on training set)
     """
 
-    mapping = {
+    mapping_metrics = {
         "perplexity": perplexity,  # For language model task
+        "perplexity_mlm": perplexity_mlm,
         #        "bleu_eager_mode": bleu_eager_mode,  # For translation task but it's too slow to run during training
         "sparse_accuracy": tf.keras.metrics.SparseCategoricalAccuracy(),  # Generic for classification
+    }
+
+    mapping_loss = {
+        "sparse_categorical_cross_entropy": tf.keras.losses.SparseCategoricalCrossentropy(),
+        "mlm_loss": mlm_loss
     }
 
     metric_funcs, additional_callbacks = [], []
@@ -183,7 +193,7 @@ def compile_model(model, learning_rate, dataloader: AbstractDataloader, metrics:
             #  To be called only on end of epoch because it's too slow
             additional_callbacks += [BleuIntervalEvaluation(dataloader=dataloader)]
         else:
-            metric_funcs += [mapping[metric]]
+            metric_funcs += [mapping_metrics[metric]]
 
     optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
 
@@ -192,7 +202,7 @@ def compile_model(model, learning_rate, dataloader: AbstractDataloader, metrics:
     #   Also we should be able to optimizer
     model.compile(
         optimizer=optimizer,
-        loss=tf.keras.losses.SparseCategoricalCrossentropy(),
+        loss=mapping_loss[loss],
         metrics=metric_funcs
     )
     return model, additional_callbacks

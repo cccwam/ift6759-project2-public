@@ -8,6 +8,7 @@ pytest-cov
 fire
 
 tensorflow_gpu==2.0.0 # Keep fixed
+tensorflow-probability==0.8.0 # For TF2.0.0
 pandas
 jsonschema
 tqdm
@@ -21,11 +22,13 @@ scikit-learn
 
 spacy==2.2.2 # Version from Helios
 
-# Note: Install as follow: "pip install tokenizers==0.6.0 transformers=2.5.1"
-#   This forces the use of tokenizers 0.6.0 during installation instead of 0.5.1
+#   Rust compiler must be install before
 #   See bug https://github.com/huggingface/transformers/issues/2831
-tokenizers==0.6.0
-transformers==2.5.1
+#   For Mac install via cli:
+#       xcode-select --install
+#       curl https://sh.rustup.rs -sSf | sh
+tokenizers==0.5.2
+transformers==2.7.0
 
 sacrebleu==1.4.3
 

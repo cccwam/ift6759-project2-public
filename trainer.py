@@ -153,6 +153,7 @@ def train_models(
                         mirrored_strategy=mirrored_strategy,
                         epochs=epochs,
                         learning_rate=learning_rate,
+                        loss=trainer_hyper_params["loss"],
                         metrics=trainer_hyper_params["metrics"],
                         patience=patience,
                         checkpoints_path=checkpoints_path
@@ -177,6 +178,7 @@ def train_model(
         mirrored_strategy,
         epochs: int,
         learning_rate: float,
+        loss:str,
         metrics: List[str],
         patience: int,
         checkpoints_path: str
@@ -237,11 +239,13 @@ def train_model(
         with mirrored_strategy.scope():
             compiled_model, additional_callbacks = helpers.compile_model(model=model,
                                                                          dataloader=dataloader,
+                                                                         loss=loss,
                                                                          metrics=metrics,
                                                                          learning_rate=learning_rate)
     else:
         compiled_model, additional_callbacks = helpers.compile_model(model=model,
                                                                      dataloader=dataloader,
+                                                                     loss=loss,
                                                                      metrics=metrics,
                                                                      learning_rate=learning_rate)
 
