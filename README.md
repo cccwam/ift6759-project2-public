@@ -58,7 +58,7 @@ contains the following configurable properties:
 
 ## Sbatch job example
 
-The the folder tools, there's a file called sbatch_template.sh. 
+In the folder tools, there's a file called sbatch_template.sh. 
 It is currently set up to run a training of our best model configuration. 
 Simply run `sbatch sbatch_template.sh` to launch the training job.
 

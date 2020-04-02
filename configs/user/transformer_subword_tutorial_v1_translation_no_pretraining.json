@@ -12,7 +12,7 @@
       "dff": 512,
       "dropout_rate": 0.2
     },
-    "source": ""
+    "source": "libs.models.transformer.builder.a6b3dadfaf7244e1a92042b4dfa9e1.h5"
   },
   "data_loader": {
     "definition": {
@@ -39,7 +39,7 @@
         3e-3
       ],
       "epochs": [
-        10
+        20
       ],
       "batch_size": [
         64

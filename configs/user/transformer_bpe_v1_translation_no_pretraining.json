@@ -5,7 +5,7 @@
       "name": "builder"
     },
     "hyper_params": {
-      "name": "TRANSFORMER_BPE_V1_ENG",
+      "name": "TRANSFORMER_BPE_V1_TRANSLATION_NO_PRETRAINING",
       "num_layers": 3,
       "d_model": 128,
       "num_heads": 4,
@@ -64,7 +64,7 @@
         3e-3
       ],
       "epochs": [
-        2
+        6
       ],
       "batch_size": [
         64

@@ -23,9 +23,12 @@ def generate_predictions(input_file_path: str, pred_file_path: str):
     from libs.data_loaders.abstract_dataloader import AbstractDataloader
 
     # best_config = 'configs/user/lm_lstm_fr_v1.json'
-    best_config = helpers.load_dict('configs/user/transformer_subword_tutorial_v2_translation_with_eng_pretraining.local.json')
+    best_config_file = 'configs/user/transformer_subword_tutorial_v1_translation_with_eng_pretraining.local.json'
+    print(f"Using best config file: {best_config_file}")
+    best_config = helpers.load_dict(best_config_file)
     # ToDo make sure others don't use this
-    del best_config["model"]["hyper_params"]["pretrained_layers"]
+    if 'pretrained_layers' in best_config["model"]["hyper_params"]:
+        del best_config["model"]["hyper_params"]["pretrained_layers"]
     helpers.validate_user_config(best_config)
 
     # TODO: Edit our AbstractDataloader to support a raw_english_test_set_file_path. Currently it only supports
