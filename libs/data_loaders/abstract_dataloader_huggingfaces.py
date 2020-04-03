@@ -6,6 +6,8 @@ from abc import ABC
 from pathlib import Path
 from typing import List
 
+import tensorflow as tf
+import tensorflow_probability as tfp
 from tokenizers.implementations import BaseTokenizer
 
 from libs.data_loaders import AbstractDataloader
@@ -28,7 +30,6 @@ class AbstractHuggingFacesTokenizer(AbstractDataloader, ABC):
         self._unk = "<unk>"
 
         self._special_tokens = [self._pad, self._mask, self._bos, self._eos, self._unk]
-
 
         self._folder: Path = Path(self._preprocessed_data_path["folder"])
         assert self._folder.exists()
@@ -67,7 +68,7 @@ class AbstractHuggingFacesTokenizer(AbstractDataloader, ABC):
             # Huggingfaces requires a file to train, so we need to save all sentences into a file
             tmp.writelines(corpora)
             tokenizer.train(files=[tmp.name], show_progress=True, vocab_size=vocab_size,
-                            special_tokens= self._special_tokens)
+                            special_tokens=self._special_tokens)
 
         logger.info("Compute the max length")
 
@@ -161,12 +162,13 @@ class AbstractHuggingFacesTokenizer(AbstractDataloader, ABC):
 
     def _add_bos_eos(self, s: List[str]):
         return self._bos + " ".join(s) + self._eos
-#        return self._bos + " " + " ".join(s) + " " + self._eos
 
+    #        return self._bos + " " + " ".join(s) + " " + self._eos
 
-    def _apply_mask_for_MLM(self, ds: tf.data.Dataset,
+    @staticmethod
+    def _apply_mask_for_mlm(ds: tf.data.Dataset,
                             distrib_mask: tfp.distributions.Multinomial,
-                            distrib_random: tfp.distributions.Multinomial,
+                            distrib_random: tfp.distributions.Uniform,
                             with_multi_inputs=True):
 
         # Inspiration from https://www.tensorflow.org/guide/data#applying_arbitrary_python_logic

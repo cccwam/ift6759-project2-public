@@ -145,12 +145,13 @@ class BilingualTranslationLMDataloaderSubword(AbstractBilingualDataloaderSubword
 
         distrib_random = tfp.distributions.Uniform(low=len(self._special_tokens), high=self._vocab_size_source)
 
-        return self._apply_mask_for_MLM(ds=ds,
+        return self._apply_mask_for_mlm(ds=ds,
                                         distrib_mask=distrib_mask,
                                         distrib_random=distrib_random)
 
     def decode(self, tokens: List[int]):
         return self._decode(tokens=tokens, tokenizer=self._tokenizer_target)
+
 
 class BilingualTranslationDataloaderSubword(AbstractBilingualDataloaderSubword):
     """

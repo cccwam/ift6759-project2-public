@@ -1,13 +1,8 @@
 import logging
+from pathlib import Path
 
-import numpy as np
-import sacrebleu
 import tensorflow as tf
 from transformers import TFPreTrainedModel
-from zipp import Path
-
-from libs.data_loaders import AbstractDataloader
-from libs.losses import mlm_loss
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +43,7 @@ class CustomCheckpoint(tf.keras.callbacks.ModelCheckpoint):
 
                         # CUSTOM LOGIC
                         if isinstance(self.model, TFPreTrainedModel):
-                            model_hgf:TFPreTrainedModel = self.model
+                            model_hgf: TFPreTrainedModel = self.model
                             model_hgf.save_pretrained(str(Path(filepath).parent / "huggingface"))
                         # END CUSTOM LOGIC
                     else:

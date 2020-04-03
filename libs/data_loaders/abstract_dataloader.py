@@ -45,7 +45,6 @@ class AbstractDataloader:
         ds = self._hook_dataset_post_precessing(ds=ds)
         ds = ds.padded_batch(batch_size=batch_size,
                              padded_shapes=self._padded_shapes,
-                             padding_values=0,
                              drop_remainder=True)
         ds = ds.prefetch(tf.data.experimental.AUTOTUNE)
 
@@ -54,7 +53,6 @@ class AbstractDataloader:
                                                                  output_shapes=self._output_shapes)
         ds_without_modification = ds_without_modification.padded_batch(batch_size=batch_size,
                                                                        padded_shapes=self._padded_shapes,
-                                                                       padding_values=0,
                                                                        drop_remainder=True)
         ds_without_modification = ds_without_modification.prefetch(tf.data.experimental.AUTOTUNE)
 

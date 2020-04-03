@@ -34,7 +34,6 @@ def builder(
         # Initializing a model from the configuration
         bert_model = TFBertForMaskedLM(configuration)
 
-
     token_inputs = tf.keras.layers.Input(shape=(seq_length,), dtype=tf.int32, name="BERT_token_inputs")
     outputs = bert_model(token_inputs)
 

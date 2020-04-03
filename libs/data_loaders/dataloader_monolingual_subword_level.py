@@ -114,10 +114,9 @@ class MonolingualMaskLMDataloaderSubword(AbstractMonolingualDataloaderSubword,
 
         distrib_random = tfp.distributions.Uniform(low=len(self._special_tokens), high=self._vocab_size_source)
 
-        return self._apply_mask_for_MLM(ds=ds,
+        return self._apply_mask_for_mlm(ds=ds,
                                         distrib_mask=distrib_mask,
                                         distrib_random=distrib_random)
-
 
 
 class MonolingualTransformersLMDataloaderSubword(AbstractMonolingualDataloaderSubword,
