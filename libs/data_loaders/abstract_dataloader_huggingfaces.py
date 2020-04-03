@@ -21,9 +21,14 @@ class AbstractHuggingFacesTokenizer(AbstractDataloader, ABC):
         AbstractDataloader.__init__(self, config=config,
                                     raw_english_test_set_file_path=raw_english_test_set_file_path)
 
+        self._pad = "<pad>"
+        self._mask = "<mask>"
         self._bos = "<bos>"
         self._eos = "<eos>"
         self._unk = "<unk>"
+
+        self._special_tokens = [self._pad, self._mask, self._bos, self._eos, self._unk]
+
 
         self._folder: Path = Path(self._preprocessed_data_path["folder"])
         assert self._folder.exists()
@@ -62,7 +67,7 @@ class AbstractHuggingFacesTokenizer(AbstractDataloader, ABC):
             # Huggingfaces requires a file to train, so we need to save all sentences into a file
             tmp.writelines(corpora)
             tokenizer.train(files=[tmp.name], show_progress=True, vocab_size=vocab_size,
-                            special_tokens=[self._bos, self._eos, self._unk])
+                            special_tokens= self._special_tokens)
 
         logger.info("Compute the max length")
 
@@ -116,7 +121,7 @@ class AbstractHuggingFacesTokenizer(AbstractDataloader, ABC):
               vocab_file=str(Path(pretrained_model_dir_path) / (tokenizer_filename_prefix + "-vocab.json")),
               merges_file=str(Path(pretrained_model_dir_path) / (tokenizer_filename_prefix + "-merges.txt")))
 
-            tokenizer.add_special_tokens([self._bos, self._eos, self._unk])
+            tokenizer.add_special_tokens(self._special_tokens)
 
         else:
 
@@ -127,7 +132,7 @@ class AbstractHuggingFacesTokenizer(AbstractDataloader, ABC):
                 tokenizer_algorithm
             )(dropout=dropout)
 
-            tokenizer.add_special_tokens([self._bos, self._eos, self._unk])
+            tokenizer.add_special_tokens(self._special_tokens)
 
             tokenizer = self._train_and_save(tokenizer=tokenizer,
                                              corpora_filenames=corpora_filenames,

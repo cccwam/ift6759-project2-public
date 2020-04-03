@@ -40,3 +40,5 @@ def load_pretrained_layers(config: dict, my_model: tf.keras.Model):
 
             weights = pretrained_model.get_weights()
             my_model.get_layer(pretrained_layer['target_layer_name']).set_weights(weights)
+
+

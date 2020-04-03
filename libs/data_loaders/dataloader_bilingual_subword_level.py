@@ -93,9 +93,9 @@ class BilingualCausalLMDataloaderSubword(AbstractBilingualDataloaderSubword,
 
 class BilingualTranslationLMDataloaderSubword(AbstractBilingualDataloaderSubword):
     """
-        TODO
         Dataset for bilingual corpora at subword level generating input sentence, target sentence
-        and the shifted target sequence
+        as mask language model, called translation language model in XLM paper.
+        https://arxiv.org/abs/1901.07291
 
     """
 
@@ -141,7 +141,7 @@ class BilingualTranslationLMDataloaderSubword(AbstractBilingualDataloaderSubword
         # 10% nothing to do, 10% random word, 80% mask
         distrib_mask = tfp.distributions.Multinomial(total_count=3, probs=[0.1, 0.1, 0.8])
 
-        # Insipiration from https://www.tensorflow.org/guide/data#applying_arbitrary_python_logic
+        # Inspiration from https://www.tensorflow.org/guide/data#applying_arbitrary_python_logic
         def _apply_mask_eager(inputs, output):
             input_shape = tf.shape(inputs)
             masks = distrib_mask.sample(input_shape, seed=42)  # TODO set seed
@@ -161,12 +161,10 @@ class BilingualTranslationLMDataloaderSubword(AbstractBilingualDataloaderSubword
     def decode(self, tokens: List[int]):
         return self._decode(tokens=tokens, tokenizer=self._tokenizer_target)
 
-
 class BilingualTranslationDataloaderSubword(AbstractBilingualDataloaderSubword):
     """
-        TODO
         Dataset for bilingual corpora at subword level generating input sentence, target sentence
-        and the shifted target sequence
+        and masking the input for sentence 2.
 
     """
 

@@ -34,8 +34,12 @@ def builder(
                                max_position_embeddings=consolidated_seq_length,
                                hidden_size=hidden_size)
 
-    # Initializing a model from the configuration
-    bert_model = TFBertForMaskedLM(configuration)
+    if "pretrained_model_huggingface" in model_hparams:
+        # TODO test
+        bert_model = TFBertForMaskedLM(configuration).from_pretrained(model_hparams["pretrained_model_huggingface"])
+    else:
+        # Initializing a model from the configuration
+        bert_model = TFBertForMaskedLM(configuration)
 
     token_inputs = tf.keras.layers.Input(shape=(consolidated_seq_length,), dtype=tf.int32,
                                          name="BERT_token_inputs")
@@ -48,7 +52,5 @@ def builder(
     model = tf.keras.Model([token_inputs, attention_masks, token_type_ids], outputs, name=name)
 
     model.summary(line_length=120, print_fn=logger.info)
-
-    # TODO ability to load pretrained model
 
     return model
