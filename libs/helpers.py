@@ -156,7 +156,7 @@ def get_tensorboard_experiment_id(experiment_name, tensorboard_tracking_folder: 
     return tensorboard_tracking_folder / model_sub_folder
 
 
-def compile_model(model, learning_rate):
+def compile_model(model, learning_rate, d_model=None):
     """
         Helper function to compile a new model at each variation of the experiment
     :param learning_rate:
@@ -166,17 +166,27 @@ def compile_model(model, learning_rate):
 
     model_instance = model
 
-    optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
+    # ToDo identify how to select optimizer
+    if learning_rate == -1:
+        optimizer = tf.keras.optimizers.Adam(
+            CustomSchedule(d_model), beta_1=0.9, beta_2=0.98, epsilon=1e-9)
+    else:
+        optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
 
     # TODO to review this
     #   Likely that we should have more than 1 loss
     #   Also we should be able to optimizer
     # Add also BLEU
-    model_instance.compile(
-        optimizer=optimizer,
-        loss=tf.keras.losses.SparseCategoricalCrossentropy(),
-        metrics=[tf.keras.metrics.SparseCategoricalAccuracy()]
-    )
+    if learning_rate == -1:
+        model_instance.compile(
+            optimizer=optimizer,
+            loss=loss_function_for_transformer,
+            metrics=[tf.keras.metrics.SparseCategoricalAccuracy()])
+    else:
+        model_instance.compile(
+            optimizer=optimizer,
+            loss=tf.keras.losses.SparseCategoricalCrossentropy(),
+            metrics=[tf.keras.metrics.SparseCategoricalAccuracy()])
     return model_instance
 
 
@@ -204,3 +214,27 @@ def loss_function_for_transformer(real, pred):
     loss_ *= mask
 
     return tf.reduce_mean(loss_)
+
+
+class CustomSchedule(tf.keras.optimizers.schedules.LearningRateSchedule):
+    def __init__(self, d_model, warmup_steps=4000):
+        super(CustomSchedule, self).__init__()
+
+        self.d_model = d_model
+        self.d_model_cast = tf.cast(self.d_model, tf.float32)
+
+        self.warmup_steps = warmup_steps
+
+    def get_config(self):
+        # config = super().get_config().copy()
+        config = {
+            'd_model': self.d_model,
+            'warmup_steps': self.warmup_steps,
+        }
+        return config
+
+    def __call__(self, step):
+        arg1 = tf.math.rsqrt(step)
+        arg2 = step * (self.warmup_steps ** -1.5)
+
+        return tf.math.rsqrt(self.d_model_cast) * tf.math.minimum(arg1, arg2)

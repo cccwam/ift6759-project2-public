@@ -35,10 +35,10 @@
   "trainer": {
     "hyper_params": {
       "lr_rate": [
-        3e-3
+        -1
       ],
       "epochs": [
-        10
+        40
       ],
       "batch_size": [
         64

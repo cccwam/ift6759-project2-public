@@ -1,10 +1,12 @@
 import os
 
+import numpy as np
 import tensorflow as tf
-TextLineDataset = tf.data.TextLineDataset
 
 from libs.data_loaders import subwords
 from libs.models import transformer
+
+TextLineDataset = tf.data.TextLineDataset
 
 
 def create_for_transformer_pre_mask(tokenizer):
@@ -22,7 +24,7 @@ def create_for_transformer_pre_mask(tokenizer):
             lang2.numpy())
 
         lang2_out = tokenizer.encode(
-            lang2.numpy())  + [tokenizer.vocab_size + 1]
+            lang2.numpy()) + [tokenizer.vocab_size + 1]
 
         return lang1, lang2_in, lang2_out
 
@@ -57,7 +59,7 @@ class MassSubwordDataLoader:
         self.tokenizer = None
         self.vocab_size_source = None
         self.vocab_size_target = None
-        self.validation_steps = 1
+        self.validation_steps = None
         self.raw_english_test_set_file_path = raw_english_test_set_file_path
 
     def build(self, batch_size, mode='translate'):
@@ -140,9 +142,13 @@ class MassSubwordDataLoader:
         tf_encode = create_for_transformer_pre_mask(self.tokenizer)
 
         train_preprocessed = (
-            sentences_translation_both_train.map(tf_encode).cache())
+            sentences_translation_both_train.map(tf_encode))
         train_padded = train_preprocessed.padded_batch(
-            batch_size, padded_shapes=([None], [None], [None]))
+            batch_size, padded_shapes=([None], [None], [None])).prefetch(tf.data.experimental.AUTOTUNE).cache()
+
+        # Hack for tf 2.0.0, need to cache train_padded before creating the generator
+        for _ in train_padded:
+            pass
 
         def mass_generator_train():
             for enc_inp, dec_inp, dec_out in train_padded:
@@ -160,13 +166,19 @@ class MassSubwordDataLoader:
         )
 
         val_preprocessed = (
-            sentences_translation_both_validation.map(tf_encode).cache())
+            sentences_translation_both_validation.map(tf_encode))
         val_padded = val_preprocessed.padded_batch(
-            batch_size, padded_shapes=([None], [None], [None]))
+            batch_size, padded_shapes=([None], [None], [None])).prefetch(tf.data.experimental.AUTOTUNE).cache()
+
+        # Hack for tf 2.0.0, need to cache val_padded before creating the generator
+        for _ in val_padded:
+            pass
+
         def mass_generator_val():
             for enc_inp, dec_inp, dec_out in val_padded:
                 enc_padding_mask, combined_mask, _ = transformer.create_masks(enc_inp, dec_inp)
                 yield (enc_inp, dec_inp, enc_padding_mask, combined_mask), dec_out
+
         self.valid_dataset = tf.data.Dataset.from_generator(
             mass_generator_val, ((tf.int64, tf.int64, tf.float32, tf.float32), tf.int64),
             output_shapes=(

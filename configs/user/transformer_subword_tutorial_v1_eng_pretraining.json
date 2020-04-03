@@ -36,7 +36,7 @@
   "trainer": {
     "hyper_params": {
       "lr_rate": [
-        3e-3
+        -1
       ],
       "epochs": [
         100

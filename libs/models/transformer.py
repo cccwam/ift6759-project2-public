@@ -7,7 +7,7 @@ import tensorflow as tf
 import numpy as np
 
 from libs.helpers import loss_function_for_transformer as loss_function
-from libs.helpers import get_online_data_loader
+from libs.helpers import get_online_data_loader, CustomSchedule
 from libs.models.helpers import load_pretrained_layers
 
 
@@ -65,6 +65,14 @@ class MultiHeadAttention(tf.keras.layers.Layer):
 
         self.dense = tf.keras.layers.Dense(d_model)
 
+    def get_config(self):
+        config = super().get_config().copy()
+        config.update({
+            'd_model': self.d_model,
+            'num_layers': self.num_layers,
+        })
+        return config
+
     def split_heads(self, x, batch_size):
         """Split the last dimension into (num_heads, depth).
         Transpose the result such that the shape is
@@ -115,8 +123,13 @@ def point_wise_feed_forward_network(d_model, dff):
 
 
 class EncoderLayer(tf.keras.layers.Layer):
-    def __init__(self, d_model, num_heads, dff, rate=0.1):
+    def __init__(self, d_model, num_heads, dff, dropout_rate=0.1):
         super(EncoderLayer, self).__init__()
+
+        self.d_model = d_model
+        self.num_heads = num_heads
+        self.dff = dff
+        self.dropout_rate = dropout_rate
 
         self.mha = MultiHeadAttention(d_model, num_heads)
         self.ffn = point_wise_feed_forward_network(d_model, dff)
@@ -124,8 +137,18 @@ class EncoderLayer(tf.keras.layers.Layer):
         self.layernorm1 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
         self.layernorm2 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
 
-        self.dropout1 = tf.keras.layers.Dropout(rate)
-        self.dropout2 = tf.keras.layers.Dropout(rate)
+        self.dropout1 = tf.keras.layers.Dropout(dropout_rate)
+        self.dropout2 = tf.keras.layers.Dropout(dropout_rate)
+
+    def get_config(self):
+        config = super().get_config().copy()
+        config.update({
+            'd_model': self.d_model,
+            'num_heads': self.num_heads,
+            'dff': self.dff,
+            'dropout_rate': self.dropout_rate,
+        })
+        return config
 
     def call(self, x, training, mask):
         attn_output, _ = self.mha(x, x, x, mask)
@@ -143,8 +166,13 @@ class EncoderLayer(tf.keras.layers.Layer):
 
 
 class DecoderLayer(tf.keras.layers.Layer):
-    def __init__(self, d_model, num_heads, dff, rate=0.1):
+    def __init__(self, d_model, num_heads, dff, dropout_rate=0.1):
         super(DecoderLayer, self).__init__()
+
+        self.d_model = d_model
+        self.num_heads = num_heads
+        self.dff = dff
+        self.dropout_rate = dropout_rate
 
         self.mha1 = MultiHeadAttention(d_model, num_heads)
         self.mha2 = MultiHeadAttention(d_model, num_heads)
@@ -155,9 +183,19 @@ class DecoderLayer(tf.keras.layers.Layer):
         self.layernorm2 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
         self.layernorm3 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
 
-        self.dropout1 = tf.keras.layers.Dropout(rate)
-        self.dropout2 = tf.keras.layers.Dropout(rate)
-        self.dropout3 = tf.keras.layers.Dropout(rate)
+        self.dropout1 = tf.keras.layers.Dropout(dropout_rate)
+        self.dropout2 = tf.keras.layers.Dropout(dropout_rate)
+        self.dropout3 = tf.keras.layers.Dropout(dropout_rate)
+
+    def get_config(self):
+        config = super().get_config().copy()
+        config.update({
+            'd_model': self.d_model,
+            'num_heads': self.num_heads,
+            'dff': self.dff,
+            'dropout_rate': self.dropout_rate,
+        })
+        return config
 
     def call(self, x, enc_output, training, look_ahead_mask, padding_mask):
         # enc_output.shape == (batch_size, input_seq_len, d_model)
@@ -205,20 +243,38 @@ def positional_encoding(position, d_model):
 
 class Encoder(tf.keras.layers.Layer):
     def __init__(self, num_layers, d_model, num_heads, dff, vocab_size_source,
-                 maximum_position_encoding, rate=0.1):
+                 maximum_position_encoding, dropout_rate=0.1):
         super(Encoder, self).__init__()
 
-        self.d_model = d_model
         self.num_layers = num_layers
+        self.d_model = d_model
+        self.num_heads = num_heads
+        self.dff = dff
+        self.vocab_size_source = vocab_size_source
+        self.maximum_position_encoding = maximum_position_encoding
+        self.dropout_rate = dropout_rate
 
         self.embedding = tf.keras.layers.Embedding(vocab_size_source, d_model)
         self.pos_encoding = positional_encoding(maximum_position_encoding,
                                                 self.d_model)
 
-        self.enc_layers = [EncoderLayer(d_model, num_heads, dff, rate)
+        self.enc_layers = [EncoderLayer(d_model, num_heads, dff, dropout_rate)
                            for _ in range(num_layers)]
 
-        self.dropout = tf.keras.layers.Dropout(rate)
+        self.dropout = tf.keras.layers.Dropout(dropout_rate)
+
+    def get_config(self):
+        config = super().get_config().copy()
+        config.update({
+            'num_layers': self.num_layers,
+            'd_model': self.d_model,
+            'num_heads': self.num_heads,
+            'dff': self.dff,
+            'vocab_size_source': self.vocab_size_source,
+            'maximum_position_encoding': self.maximum_position_encoding,
+            'dropout_rate': self.dropout_rate,
+        })
+        return config
 
     def call(self, x, training, mask):
         seq_len = tf.shape(x)[1]
@@ -238,8 +294,16 @@ class Encoder(tf.keras.layers.Layer):
 
 class Decoder(tf.keras.layers.Layer):
     def __init__(self, num_layers, d_model, num_heads, dff, vocab_size_target,
-                 maximum_position_encoding, rate=0.1):
+                 maximum_position_encoding, dropout_rate=0.1):
         super(Decoder, self).__init__()
+
+        self.num_layers = num_layers
+        self.d_model = d_model
+        self.num_heads = num_heads
+        self.dff = dff
+        self.vocab_size_target = vocab_size_target
+        self.maximum_position_encoding = maximum_position_encoding
+        self.dropout_rate = dropout_rate
 
         self.d_model = d_model
         self.num_layers = num_layers
@@ -248,9 +312,22 @@ class Decoder(tf.keras.layers.Layer):
         self.pos_encoding = positional_encoding(maximum_position_encoding,
                                                 d_model)
 
-        self.dec_layers = [DecoderLayer(d_model, num_heads, dff, rate)
+        self.dec_layers = [DecoderLayer(d_model, num_heads, dff, dropout_rate)
                            for _ in range(num_layers)]
-        self.dropout = tf.keras.layers.Dropout(rate)
+        self.dropout = tf.keras.layers.Dropout(dropout_rate)
+
+    def get_config(self):
+        config = super().get_config().copy()
+        config.update({
+            'num_layers': self.num_layers,
+            'd_model': self.d_model,
+            'num_heads': self.num_heads,
+            'dff': self.dff,
+            'vocab_size_target': self.vocab_size_target,
+            'maximum_position_encoding': self.maximum_position_encoding,
+            'dropout_rate': self.dropout_rate,
+        })
+        return config
 
     def call(self, x, enc_output, training, look_ahead_mask, padding_mask):
         seq_len = tf.shape(x)[1]
@@ -274,17 +351,18 @@ class Decoder(tf.keras.layers.Layer):
         return x, attention_weights
 
 
+# ToDo obsolete?
 class Transformer(tf.keras.Model):
     def __init__(self, num_layers, d_model, num_heads, dff, vocab_size_source,
-                 vocab_size_target, pe_input, pe_target, rate=0.1,
+                 vocab_size_target, pe_input, pe_target, dropout_rate=0.1,
                  model_name='Transformer'):
         super(Transformer, self).__init__()
 
         self.encoder = Encoder(num_layers, d_model, num_heads, dff,
-                               vocab_size_source, pe_input, rate)
+                               vocab_size_source, pe_input, dropout_rate)
 
         self.decoder = Decoder(num_layers, d_model, num_heads, dff,
-                               vocab_size_target, pe_target, rate)
+                               vocab_size_target, pe_target, dropout_rate)
 
         self.final_layer = tf.keras.layers.Dense(vocab_size_target)
 
@@ -314,7 +392,6 @@ class Transformer(tf.keras.Model):
         return final_output, attention_weights
 
     def load_checkpoint(self):
-        # ToDo customize checkpoint save directory
         checkpoint_path = os.path.join(
             os.environ['HOME'], f"ift6759_p2_checkpoints/{self.model_name}")
         ckpt = tf.train.Checkpoint(transformer=self,
@@ -437,22 +514,6 @@ class Transformer(tf.keras.Model):
         return tf.squeeze(transformer_output, axis=0), attention_weights
 
 
-class CustomSchedule(tf.keras.optimizers.schedules.LearningRateSchedule):
-    def __init__(self, d_model, warmup_steps=4000):
-        super(CustomSchedule, self).__init__()
-
-        self.d_model = d_model
-        self.d_model = tf.cast(self.d_model, tf.float32)
-
-        self.warmup_steps = warmup_steps
-
-    def __call__(self, step):
-        arg1 = tf.math.rsqrt(step)
-        arg2 = step * (self.warmup_steps ** -1.5)
-
-        return tf.math.rsqrt(self.d_model) * tf.math.minimum(arg1, arg2)
-
-
 def create_padding_mask(seq):
     seq = tf.cast(tf.math.equal(seq, 0), tf.float32)
 
@@ -484,6 +545,7 @@ def create_masks(inp, tar):
     return enc_padding_mask, combined_mask, dec_padding_mask
 
 
+# ToDo obsolete?
 def builder(config: typing.Dict[typing.AnyStr, typing.Any]):
     # noinspection PyShadowingNames,DuplicatedCode
     model_hparams = config["model"]["hyper_params"]
@@ -500,7 +562,7 @@ def builder(config: typing.Dict[typing.AnyStr, typing.Any]):
     transformer_tl = Transformer(
         num_layers, d_model, num_heads, dff, vocab_size_source,
         vocab_size_target, pe_input=vocab_size_source,
-        pe_target=vocab_size_target, rate=dropout_rate,
+        pe_target=vocab_size_target, dropout_rate=dropout_rate,
         model_name=model_hparams["name"])
 
     if "pretrained_layers" in config["model"]["hyper_params"]:

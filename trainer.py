@@ -50,6 +50,11 @@ def train_models(
     :param tensorboard_tracking_folder: The TensorBoard tracking folder
     """
     model_dict = config['model']
+    # ToDo move this elsewhere
+    if 'd_model' in config['model']['hyper_params']:
+        d_model = config['model']['hyper_params']['d_model']
+    else:
+        d_model = None
     data_loader_dict = config['data_loader']
     trainer_hyper_params = config['trainer']['hyper_params']
 
@@ -157,18 +162,13 @@ def train_models(
                         epochs=epochs,
                         learning_rate=learning_rate,
                         patience=patience,
-                        checkpoints_path=checkpoints_path
+                        checkpoints_path=checkpoints_path,
+                        d_model=d_model
                     )
                     variation_num += 1
 
     # Save final model
-    # ToDo Use better logic for models that support .save and those that don't
-    try:
-        model.save(helpers.generate_model_name(config))
-    except NotImplementedError:
-        model.save_weights(
-            helpers.generate_model_name(config).rstrip('.hdf5') + '.h5',
-            save_format='h5')
+    model.save(helpers.generate_model_name(config))
 
 
 def train_model(
@@ -182,7 +182,8 @@ def train_model(
         epochs: int,
         learning_rate: float,
         patience: int,
-        checkpoints_path: str
+        checkpoints_path: str,
+        d_model: int,
 ):
     """
     The training loop for a single model
@@ -202,25 +203,24 @@ def train_model(
     """
 
     # Multi GPU setup
-    # ToDo: Is using the model 'lr' attribute a good way to bypass compile_model?
     # Since the transformer uses a custom learning rate scheduler, the
     # logic in compile_model does not apply here.
     fit_kwargs = {}
     if mirrored_strategy is not None and mirrored_strategy.num_replicas_in_sync > 1:
         with mirrored_strategy.scope():
+            # ToDo Obsolete with TransformerV2?
             if hasattr(model, 'lr'):
-                # ToDo better checkpoint handling
                 compiled_model = model
                 fit_kwargs['ckpt_manager'] = compiled_model.load_checkpoint()
             else:
-                compiled_model = helpers.compile_model(model, learning_rate=learning_rate)
+                compiled_model = helpers.compile_model(model, learning_rate=learning_rate, d_model=d_model)
     else:
+        # ToDo Obsolete with TransformerV2?
         if hasattr(model, 'lr'):
-            # ToDo better checkpoint handling
             compiled_model = model
             fit_kwargs['ckpt_manager'] = compiled_model.load_checkpoint()
         else:
-            compiled_model = helpers.compile_model(model, learning_rate=learning_rate)
+            compiled_model = helpers.compile_model(model, learning_rate=learning_rate, d_model=d_model)
 
     if tensorboard_log_dir is not None:
         # Workaround for https://github.com/tensorflow/tensorboard/issues/2412
