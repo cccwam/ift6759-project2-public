@@ -1,0 +1,51 @@
+{
+  "model": {
+    "definition": {
+      "module": "libs.models.transformerv2",
+      "name": "builder"
+    },
+    "hyper_params": {
+      "name": "TRANSFORMER_MASS_V1",
+      "num_layers": 3,
+      "d_model": 128,
+      "num_heads": 4,
+      "dff": 512,
+      "dropout_rate": 0.2
+    },
+    "source": ""
+  },
+  "data_loader": {
+    "definition": {
+      "module": "libs.data_loaders.mass_subword",
+      "name": "MassSubwordDataLoader"
+    },
+    "hyper_params": {
+      "preprocessed_data_path": {
+        "folder": "/project/cq-training-1/project2/teams/team03/data/split_01"
+      },
+      "vocabulary_name": "/project/cq-training-1/project2/teams/team03/data/subword_tutorial_vocab/mass_subword_vocabulary",
+      "mode": "translation",
+      "samples_for_test": 0,
+      "samples_for_valid": 0,
+      "samples_for_train": 0,
+      "vocab_size_source": 8273,
+      "vocab_size_target": 8273
+    }
+  },
+  "trainer": {
+    "hyper_params": {
+      "lr_rate": [
+        3e-3
+      ],
+      "epochs": [
+        10
+      ],
+      "batch_size": [
+        64
+      ],
+      "patience": [
+        2
+      ]
+    }
+  }
+}
