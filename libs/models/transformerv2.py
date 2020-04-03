@@ -29,18 +29,14 @@ def builder(config: typing.Dict[typing.AnyStr, typing.Any]):
 
     final_layer = tf.keras.layers.Dense(vocab_size_target)
 
-    enc_inp = tf.keras.layers.Input(shape=(None,),
-                                         dtype=tf.int64,
-                                         name="i1")
-    dec_inp = tf.keras.layers.Input(shape=(None,),
-                                            dtype=tf.int64,
-                                            name="i2")
-    padding_mask = tf.keras.layers.Input(shape=(1, 1, None),
-                                           dtype=tf.float32,
-                                           name="i3")
-    combined_mask = tf.keras.layers.Input(shape=(1, None, None),
-                                           dtype=tf.float32,
-                                           name="i4")
+    enc_inp = tf.keras.layers.Input(
+        shape=(None,), dtype=tf.int64, name="i1")
+    dec_inp = tf.keras.layers.Input(
+        shape=(None,), dtype=tf.int64, name="i2")
+    padding_mask = tf.keras.layers.Input(
+        shape=(1, 1, None), dtype=tf.float32, name="i3")
+    combined_mask = tf.keras.layers.Input(
+        shape=(1, None, None), dtype=tf.float32, name="i4")
 
     enc_output = encoder(enc_inp, True, padding_mask)
     # (batch_size, inp_seq_len, d_model)
