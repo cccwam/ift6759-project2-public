@@ -164,15 +164,26 @@ class AbstractHuggingFacesTokenizer(AbstractDataloader, ABC):
 #        return self._bos + " " + " ".join(s) + " " + self._eos
 
 
-    def _apply_mask_for_MLM(self, ds: tf.data.Dataset, distrib_mask: tfp.distributions.Multinomial, with_multi_inputs=True):
+    def _apply_mask_for_MLM(self, ds: tf.data.Dataset,
+                            distrib_mask: tfp.distributions.Multinomial,
+                            distrib_random: tfp.distributions.Multinomial,
+                            with_multi_inputs=True):
 
         # Inspiration from https://www.tensorflow.org/guide/data#applying_arbitrary_python_logic
         def _apply_mask_eager(inputs, output):
             input_shape = tf.shape(inputs)
             masks = distrib_mask.sample(input_shape, seed=42)  # TODO set seed
             masks = tf.cast(masks, dtype=tf.int32)
+            random_tokens = distrib_random.sample(input_shape, seed=42)  # TODO set seed
+            random_tokens = tf.cast(random_tokens, dtype=tf.int32)
+
+            # Replace with mask
             # One is the mask token id
             inputs_masked = tf.where(tf.equal(masks[:, 2], 1), inputs, tf.ones(input_shape, dtype=tf.int32))
+
+            # Replace with random token
+            inputs_masked = tf.where(tf.equal(masks[:, 1], 1), inputs_masked, random_tokens)
+
             output_masked = tf.where(tf.equal(masks[:, 0], 1), output, tf.zeros(input_shape, dtype=tf.int32))
             return inputs_masked, output_masked
 

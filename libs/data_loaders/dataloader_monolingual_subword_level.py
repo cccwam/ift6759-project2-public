@@ -112,7 +112,11 @@ class MonolingualMaskLMDataloaderSubword(AbstractMonolingualDataloaderSubword,
         # 10% nothing to do, 10% random word, 80% mask
         distrib_mask = tfp.distributions.Multinomial(total_count=3, probs=[0.1, 0.1, 0.8])
 
-        return self._apply_mask_for_MLM(ds=ds, distrib_mask=distrib_mask)
+        distrib_random = tfp.distributions.Uniform(low=len(self._special_tokens), high=self._vocab_size_source)
+
+        return self._apply_mask_for_MLM(ds=ds,
+                                        distrib_mask=distrib_mask,
+                                        distrib_random=distrib_random)
 
 
 
