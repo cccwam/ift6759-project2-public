@@ -114,9 +114,11 @@ class BilingualTranslationLMDataloaderSubword(AbstractBilingualDataloaderSubword
     # TODO add also label is translation or not
     def _my_generator(self, source_numericalized: List[Encoding], target_numericalized: List[Encoding]):
         for i in range(len(source_numericalized)):
+            # zero is the pad token id
             source = np.zeros([self._seq_length_source], dtype=int)
             source[:len(source_numericalized[i].ids)] = source_numericalized[i].ids
 
+            # zero is the pad token id
             target = np.zeros([self._seq_length_target], dtype=int)
             target[:len(target_numericalized[i].ids)] = target_numericalized[i].ids
 
@@ -141,22 +143,7 @@ class BilingualTranslationLMDataloaderSubword(AbstractBilingualDataloaderSubword
         # 10% nothing to do, 10% random word, 80% mask
         distrib_mask = tfp.distributions.Multinomial(total_count=3, probs=[0.1, 0.1, 0.8])
 
-        # Inspiration from https://www.tensorflow.org/guide/data#applying_arbitrary_python_logic
-        def _apply_mask_eager(inputs, output):
-            input_shape = tf.shape(inputs)
-            masks = distrib_mask.sample(input_shape, seed=42)  # TODO set seed
-            masks = tf.cast(masks, dtype=tf.int32)
-            inputs_masked = tf.where(tf.equal(masks[:, 2], 1), inputs, tf.zeros(input_shape, dtype=tf.int32))
-            output_masked = tf.where(tf.equal(masks[:, 0], 1), output, tf.zeros(input_shape, dtype=tf.int32))
-            return inputs_masked, output_masked
-
-        def apply_mask(x, y):
-            inputs, attention_masks, tokens_type_ids = x
-            inputs_masked, y_masked = tf.py_function(_apply_mask_eager, [inputs, y], [tf.int32, tf.int32])
-
-            return (inputs_masked, attention_masks, tokens_type_ids), y_masked
-
-        return ds.map(map_func=apply_mask)
+        return self._apply_mask_for_MLM(ds=ds, distrib_mask=distrib_mask)
 
     def decode(self, tokens: List[int]):
         return self._decode(tokens=tokens, tokenizer=self._tokenizer_target)

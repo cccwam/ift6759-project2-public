@@ -96,31 +96,24 @@ class MonolingualMaskLMDataloaderSubword(AbstractMonolingualDataloaderSubword,
 
     def _my_generator(self, source_numericalized: List[Encoding]):
         for i in range(len(source_numericalized)):
-            inputs = source_numericalized[i].ids
+            # zero is the pad token id
+            inputs = np.zeros([self._seq_length], dtype=int)
+            inputs[:len(source_numericalized[i].ids)] = source_numericalized[i].ids
 
-            # TODO add attention masks
-            yield (inputs, inputs)
+            attention_masks = np.zeros([self._seq_length], dtype=int)
+            attention_masks[:len(source_numericalized[i].ids)] = 1
 
-    # TODO refactoring because same as bilingual
+            # TODO add management of token_type_ids = 1 for French
+            tokens_type_ids = tf.zeros([self._seq_length], dtype=tf.int32)
+
+            yield ((inputs, attention_masks, tokens_type_ids), inputs)
+
     def _hook_dataset_post_precessing(self, ds: tf.data.Dataset):
         # 10% nothing to do, 10% random word, 80% mask
         distrib_mask = tfp.distributions.Multinomial(total_count=3, probs=[0.1, 0.1, 0.8])
 
-        # Insipiration from https://www.tensorflow.org/guide/data#applying_arbitrary_python_logic
-        def _apply_mask_eager(inputs, output):
-            input_shape = tf.shape(inputs)
-            masks = distrib_mask.sample(input_shape, seed=42)  # TODO set seed
-            masks = tf.cast(masks, dtype=tf.int32)
-            inputs_masked = tf.where(tf.equal(masks[:, 2], 1), inputs, tf.zeros(input_shape, dtype=tf.int32))
-            output_masked = tf.where(tf.equal(masks[:, 0], 1), output, tf.zeros(input_shape, dtype=tf.int32))
-            return inputs_masked, output_masked
+        return self._apply_mask_for_MLM(ds=ds, distrib_mask=distrib_mask)
 
-        def apply_mask(x, y):
-            inputs_masked, y_masked = tf.py_function(_apply_mask_eager, [x, y], [tf.int32, tf.int32])
-
-            return inputs_masked, y_masked
-
-        return ds.map(map_func=apply_mask)
 
 
 class MonolingualTransformersLMDataloaderSubword(AbstractMonolingualDataloaderSubword,

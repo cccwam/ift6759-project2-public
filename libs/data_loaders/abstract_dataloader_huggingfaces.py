@@ -162,3 +162,32 @@ class AbstractHuggingFacesTokenizer(AbstractDataloader, ABC):
     def _add_bos_eos(self, s: List[str]):
         return self._bos + " ".join(s) + self._eos
 #        return self._bos + " " + " ".join(s) + " " + self._eos
+
+
+    def _apply_mask_for_MLM(self, ds: tf.data.Dataset, distrib_mask: tfp.distributions.Multinomial, with_multi_inputs=True):
+
+        # Inspiration from https://www.tensorflow.org/guide/data#applying_arbitrary_python_logic
+        def _apply_mask_eager(inputs, output):
+            input_shape = tf.shape(inputs)
+            masks = distrib_mask.sample(input_shape, seed=42)  # TODO set seed
+            masks = tf.cast(masks, dtype=tf.int32)
+            # One is the mask token id
+            inputs_masked = tf.where(tf.equal(masks[:, 2], 1), inputs, tf.ones(input_shape, dtype=tf.int32))
+            output_masked = tf.where(tf.equal(masks[:, 0], 1), output, tf.zeros(input_shape, dtype=tf.int32))
+            return inputs_masked, output_masked
+
+        def apply_mask(x, y):
+            inputs, attention_masks, tokens_type_ids = x
+            inputs_masked, y_masked = tf.py_function(_apply_mask_eager, [inputs, y], [tf.int32, tf.int32])
+
+            return (inputs_masked, attention_masks, tokens_type_ids), y_masked
+
+        def apply_mask_single_input(x, y):
+            inputs_masked, y_masked = tf.py_function(_apply_mask_eager, [x, y], [tf.int32, tf.int32])
+
+            return inputs_masked, y_masked
+
+        if with_multi_inputs:
+            return ds.map(map_func=apply_mask)
+        else:
+            return ds.map(map_func=apply_mask_single_input)

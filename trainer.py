@@ -11,6 +11,7 @@ import tensorflow as tf
 from tensorboard.plugins.hparams import api as hp
 
 from libs import helpers
+from libs.callbacks import CustomCheckpoint
 from libs.data_loaders.abstract_dataloader import AbstractDataloader
 
 logger = logging.getLogger(__name__)
@@ -205,8 +206,8 @@ def train_model(
 
         # Workaround for https://github.com/tensorflow/tensorboard/issues/2412
         callbacks = [tf.keras.callbacks.TensorBoard(log_dir=tensorboard_log_dir, profile_batch=0),
-                     tf.keras.callbacks.ModelCheckpoint(filepath=checkpoints_path, save_weights_only=False,
-                                                        monitor='val_loss'),
+                     CustomCheckpoint(filepath=checkpoints_path, save_weights_only=False,
+                                      save_best_only=True, monitor='val_loss'),
                      hp.KerasCallback(writer=str(tensorboard_log_dir), hparams=hparams)]
     else:
         callbacks = []
