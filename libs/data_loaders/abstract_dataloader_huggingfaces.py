@@ -93,8 +93,8 @@ class AbstractHuggingFacesTokenizer(AbstractDataloader, ABC):
         return tokenizer
 
     @staticmethod
-    def _decode(tokens, tokenizer):
-        return tokenizer.decode([t for t in tokens.astype(int) if t != 0])
+    def _decode(tokens, tokenizer:BaseTokenizer):
+        return tokenizer.decode(tokens)
 
     def _load_tokenizer(self,
                         language: str,

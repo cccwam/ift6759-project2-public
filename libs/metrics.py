@@ -50,8 +50,8 @@ class BleuIntervalEvaluation(tf.keras.callbacks.Callback):
         def compute_bleu(inputs):
             y_true_tf, y_pred_tf = inputs[0], inputs[1]
 
-            pred_sentence = self._dataloader.decode(y_pred_tf.numpy())
-            true_sentence = self._dataloader.decode(y_true_tf.numpy())
+            pred_sentence = self._dataloader.decode(y_pred_tf.numpy().tolist())
+            true_sentence = self._dataloader.decode(y_true_tf.numpy().tolist())
             bleu_score = sacrebleu.corpus_bleu(pred_sentence, true_sentence).score
 
             # To display some examples in logs
