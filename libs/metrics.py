@@ -61,7 +61,7 @@ class BleuIntervalEvaluation(tf.keras.callbacks.Callback):
             return tf.convert_to_tensor(bleu_score)
 
         stack = tf.stack([y_true, y_pred.argmax(-1)], axis=1)
-        return tf.reduce_mean(tf.map_fn(compute_bleu, stack, dtype=tf.float32))
+        return tf.reduce_mean(tf.map_fn(compute_bleu, stack, dtype=tf.float32, parallel_iterations=10))
 
 
 def perplexity(y_true, y_pred):

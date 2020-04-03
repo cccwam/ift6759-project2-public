@@ -90,6 +90,8 @@ class AbstractDataloader:
             self.training_dataset = self.training_dataset.take(int(self._samples_for_train / batch_size))
 
     # TF bug https://github.com/tensorflow/tensorflow/issues/28782
+    # DO NOT USE CACHE BECAUSE OF RANDOM MASKING FOR MLM taks
+    #
     #        self.test_dataset = self.test_dataset.cache()
     #        self.training_dataset = self.training_dataset.cache()
     #        self.valid_dataset = self.valid_dataset.cache()
