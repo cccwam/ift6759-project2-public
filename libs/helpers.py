@@ -8,6 +8,8 @@ from pathlib import Path
 import jsonschema
 import tensorflow as tf
 
+from libs.models import transformer
+
 logger = logging.getLogger(__name__)
 
 
@@ -115,25 +117,30 @@ def prepare_model(
         else:
             raise FileNotFoundError(f'Error: The file {default_model_path} does not exist.')
 
-    # ToDo Better handling of models that support .load_model vs those who don't
-    try:
-        model = tf.keras.models.load_model(model_source)
-    except ValueError:
-        print("Retrieving data loader for task")
-        data_loader = get_online_data_loader(config)
-        data_loader.build(
-            batch_size=64,
-            mode=config['data_loader']['hyper_params']['mode'])
-        training_dataset, _ = \
-            data_loader.training_dataset, data_loader.valid_dataset
-        model = get_online_model(config)
-        print("Initial fit on 1 batch to build model")
-        model.fit(
-            training_dataset.take(1), validation_steps=2,
-            ckpt_manager=None)
-        print("Loading weights")
-        model.load_weights(model_source)
-
+    print(f"Loading model: {model_source}")
+    # ToDo This is transformer specific
+    model = transformer.load_transformer(config)
+    # model = tf.keras.models.load_model(model_source)
+    # # ToDo Better handling of models that support .load_model vs those who don't
+    # try:
+    #     model = tf.keras.models.load_model(model_source)
+    # # ToDo Might be obsolete if MASS works
+    # except ValueError:
+    #     print("Retrieving data loader for task")
+    #     data_loader = get_online_data_loader(config)
+    #     data_loader.build(
+    #         batch_size=64,
+    #         mode=config['data_loader']['hyper_params']['mode'])
+    #     training_dataset, _ = \
+    #         data_loader.training_dataset, data_loader.valid_dataset
+    #     model = get_online_model(config)
+    #     print("Initial fit on 1 batch to build model")
+    #     model.fit(
+    #         training_dataset.take(1), validation_steps=2,
+    #         ckpt_manager=None)
+    #     print("Loading weights")
+    #     model.load_weights(model_source)
+    #
     return model
 
 
@@ -169,7 +176,7 @@ def compile_model(model, learning_rate, d_model=None):
     # ToDo identify how to select optimizer
     if learning_rate == -1:
         optimizer = tf.keras.optimizers.Adam(
-            CustomSchedule(d_model), beta_1=0.9, beta_2=0.98, epsilon=1e-9)
+            transformer.CustomSchedule(d_model), beta_1=0.9, beta_2=0.98, epsilon=1e-9)
     else:
         optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
 
@@ -180,7 +187,7 @@ def compile_model(model, learning_rate, d_model=None):
     if learning_rate == -1:
         model_instance.compile(
             optimizer=optimizer,
-            loss=loss_function_for_transformer,
+            loss=transformer.loss_function_for_transformer,
             metrics=[tf.keras.metrics.SparseCategoricalAccuracy()])
     else:
         model_instance.compile(
@@ -202,39 +209,3 @@ def get_mirrored_strategy():
     logger.debug('Number of used GPU devices: {}'.format(mirrored_strategy.num_replicas_in_sync))
     logger.debug("------------")
     return mirrored_strategy
-
-
-def loss_function_for_transformer(real, pred):
-    loss_object = tf.keras.losses.SparseCategoricalCrossentropy(
-        from_logits=True, reduction='none')
-    mask = tf.math.logical_not(tf.math.equal(real, 0))
-    loss_ = loss_object(real, pred)
-
-    mask = tf.cast(mask, dtype=loss_.dtype)
-    loss_ *= mask
-
-    return tf.reduce_mean(loss_)
-
-
-class CustomSchedule(tf.keras.optimizers.schedules.LearningRateSchedule):
-    def __init__(self, d_model, warmup_steps=4000):
-        super(CustomSchedule, self).__init__()
-
-        self.d_model = d_model
-        self.d_model_cast = tf.cast(self.d_model, tf.float32)
-
-        self.warmup_steps = warmup_steps
-
-    def get_config(self):
-        # config = super().get_config().copy()
-        config = {
-            'd_model': self.d_model,
-            'warmup_steps': self.warmup_steps,
-        }
-        return config
-
-    def __call__(self, step):
-        arg1 = tf.math.rsqrt(step)
-        arg2 = step * (self.warmup_steps ** -1.5)
-
-        return tf.math.rsqrt(self.d_model_cast) * tf.math.minimum(arg1, arg2)

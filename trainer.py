@@ -136,9 +136,13 @@ def train_models(
 
                     if mirrored_strategy is not None and mirrored_strategy.num_replicas_in_sync > 1:
                         with mirrored_strategy.scope():
-                            model = helpers.get_online_model(config)
+                            # ToDo sometimes we need to reload?
+                            model = helpers.get_model(config)
+                            # model = helpers.get_online_model(config)
                     else:
-                        model = helpers.get_online_model(config)
+                        # ToDo sometimes we need to reload?
+                        model = helpers.get_model(config)
+                        # model = helpers.get_online_model(config)
 
                     if tensorboard_tracking_folder is not None:
                         tensorboard_log_dir = str(tensorboard_experiment_id / str(variation_num))

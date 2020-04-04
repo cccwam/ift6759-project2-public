@@ -6,9 +6,8 @@ import typing
 import tensorflow as tf
 import numpy as np
 
-from libs.helpers import loss_function_for_transformer as loss_function
-from libs.helpers import get_online_data_loader, CustomSchedule
-from libs.models.helpers import load_pretrained_layers
+# from libs.helpers import get_online_data_loader
+# from libs.models.helpers import load_pretrained_layers
 
 
 def scaled_dot_product_attention(q, k, v, mask):
@@ -243,7 +242,7 @@ def positional_encoding(position, d_model):
 
 class Encoder(tf.keras.layers.Layer):
     def __init__(self, num_layers, d_model, num_heads, dff, vocab_size_source,
-                 maximum_position_encoding, dropout_rate=0.1):
+                 maximum_position_encoding, dropout_rate=0.1, **kwargs):
         super(Encoder, self).__init__()
 
         self.num_layers = num_layers
@@ -294,7 +293,7 @@ class Encoder(tf.keras.layers.Layer):
 
 class Decoder(tf.keras.layers.Layer):
     def __init__(self, num_layers, d_model, num_heads, dff, vocab_size_target,
-                 maximum_position_encoding, dropout_rate=0.1):
+                 maximum_position_encoding, dropout_rate=0.1, **kwargs):
         super(Decoder, self).__init__()
 
         self.num_layers = num_layers
@@ -419,7 +418,7 @@ class Transformer(tf.keras.Model):
             with tf.GradientTape() as tape:
                 predictions, _ = self(inp, tar_inp, True, enc_padding_mask,
                                       combined_mask, dec_padding_mask)
-                loss = loss_function(tar_real, predictions)
+                loss = loss_function_for_transformer(tar_real, predictions)
 
             gradients = tape.gradient(loss, self.trainable_variables)
             self.optimizer.apply_gradients(
@@ -438,7 +437,7 @@ class Transformer(tf.keras.Model):
 
             predictions, _ = self.call(inp, tar_inp, True, enc_padding_mask,
                                        combined_mask, dec_padding_mask)
-            loss = loss_function(tar_real, predictions)
+            loss = loss_function_for_transformer(tar_real, predictions)
 
             self.validation_loss(loss)
             self.validation_accuracy(tar_real, predictions)
@@ -565,19 +564,64 @@ def builder(config: typing.Dict[typing.AnyStr, typing.Any]):
         pe_target=vocab_size_target, dropout_rate=dropout_rate,
         model_name=model_hparams["name"])
 
-    if "pretrained_layers" in config["model"]["hyper_params"]:
-        print("Entering pretraining procedure")
-        print("Retrieving data loader")
-        task_data_loader = get_online_data_loader(config)
-        task_data_loader.build(
-            batch_size=64, mode=config['data_loader']['hyper_params']['mode'])
-        training_dataset, _ = \
-            task_data_loader.training_dataset, task_data_loader.valid_dataset
-        print("Initial fit on 1 batch to build main task model")
-        transformer_tl.fit(
-            training_dataset.take(1), validation_steps=2, ckpt_manager=None)
-        print("Loading pretrained layers")
-        load_pretrained_layers(config, transformer_tl)
-        print("Completed loading weights from pretrained model")
+    # if "pretrained_layers" in config["model"]["hyper_params"]:
+    #     print("Entering pretraining procedure")
+    #     print("Retrieving data loader")
+    #     task_data_loader = get_online_data_loader(config)
+    #     task_data_loader.build(
+    #         batch_size=64, mode=config['data_loader']['hyper_params']['mode'])
+    #     training_dataset, _ = \
+    #         task_data_loader.training_dataset, task_data_loader.valid_dataset
+    #     print("Initial fit on 1 batch to build main task model")
+    #     transformer_tl.fit(
+    #         training_dataset.take(1), validation_steps=2, ckpt_manager=None)
+    #     print("Loading pretrained layers")
+    #     load_pretrained_layers(config, transformer_tl)
+    #     print("Completed loading weights from pretrained model")
 
     return transformer_tl
+
+
+def loss_function_for_transformer(real, pred):
+    loss_object = tf.keras.losses.SparseCategoricalCrossentropy(
+        from_logits=True, reduction='none')
+    mask = tf.math.logical_not(tf.math.equal(real, 0))
+    loss_ = loss_object(real, pred)
+
+    mask = tf.cast(mask, dtype=loss_.dtype)
+    loss_ *= mask
+
+    return tf.reduce_mean(loss_)
+
+
+class CustomSchedule(tf.keras.optimizers.schedules.LearningRateSchedule):
+    def __init__(self, d_model, warmup_steps=4000):
+        super(CustomSchedule, self).__init__()
+
+        self.d_model = d_model
+        self.d_model_cast = tf.cast(self.d_model, tf.float32)
+
+        self.warmup_steps = warmup_steps
+
+    def get_config(self):
+        # config = super().get_config().copy()
+        config = {
+            'd_model': self.d_model,
+            'warmup_steps': self.warmup_steps,
+        }
+        return config
+
+    def __call__(self, step):
+        arg1 = tf.math.rsqrt(step)
+        arg2 = step * (self.warmup_steps ** -1.5)
+
+        return tf.math.rsqrt(self.d_model_cast) * tf.math.minimum(arg1, arg2)
+
+
+def load_transformer(config):
+    return tf.keras.models.load_model(
+        config['model']['source'],
+        custom_objects={'Encoder': Encoder,
+                        'Decoder': Decoder,
+                        'CustomSchedule': CustomSchedule,
+                        'loss_function_for_transformer': loss_function_for_transformer})
