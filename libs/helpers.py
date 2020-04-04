@@ -118,9 +118,10 @@ def prepare_model(
             raise FileNotFoundError(f'Error: The file {default_model_path} does not exist.')
 
     print(f"Loading model: {model_source}")
-    # ToDo This is transformer specific
-    model = transformer.load_transformer(config)
-    # model = tf.keras.models.load_model(model_source)
+    if config["model"]["definition"]["module"] == 'libs.models.transformerv2':
+        model = transformer.load_transformer(config)
+    else:
+        model = tf.keras.models.load_model(model_source)
     # # ToDo Better handling of models that support .load_model vs those who don't
     # try:
     #     model = tf.keras.models.load_model(model_source)
@@ -163,7 +164,7 @@ def get_tensorboard_experiment_id(experiment_name, tensorboard_tracking_folder: 
     return tensorboard_tracking_folder / model_sub_folder
 
 
-def compile_model(model, learning_rate, d_model=None):
+def compile_model(model, learning_rate, config=None):
     """
         Helper function to compile a new model at each variation of the experiment
     :param learning_rate:
@@ -175,8 +176,10 @@ def compile_model(model, learning_rate, d_model=None):
 
     # ToDo identify how to select optimizer
     if learning_rate == -1:
+        d_model = config['model']['hyper_params']['d_model']
         optimizer = tf.keras.optimizers.Adam(
-            transformer.CustomSchedule(d_model), beta_1=0.9, beta_2=0.98, epsilon=1e-9)
+            transformer.CustomSchedule(d_model), beta_1=0.9, beta_2=0.98,
+            epsilon=1e-9)
     else:
         optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
 

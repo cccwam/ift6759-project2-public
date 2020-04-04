@@ -50,11 +50,6 @@ def train_models(
     :param tensorboard_tracking_folder: The TensorBoard tracking folder
     """
     model_dict = config['model']
-    # ToDo move this elsewhere
-    if 'd_model' in config['model']['hyper_params']:
-        d_model = config['model']['hyper_params']['d_model']
-    else:
-        d_model = None
     data_loader_dict = config['data_loader']
     trainer_hyper_params = config['trainer']['hyper_params']
 
@@ -94,6 +89,7 @@ def train_models(
     hp_patience = hp.HParam('patience', hp.Discrete(trainer_hyper_params["patience"]))
 
     # ToDo Better way to differentiate different data loading logic
+    # ToDo Obsolete
     if 'mode' in config['data_loader']['hyper_params']:
         data_loader.build(batch_size=hp_batch_size.domain.values[0], mode=config['data_loader']['hyper_params']['mode'])
     else:
@@ -167,7 +163,7 @@ def train_models(
                         learning_rate=learning_rate,
                         patience=patience,
                         checkpoints_path=checkpoints_path,
-                        d_model=d_model
+                        config=config
                     )
                     variation_num += 1
 
@@ -187,7 +183,7 @@ def train_model(
         learning_rate: float,
         patience: int,
         checkpoints_path: str,
-        d_model: int,
+        config,
 ):
     """
     The training loop for a single model
@@ -217,14 +213,14 @@ def train_model(
                 compiled_model = model
                 fit_kwargs['ckpt_manager'] = compiled_model.load_checkpoint()
             else:
-                compiled_model = helpers.compile_model(model, learning_rate=learning_rate, d_model=d_model)
+                compiled_model = helpers.compile_model(model, learning_rate=learning_rate, config=config)
     else:
         # ToDo Obsolete with TransformerV2?
         if hasattr(model, 'lr'):
             compiled_model = model
             fit_kwargs['ckpt_manager'] = compiled_model.load_checkpoint()
         else:
-            compiled_model = helpers.compile_model(model, learning_rate=learning_rate, d_model=d_model)
+            compiled_model = helpers.compile_model(model, learning_rate=learning_rate, config=config)
 
     if tensorboard_log_dir is not None:
         # Workaround for https://github.com/tensorflow/tensorboard/issues/2412

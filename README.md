@@ -99,7 +99,22 @@ python trainer.py \
 ```
 
 * `config`: Path to the JSON config file used to store user model, dataloader and trainer parameters and  that follows configs/user/schema.json.
-* `tensorboard_tracking_folder`: Path where to store TensorBoard data and save trained model. 
+* `tensorboard_tracking_folder`: Path where to store TensorBoard data and save trained model.
+
+### Full MASS pretraining task pipeline
+
+```
+# Run pretraining task
+python trainer.py \
+    --config config/user/transformer_mass_v1_pretraining.json
+    --tensorboard_tracking_folder /project/cq-training-1/project2/teams/team03/tensorboard/$USER
+# Copy resulting model to desired location and use as source in the config for the translation task that follows
+# Translation task
+python trainer.py \
+    --config config/user/transformer_mass_v1_translation_with_pretraining.json
+    --tensorboard_tracking_folder /project/cq-training-1/project2/teams/team03/tensorboard/$USER
+# For evaluation, do not forget to change the best_config in evaluator.py
+``` 
 
 ## Special requirements
 

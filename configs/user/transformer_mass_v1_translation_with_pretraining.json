@@ -12,7 +12,7 @@
       "dff": 512,
       "dropout_rate": 0.2
     },
-    "source": "online"
+    "source": "placeholder_for_saved_model_path"
   },
   "data_loader": {
     "definition": {
@@ -38,7 +38,7 @@
         -1
       ],
       "epochs": [
-        40
+        1
       ],
       "batch_size": [
         64

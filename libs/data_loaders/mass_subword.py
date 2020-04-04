@@ -67,6 +67,55 @@ def create_for_transformer_eval(tokenizer):
     return tf_py_encode
 
 
+def create_text_datasets(config):
+    dl_hparams = config["data_loader"]["hyper_params"]
+    path_data = dl_hparams["preprocessed_data_path"]["folder"]
+
+    path_trad_en_train = os.path.join(path_data, 'original',
+                                      'train.lang1.train')
+    path_trad_en_test = os.path.join(path_data, 'original',
+                                     'train.lang1.test')
+    path_unal_en_train = os.path.join(path_data,
+                                      'tokenized_default_no_punc',
+                                      'unaligned.en.train')
+    path_trad_en_val = os.path.join(path_data, 'original',
+                                    'train.lang1.validation')
+    path_unal_en_val = os.path.join(path_data, 'tokenized_default_no_punc',
+                                    'unaligned.en.validation')
+    path_trad_fr_train = os.path.join(path_data, 'original',
+                                      'train.lang2.train')
+    path_trad_fr_test = os.path.join(path_data, 'original',
+                                     'train.lang2.test')
+    path_unal_fr_train = os.path.join(path_data, 'tokenized_keep_case',
+                                      'unaligned.fr.train')
+    path_trad_fr_val = os.path.join(path_data, 'original',
+                                    'train.lang2.validation')
+    path_unal_fr_val = os.path.join(path_data, 'tokenized_keep_case',
+                                    'unaligned.fr.validation')
+    # Create all TextLineDataset objects
+    datasets = {
+        'sentences_translation_en_train': TextLineDataset(
+            [path_trad_en_train]),
+        'sentences_translation_en_validation': TextLineDataset(
+            [path_trad_en_val]),
+        'sentences_translation_en_test': TextLineDataset(
+            [path_trad_en_test]),
+        'sentences_all_train': TextLineDataset(
+            [path_trad_en_train, path_unal_en_train,
+             path_trad_fr_train, path_unal_fr_train]),
+        'sentences_all_validation': TextLineDataset(
+            [path_trad_en_val, path_unal_en_val,
+             path_trad_fr_val, path_unal_fr_val]),
+        'sentences_translation_fr_train': TextLineDataset(
+            [path_trad_fr_train]),
+        'sentences_translation_fr_validation': TextLineDataset(
+            [path_trad_fr_val]),
+        'sentences_translation_fr_test': TextLineDataset(
+            [path_trad_fr_test]),
+    }
+    return datasets
+
+
 def create_for_transformer_mass_task(tokenizer, rseed=325, fragment_factor=0.5):
     def encode(lang1):
         """Encode with tokenizer and add beginning/end of sentence tokens
@@ -139,53 +188,12 @@ class MassSubwordDataLoader:
         self.validation_steps = None
         self.raw_english_test_set_file_path = raw_english_test_set_file_path
 
+    # ToDo mode obsolete
     def build(self, batch_size, mode='translate'):
         dl_hparams = self.config["data_loader"]["hyper_params"]
-        path_data = dl_hparams["preprocessed_data_path"]["folder"]
         vocabulary_name = dl_hparams["vocabulary_name"]
 
-        path_trad_en_train = os.path.join(path_data, 'original',
-                                          'train.lang1.train')
-        path_trad_en_test = os.path.join(path_data, 'original',
-                                         'train.lang1.test')
-        path_unal_en_train = os.path.join(path_data,
-                                          'tokenized_default_no_punc',
-                                          'unaligned.en.train')
-        path_trad_en_val = os.path.join(path_data, 'original',
-                                        'train.lang1.validation')
-        path_unal_en_val = os.path.join(path_data, 'tokenized_default_no_punc',
-                                        'unaligned.en.validation')
-        path_trad_fr_train = os.path.join(path_data, 'original',
-                                          'train.lang2.train')
-        path_trad_fr_test = os.path.join(path_data, 'original',
-                                         'train.lang2.test')
-        path_unal_fr_train = os.path.join(path_data, 'tokenized_keep_case',
-                                          'unaligned.fr.train')
-        path_trad_fr_val = os.path.join(path_data, 'original',
-                                        'train.lang2.validation')
-        path_unal_fr_val = os.path.join(path_data, 'tokenized_keep_case',
-                                        'unaligned.fr.validation')
-        # Create all TextLineDataset objects
-        datasets = {
-            'sentences_translation_en_train': TextLineDataset(
-                [path_trad_en_train]),
-            'sentences_translation_en_validation': TextLineDataset(
-                [path_trad_en_val]),
-            'sentences_translation_en_test': TextLineDataset(
-                [path_trad_en_test]),
-            'sentences_all_train': TextLineDataset(
-                [path_trad_en_train, path_unal_en_train,
-                 path_trad_fr_train, path_unal_fr_train]),
-            'sentences_all_validation': TextLineDataset(
-                [path_trad_en_val, path_unal_en_val,
-                 path_trad_fr_val, path_unal_fr_val]),
-            'sentences_translation_fr_train': TextLineDataset(
-                [path_trad_fr_train]),
-            'sentences_translation_fr_validation': TextLineDataset(
-                [path_trad_fr_val]),
-            'sentences_translation_fr_test': TextLineDataset(
-                [path_trad_fr_test]),
-        }
+        datasets = create_text_datasets(self.config)
         if self.raw_english_test_set_file_path:
             sentences_test = TextLineDataset([self.raw_english_test_set_file_path])
 
@@ -194,27 +202,12 @@ class MassSubwordDataLoader:
         self.vocab_size_source = self.tokenizer.vocab_size + 2
         print(self.vocab_size_source)
 
-        if mode == 'all':
-            # ToDo use the whole dataset
-            sentences_translation_both_train = tf.data.Dataset.zip(
-                (datasets['sentences_all_en_train'].take(30000),
-                 datasets['sentences_all_en_train'].take(30000)))
-            sentences_translation_both_validation = tf.data.Dataset.zip(
-                (datasets['sentences_all_en_validation'].take(5000),
-                 datasets['sentences_all_en_validation'].take(5000)))
-            # sentences_translation_both_train = tf.data.Dataset.zip(
-            #     (datasets['sentences_all_en_train'],
-            #      datasets['sentences_all_en_train']))
-            # sentences_translation_both_validation = tf.data.Dataset.zip(
-            #     (datasets['sentences_all_en_validation'],
-            #      datasets['sentences_all_en_validation']))
-        else:
-            sentences_translation_both_train = tf.data.Dataset.zip(
-                (datasets['sentences_translation_en_train'],
-                 datasets['sentences_translation_fr_train']))
-            sentences_translation_both_validation = tf.data.Dataset.zip(
-                (datasets['sentences_translation_en_validation'],
-                 datasets['sentences_translation_fr_validation']))
+        sentences_translation_both_train = tf.data.Dataset.zip(
+            (datasets['sentences_translation_en_train'],
+             datasets['sentences_translation_fr_train']))
+        sentences_translation_both_validation = tf.data.Dataset.zip(
+            (datasets['sentences_translation_en_validation'],
+             datasets['sentences_translation_fr_validation']))
 
         tf_encode = create_for_transformer_pre_mask(self.tokenizer)
 
@@ -314,53 +307,12 @@ class MassSubwordDataLoaderPretraining:
         self.validation_steps = None
         self.raw_english_test_set_file_path = raw_english_test_set_file_path
 
+    # ToDo mode obsolete
     def build(self, batch_size, mode='translate'):
         dl_hparams = self.config["data_loader"]["hyper_params"]
-        path_data = dl_hparams["preprocessed_data_path"]["folder"]
         vocabulary_name = dl_hparams["vocabulary_name"]
 
-        path_trad_en_train = os.path.join(path_data, 'original',
-                                          'train.lang1.train')
-        path_trad_en_test = os.path.join(path_data, 'original',
-                                         'train.lang1.test')
-        path_unal_en_train = os.path.join(path_data,
-                                          'tokenized_default_no_punc',
-                                          'unaligned.en.train')
-        path_trad_en_val = os.path.join(path_data, 'original',
-                                        'train.lang1.validation')
-        path_unal_en_val = os.path.join(path_data, 'tokenized_default_no_punc',
-                                        'unaligned.en.validation')
-        path_trad_fr_train = os.path.join(path_data, 'original',
-                                          'train.lang2.train')
-        path_trad_fr_test = os.path.join(path_data, 'original',
-                                         'train.lang2.test')
-        path_unal_fr_train = os.path.join(path_data, 'tokenized_keep_case',
-                                          'unaligned.fr.train')
-        path_trad_fr_val = os.path.join(path_data, 'original',
-                                        'train.lang2.validation')
-        path_unal_fr_val = os.path.join(path_data, 'tokenized_keep_case',
-                                        'unaligned.fr.validation')
-        # Create all TextLineDataset objects
-        datasets = {
-            'sentences_translation_en_train': TextLineDataset(
-                [path_trad_en_train]),
-            'sentences_translation_en_validation': TextLineDataset(
-                [path_trad_en_val]),
-            'sentences_translation_en_test': TextLineDataset(
-                [path_trad_en_test]),
-            'sentences_all_train': TextLineDataset(
-                [path_trad_en_train, path_unal_en_train,
-                 path_trad_fr_train, path_unal_fr_train]),
-            'sentences_all_validation': TextLineDataset(
-                [path_trad_en_val, path_unal_en_val,
-                 path_trad_fr_val, path_unal_fr_val]),
-            'sentences_translation_fr_train': TextLineDataset(
-                [path_trad_fr_train]),
-            'sentences_translation_fr_validation': TextLineDataset(
-                [path_trad_fr_val]),
-            'sentences_translation_fr_test': TextLineDataset(
-                [path_trad_fr_test]),
-        }
+        datasets = create_text_datasets(self.config)
 
         self.tokenizer = subwords.subword_tokenizer(
             vocabulary_name, datasets['sentences_all_train'])
@@ -372,7 +324,6 @@ class MassSubwordDataLoaderPretraining:
         sentences_both_validation = datasets['sentences_all_validation'].shuffle(buffer_size=500000).take(5000)
         # sentences_both_train = datasets['sentences_all_train'].shuffle(buffer_size=500000)
         # sentences_both_validation = datasets['sentences_all_validation'].shuffle(buffer_size=500000)
-
 
         tf_encode = create_for_transformer_mass_task(self.tokenizer)
 

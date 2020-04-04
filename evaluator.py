@@ -24,10 +24,10 @@ def generate_predictions(input_file_path: str, pred_file_path: str):
     from libs.models import transformer
 
     # best_config = 'configs/user/lm_lstm_fr_v1.json'
-    best_config_file = 'configs/user/transformer_mass_v1_translation_no_pretraining.local.json'
+    best_config_file = 'configs/user/transformer_mass_v1_translation_with_pretraining.local.json'
     print(f"Using best config file: {best_config_file}")
     best_config = helpers.load_dict(best_config_file)
-    # ToDo make sure others don't use this
+    # ToDo obsolete make sure others don't use this
     if 'pretrained_layers' in best_config["model"]["hyper_params"]:
         del best_config["model"]["hyper_params"]["pretrained_layers"]
     helpers.validate_user_config(best_config)
@@ -35,12 +35,13 @@ def generate_predictions(input_file_path: str, pred_file_path: str):
     # TODO: Edit our AbstractDataloader to support a raw_english_test_set_file_path. Currently it only supports
     #   preprocessed data defined directly in best_config.
     data_loader: AbstractDataloader = helpers.get_online_data_loader(best_config, input_file_path)
-    # ToDo this is a replacement for custom layers
-    # model: tf.keras.Model = helpers.get_model(best_config)
-    model = transformer.load_transformer(best_config)
+    if best_config["model"]["definition"]["module"] == 'libs.models.transformerv2':
+        model = transformer.load_transformer(best_config)
+    else:
+        model: tf.keras.Model = helpers.get_model(best_config)
 
     # ToDo increase batch size for inference?
-    batch_size = 64
+    batch_size = 128
     data_loader.build(batch_size)
     test_dataset = data_loader.test_dataset
 
@@ -69,62 +70,8 @@ def generate_predictions(input_file_path: str, pred_file_path: str):
                 [j for j in result if j < data_loader.tokenizer_fr.vocab_size])
             all_predictions.append(predicted_sentence)
     elif best_config["data_loader"]["definition"]["name"] == 'MassSubwordDataLoader':
-        # ToDo might need end token if we want a stop criteria
-        # end_token = data_loader.tokenizer.vocab_size + 1
-
-        # ToDo actually fetch by name
-        encoder = model.layers[3]
-        decoder = model.layers[5]
-        final_layer = model.layers[6]
-        for i, test_inp in enumerate(test_dataset):
-            enc_inp, dec_inp, padding_mask, combined_mask = test_inp
-            enc_output = encoder(enc_inp, False, padding_mask)
-            for slen in range(100):
-                # enc_padding_mask, combined_mask, dec_padding_mask = \
-                #     create_masks(encoder_input, transformer_output)
-
-                # predictions.shape == (batch_size, seq_len, vocab_size)
-                dec_output, attention_weights = decoder(
-                    dec_inp, enc_output, False, combined_mask,
-                    padding_mask)
-                final_output = final_layer(dec_output)
-
-                # predictions, attention_weights = self(encoder_input,
-                #                                       transformer_output,
-                #                                       False,
-                #                                       enc_padding_mask,
-                #                                       combined_mask,
-                #                                       dec_padding_mask)
-
-                # select the last word from the seq_len dimension
-                predictions = final_output[:, -1:, :]
-                # (batch_size, 1, vocab_size)
-
-                predicted_id = tf.cast(tf.argmax(predictions, axis=-1),
-                                       tf.int64)  # (batch_size, 1)
-
-                # ToDo reimplement this stop criteria in batch?
-                # return the result if the predicted_id is equal to the end token
-                # if predicted_id == end_token:
-                #     return tf.squeeze(transformer_output,
-                #                       axis=0), attention_weights
-
-                # concatentate the predicted_id to the output which is given to the
-                # decoder as its input.
-                dec_inp = tf.concat([dec_inp, predicted_id], axis=-1)
-
-            # return tf.squeeze(dec_inp, axis=0)
-
-            for i in range(dec_inp.shape[0]):
-                sent_ids = []
-                for j in dec_inp[i]:
-                    if j == data_loader.tokenizer.vocab_size:
-                        continue
-                    if j == data_loader.tokenizer.vocab_size + 1:
-                        break
-                    sent_ids.append(j)
-                predicted_sentence = data_loader.tokenizer.decode(sent_ids)
-                all_predictions.append(predicted_sentence)
+        all_predictions = transformer.inference(
+            data_loader.tokenizer, model, test_dataset)
     else:
         for mini_batch in test_dataset.batch(batch_size):
             # Outputs are mini_batch[:, 1]

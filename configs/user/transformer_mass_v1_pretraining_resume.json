@@ -5,19 +5,19 @@
       "name": "builder"
     },
     "hyper_params": {
-      "name": "TRANSFORMER_MASS_V1",
+      "name": "TRANSFORMER_MASS_V1_PRETRAINING",
       "num_layers": 3,
       "d_model": 128,
       "num_heads": 4,
       "dff": 512,
       "dropout_rate": 0.2
     },
-    "source": "online"
+    "source": "placeholder_for_saved_model_path"
   },
   "data_loader": {
     "definition": {
       "module": "libs.data_loaders.mass_subword",
-      "name": "MassSubwordDataLoader"
+      "name": "MassSubwordDataLoaderPretraining"
     },
     "hyper_params": {
       "preprocessed_data_path": {
@@ -38,7 +38,7 @@
         -1
       ],
       "epochs": [
-        40
+        1
       ],
       "batch_size": [
         64

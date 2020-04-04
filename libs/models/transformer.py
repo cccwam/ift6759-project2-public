@@ -625,3 +625,59 @@ def load_transformer(config):
                         'Decoder': Decoder,
                         'CustomSchedule': CustomSchedule,
                         'loss_function_for_transformer': loss_function_for_transformer})
+
+
+def inference(tokenizer, model, test_dataset):
+    begin_token = tokenizer.vocab_size
+    end_token = tokenizer.vocab_size + 1
+
+    # ToDo actually fetch by name
+    encoder = model.layers[3]
+    # encoder = [layer for layer in model.layers if layer.name=='Encoder'][0]
+    decoder = model.layers[5]
+    # decoder = [layer for layer in model.layers if layer.name == 'Decoder'][0]
+    final_layer = model.layers[6]
+    # final_layer = [layer for layer in model.layers if layer.name == '???'][0]
+    all_predictions = []
+    for i, test_inp in enumerate(test_dataset):
+        # ToDo better verbosity
+        print(i)
+        enc_inp, dec_inp, padding_mask, combined_mask = test_inp
+        enc_output = encoder(enc_inp, False, padding_mask)
+        # ToDo allow different max length?
+        for slen in range(100):
+            dec_output, attention_weights = decoder(
+                dec_inp, enc_output, False, combined_mask,
+                padding_mask)
+            final_output = final_layer(dec_output)
+            # final_output.shape == (batch_size, seq_len, vocab_size)
+
+            # select the last word from the seq_len dimension
+            predictions = final_output[:, -1:, :]
+            # (batch_size, 1, vocab_size)
+
+            predicted_id = tf.cast(tf.argmax(predictions, axis=-1),
+                                   tf.int64)  # (batch_size, 1)
+
+            # ToDo reimplement this stop criteria in batch?
+            # return the result if the predicted_id is equal to the end token
+            # if predicted_id == end_token:
+            #     return tf.squeeze(transformer_output,
+            #                       axis=0), attention_weights
+
+            # concatentate the predicted_id to the output which is given to the
+            # decoder as its input.
+            dec_inp = tf.concat([dec_inp, predicted_id], axis=-1)
+
+        for i in range(dec_inp.shape[0]):
+            sent_ids = []
+            for j in dec_inp[i]:
+                if j == begin_token:
+                    continue
+                if j == end_token:
+                    break
+                sent_ids.append(j)
+            predicted_sentence = tokenizer.decode(sent_ids)
+            all_predictions.append(predicted_sentence)
+
+    return all_predictions

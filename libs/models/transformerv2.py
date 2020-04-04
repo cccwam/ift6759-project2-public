@@ -52,20 +52,4 @@ def builder(config: typing.Dict[typing.AnyStr, typing.Any]):
                            outputs, name=model_hparams["name"])
     model.summary(line_length=120)
 
-    # ToDo review this, probably obsolete
-    # if "pretrained_layers" in config["model"]["hyper_params"]:
-    #     print("Entering pretraining procedure")
-    #     print("Retrieving data loader")
-    #     task_data_loader = get_online_data_loader(config)
-    #     task_data_loader.build(
-    #         batch_size=64, mode=config['data_loader']['hyper_params']['mode'])
-    #     training_dataset, _ = \
-    #         task_data_loader.training_dataset, task_data_loader.valid_dataset
-    #     print("Initial fit on 1 batch to build main task model")
-    #     transformer_tl.fit(
-    #         training_dataset.take(1), validation_steps=2, ckpt_manager=None)
-    #     print("Loading pretrained layers")
-    #     load_pretrained_layers(config, transformer_tl)
-    #     print("Completed loading weights from pretrained model")
-
     return model
