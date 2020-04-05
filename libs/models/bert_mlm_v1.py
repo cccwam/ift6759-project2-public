@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 """
     BERT model for a masked language model task for one language only.
-    
+
     It's the same model as machine translation task.
 """
 
