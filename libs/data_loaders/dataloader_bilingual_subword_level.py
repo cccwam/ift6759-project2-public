@@ -138,13 +138,20 @@ class BilingualTranslationLMDataloaderSubword(AbstractBilingualDataloaderSubword
             yield ((inputs, attention_masks, tokens_type_ids), output)
 
     def _hook_dataset_post_precessing(self, ds: tf.data.Dataset):
+        # Do action only for 15% of tokens (and mask output for others)
+        prob_mask_idx = 0.15
         # 10% nothing to do, 10% random word, 80% mask
-        distrib_mask = tfp.distributions.Multinomial(total_count=1, probs=[0.1, 0.1, 0.8])
+        # prob_nothing, prob_random_replacement, prob_replace_by_mask \
+        prob_mask_actions = np.array([0.1, 0.1, 0.8])
+        prob_mask_actions = prob_mask_actions * prob_mask_idx
+        prob_mask_actions = np.append(prob_mask_actions, [1 - sum(prob_mask_actions)]).tolist()
+        distrib_mask = tfp.distributions.Multinomial(total_count=1,
+                                                     probs=prob_mask_actions)
 
         distrib_random = tfp.distributions.Uniform(low=len(self._special_tokens), high=self._vocab_size_source)
 
         return self._apply_mask_for_mlm(ds=ds,
-                                        distrib_mask=distrib_mask,
+                                        distrib_mask_actions=distrib_mask,
                                         distrib_random=distrib_random)
 
     def decode(self, tokens: List[int]):
@@ -205,13 +212,20 @@ class BilingualCustomPretrainingDataloaderSubword(AbstractBilingualDataloaderSub
     #         yield ((inputs, attention_masks, tokens_type_ids, tf.convert_to_tensor(isinstance())), output)
 
     def _hook_dataset_post_precessing(self, ds: tf.data.Dataset):
+        # Do action only for 15% of tokens (and mask output for others)
+        prob_mask_idx = 0.15
         # 10% nothing to do, 10% random word, 80% mask
-        distrib_mask = tfp.distributions.Multinomial(total_count=1, probs=[0.1, 0.1, 0.8])
+        # prob_nothing, prob_random_replacement, prob_replace_by_mask \
+        prob_mask_actions = np.array([0.1, 0.1, 0.8])
+        prob_mask_actions = prob_mask_actions * prob_mask_idx
+        prob_mask_actions = np.append(prob_mask_actions, [1 - sum(prob_mask_actions)]).tolist()
+        distrib_mask = tfp.distributions.Multinomial(total_count=1,
+                                                     probs=prob_mask_actions)
 
         distrib_random = tfp.distributions.Uniform(low=len(self._special_tokens), high=self._vocab_size_source)
 
         return self._apply_mask_for_mlm(ds=ds,
-                                        distrib_mask=distrib_mask,
+                                        distrib_mask_actions=distrib_mask,
                                         distrib_random=distrib_random)
 
     def decode(self, tokens: List[int]):
