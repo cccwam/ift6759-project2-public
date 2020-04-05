@@ -42,9 +42,7 @@ class CustomCheckpoint(tf.keras.callbacks.ModelCheckpoint):
                             self.model.save(filepath, overwrite=True)
 
                         # CUSTOM LOGIC
-                        if isinstance(self.model, TFPreTrainedModel):
-                            model_hgf: TFPreTrainedModel = self.model
-                            model_hgf.save_pretrained(str(Path(filepath).parent / "huggingface"))
+                        self._custom_logic(filepath=filepath)
                         # END CUSTOM LOGIC
                     else:
                         if self.verbose > 0:
@@ -57,10 +55,16 @@ class CustomCheckpoint(tf.keras.callbacks.ModelCheckpoint):
                     self.model.save_weights(filepath, overwrite=True)
                 else:
                     self.model.save(filepath, overwrite=True)
+
                 # CUSTOM LOGIC
-                if isinstance(self.model, TFPreTrainedModel):
-                    model_hgf: TFPreTrainedModel = self.model
-                    model_hgf.save_pretrained(str(Path(filepath).parent / "huggingface"))
+                self._custom_logic(filepath=filepath)
                 # END CUSTOM LOGIC
 
             self._maybe_remove_file()
+
+    def _custom_logic(self, filepath: str):
+        if isinstance(self.model.layers[-1], TFPreTrainedModel):
+            model_hgf: TFPreTrainedModel = self.model.layers[-1]
+            folder: Path = Path(filepath).parent / "huggingface"
+            folder.mkdir(parents=True, exist_ok=True)
+            model_hgf.save_pretrained(str(folder))

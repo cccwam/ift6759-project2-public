@@ -191,7 +191,8 @@ class AbstractHuggingFacesTokenizer(AbstractDataloader, ABC):
             output_shape = tf.shape(output)  # Shape Seq Length
 
             # TODO set seed
-            masks = distrib_mask_actions.sample(input_shape, seed=42)  # Shape Seq Length * Probability for each class (4)
+            masks = distrib_mask_actions.sample(input_shape,
+                                                seed=42)  # Shape Seq Length * Probability for each class (4)
             masks = tf.cast(masks, dtype=tf.int32)
             random_tokens = distrib_random.sample(input_shape, seed=42)  # TODO set seed
             random_tokens = tf.cast(random_tokens, dtype=tf.int32)

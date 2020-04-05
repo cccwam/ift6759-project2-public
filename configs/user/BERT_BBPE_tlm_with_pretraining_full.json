@@ -1,0 +1,82 @@
+{
+  "model": {
+    "definition": {
+      "module": "libs.models.bert_mt_v1",
+      "name": "builder"
+    },
+    "hyper_params": {
+      "name": "BERT-Small",
+      "num_hidden_layers": 4,
+      "num_attention_heads": 8,
+      "hidden_size": 512,
+      "pretrained_model_huggingface": "TODO"
+    },
+    "source": ""
+  },
+  "data_loader": {
+    "definition": {
+      "module": "libs.data_loaders.dataloader_bilingual_subword_level",
+      "name": "BilingualTranslationLMDataloaderSubword"
+    },
+    "hyper_params": {
+      "preprocessed_data_path": {
+        "folder": "/project/cq-training-1/project2/teams/team03/data/word_level_24032020",
+        "bilingual_corpus_filenames": [
+          "train_lang1_en_tokenized.pickle",
+          "train_lang2_fr_tokenized.pickle"
+        ],
+        "languages": [
+          "BOTH",
+          "BOTH"
+        ],
+        "corpora_filenames": [
+          [
+            "unaligned_en_tokenized.pickle",
+            "unaligned_fr_tokenized.pickle",
+            "train_lang1_en_tokenized.pickle",
+            "train_lang2_fr_tokenized.pickle"
+          ],
+          [
+            "unaligned_en_tokenized.pickle",
+            "unaligned_fr_tokenized.pickle",
+            "train_lang1_en_tokenized.pickle",
+            "train_lang2_fr_tokenized.pickle"
+          ]
+        ]
+      },
+      "pretrained_model_dir_path": "/project/cq-training-1/project2/teams/team03/models/pretokenizers",
+      "tokenizer_algorithm": "ByteLevelBPETokenizer",
+      "tmp_path": "/tmp",
+      "dropout": 0.1,
+      "vocab_size_source": 8000,
+      "seq_length_source": 512,
+      "vocab_size_target": 8000,
+      "seq_length_target": 512,
+      "samples_for_test": 500,
+      "samples_for_valid": 500,
+      "samples_for_train": 500
+    }
+  },
+  "trainer": {
+    "hyper_params": {
+      "loss": "mlm_loss",
+      "metrics": [
+        "sparse_accuracy",
+        "perplexity_mlm"
+      ],
+      "optimizer": "adam",
+      "lr_rate": [
+        1e-4
+      ],
+      "epochs": [
+        30
+      ],
+      "batch_size": [
+        8
+      ],
+      "patience": [
+        2
+      ]
+    }
+  }
+}

@@ -40,10 +40,14 @@ def builder(
                                max_position_embeddings=consolidated_seq_length,
                                hidden_size=hidden_size)
 
+    # Idea for using Bert as part of larger model
+    # https://github.com/huggingface/transformers/issues/1350
     if "pretrained_model_huggingface" in model_hparams:
-        # TODO test to reload
-        bert_model = TFBertForMaskedLM(configuration).from_pretrained(model_hparams["pretrained_model_huggingface"])
+        pretrained_model_huggingface_path: str = model_hparams["pretrained_model_huggingface"]
+        logger.info(f"Load existing model from {pretrained_model_huggingface_path}")
+        bert_model = TFBertForMaskedLM(configuration).from_pretrained(pretrained_model_huggingface_path)
     else:
+        logger.info(f"No existing model")
         # Initializing a model from the configuration
         bert_model = TFBertForMaskedLM(configuration)
 
