@@ -77,7 +77,7 @@ class SubwordDataLoader:
     def __init__(self, config: dict, raw_english_test_set_file_path=None, **kwargs):
         self.config = config
         self.training_dataset = None
-        self.validation_dataset = None
+        self.valid_dataset = None
         self.test_dataset = None
         self.tokenizer_en = None
         self.tokenizer_fr = None
@@ -184,13 +184,9 @@ class SubwordDataLoader:
         val_preprocessed = (
             sentences_translation_both_validation.map(tf_encode))
 
-        self.training_dataset = (
-            train_preprocessed
-                .padded_batch(batch_size, padded_shapes=([None], [None]))
-                .prefetch(tf.data.experimental.AUTOTUNE))
-        self.valid_dataset = (
-            val_preprocessed
-                .padded_batch(batch_size, padded_shapes=([None], [None])))
+        train_preprocessed = train_preprocessed.padded_batch(batch_size, padded_shapes=([None], [None]))
+        self.training_dataset = (train_preprocessed.prefetch(tf.data.experimental.AUTOTUNE))
+        self.valid_dataset = val_preprocessed.padded_batch(batch_size, padded_shapes=([None], [None]))
 
     def get_hparams(self):
         return f"vocab_size_{self.vocab_size_source},{self.vocab_size_target}"
