@@ -123,7 +123,8 @@ class MonolingualMaskLMDataloaderSubword(AbstractMonolingualDataloaderSubword):
 
             yield ((inputs, attention_masks, tokens_type_ids), output)
 
-    def _hook_dataset_post_precessing(self, ds: tf.data.Dataset): # TODO refactoring because this logic is also in bilingual
+    def _hook_dataset_post_precessing(self, ds: tf.data.Dataset):
+        # TODO refactoring because this logic is also in bilingual
         # Do action only for 15% of tokens (and mask output for others)
         prob_mask_idx = 0.15
         # 10% nothing to do, 10% random word, 80% mask
