@@ -657,7 +657,7 @@ def inference(tokenizer, model, test_dataset):
             # (batch_size, 1, vocab_size)
 
             predicted_id = tf.cast(tf.argmax(predictions, axis=-1),
-                                   tf.int64)  # (batch_size, 1)
+                                   tf.int32)  # (batch_size, 1)
 
             # ToDo reimplement this stop criteria in batch?
             # return the result if the predicted_id is equal to the end token

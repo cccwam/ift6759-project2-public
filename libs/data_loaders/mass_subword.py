@@ -31,7 +31,7 @@ def create_for_transformer_pre_mask(tokenizer):
 
     def tf_py_encode(lang1, lang2):
         result_lang1, result_lang2, result_lang2_out = tf.py_function(
-            encode, [lang1, lang2], [tf.int64, tf.int64, tf.int64])
+            encode, [lang1, lang2], [tf.int32, tf.int32, tf.int32])
         result_lang1.set_shape([None])
         result_lang2.set_shape([None])
         result_lang2_out.set_shape([None])
@@ -58,7 +58,7 @@ def create_for_transformer_eval(tokenizer):
 
     def tf_py_encode(lang1):
         result_lang1, result_lang2 = tf.py_function(
-            encode, [lang1], [tf.int64, tf.int64])
+            encode, [lang1], [tf.int32, tf.int32])
         result_lang1.set_shape([None])
         result_lang2.set_shape([None])
 
@@ -156,7 +156,7 @@ def create_for_transformer_mass_task(tokenizer, rseed=325, fragment_factor=0.5):
 
     def tf_py_encode(lang1):
         result_lang1, result_lang1_dec, result_lang1_out = tf.py_function(
-            encode, [lang1], [tf.int64, tf.int64, tf.int64])
+            encode, [lang1], [tf.int32, tf.int32, tf.int32])
         result_lang1.set_shape([None])
         result_lang1_dec.set_shape([None])
         result_lang1_out.set_shape([None])
@@ -225,7 +225,7 @@ class MassSubwordDataLoader:
                 yield (enc_inp, dec_inp, enc_padding_mask, combined_mask), dec_out
 
         self.training_dataset = tf.data.Dataset.from_generator(
-            mass_generator_train, ((tf.int64, tf.int64, tf.float32, tf.float32), tf.int64),
+            mass_generator_train, ((tf.int32, tf.int32, tf.float32, tf.float32), tf.int32),
             output_shapes=(
                 ((tf.TensorShape([None, None]),
                   tf.TensorShape([None, None]),
@@ -248,7 +248,7 @@ class MassSubwordDataLoader:
                 yield (enc_inp, dec_inp, enc_padding_mask, combined_mask), dec_out
 
         self.valid_dataset = tf.data.Dataset.from_generator(
-            mass_generator_val, ((tf.int64, tf.int64, tf.float32, tf.float32), tf.int64),
+            mass_generator_val, ((tf.int32, tf.int32, tf.float32, tf.float32), tf.int32),
             output_shapes=(
                 ((tf.TensorShape([None, None]),
                   tf.TensorShape([None, None]),
@@ -273,7 +273,7 @@ class MassSubwordDataLoader:
                     yield (enc_inp, dec_inp, enc_padding_mask, combined_mask)
 
             self.test_dataset = tf.data.Dataset.from_generator(
-                mass_generator_test, (tf.int64, tf.int64, tf.float32, tf.float32),
+                mass_generator_test, (tf.int32, tf.int32, tf.float32, tf.float32),
                 output_shapes=(
                     (tf.TensorShape([None, None]),
                      tf.TensorShape([None, None]),
@@ -341,7 +341,7 @@ class MassSubwordDataLoaderPretraining:
                 yield (enc_inp, dec_inp, enc_padding_mask, combined_mask), dec_out
 
         self.training_dataset = tf.data.Dataset.from_generator(
-            mass_generator_train, ((tf.int64, tf.int64, tf.float32, tf.float32), tf.int64),
+            mass_generator_train, ((tf.int32, tf.int32, tf.float32, tf.float32), tf.int32),
             output_shapes=(
                 ((tf.TensorShape([None, None]),
                   tf.TensorShape([None, None]),
@@ -364,7 +364,7 @@ class MassSubwordDataLoaderPretraining:
                 yield (enc_inp, dec_inp, enc_padding_mask, combined_mask), dec_out
 
         self.valid_dataset = tf.data.Dataset.from_generator(
-            mass_generator_val, ((tf.int64, tf.int64, tf.float32, tf.float32), tf.int64),
+            mass_generator_val, ((tf.int32, tf.int32, tf.float32, tf.float32), tf.int32),
             output_shapes=(
                 ((tf.TensorShape([None, None]),
                   tf.TensorShape([None, None]),
