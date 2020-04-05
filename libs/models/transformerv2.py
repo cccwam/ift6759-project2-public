@@ -7,7 +7,13 @@ from libs.models import transformer
 
 
 def builder(config: typing.Dict[typing.AnyStr, typing.Any]):
-    # noinspection PyShadowingNames,DuplicatedCode
+    """Build transformer for translation task.
+
+    :param: config, the model parameters
+    :return: tf.keras.Model
+
+    """
+
     model_hparams = config["model"]["hyper_params"]
     dl_hparams = config["data_loader"]["hyper_params"]
 

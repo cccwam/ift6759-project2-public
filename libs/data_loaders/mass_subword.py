@@ -17,7 +17,9 @@ def create_for_transformer_pre_mask(tokenizer):
         :param lang1: sentence
         :param lang2: sentence
         :return: list of tokens for both languages
+
         """
+
         lang1 = [tokenizer.vocab_size] + tokenizer.encode(
             lang1.numpy()) + [tokenizer.vocab_size + 1]
 
@@ -48,7 +50,9 @@ def create_for_transformer_eval(tokenizer):
         :param lang1: sentence
         :param lang2: sentence
         :return: list of tokens for both languages
+
         """
+
         lang1 = [tokenizer.vocab_size] + tokenizer.encode(
             lang1.numpy()) + [tokenizer.vocab_size + 1]
 
@@ -68,6 +72,13 @@ def create_for_transformer_eval(tokenizer):
 
 
 def create_text_datasets(config):
+    """Compile dictionary of text datasets for translation tasks
+
+    :param config: dictionary, parameter for the data loader
+    :return: dictionary, datasets useful for translation task
+
+    """
+
     dl_hparams = config["data_loader"]["hyper_params"]
     path_data = dl_hparams["preprocessed_data_path"]["folder"]
 
@@ -123,7 +134,9 @@ def create_for_transformer_mass_task(tokenizer, rseed=325, fragment_factor=0.5):
         :param lang1: sentence
         :param lang2: sentence
         :return: list of tokens for both languages
+
         """
+
         random.seed(rseed)
         raw_sent_encoding = tokenizer.encode(lang1.numpy())
         sent_for_decoder = copy.deepcopy(raw_sent_encoding)
@@ -167,17 +180,24 @@ def create_for_transformer_mass_task(tokenizer, rseed=325, fragment_factor=0.5):
 
 
 class MassSubwordDataLoader:
-    """
-        Dataset for bilingual corpora at subword level.
+    """Data loader for translation task
 
+    Notes:
         Special tokens:
-        - 0 for MASK
-        - vocab_size for BOS
-        - vocab_size + 1 for EOS
+            - 0 for MASK
+            - vocab_size for BOS
+            - vocab_size + 1 for EOS
     """
 
     def __init__(self, config: dict, raw_english_test_set_file_path=None,
                  **kwargs):
+        """Initialize data loader for translation task
+
+        :param config: dictionary, parameters for the data loader
+        :param raw_english_test_set_file_path: str, text file for testing
+
+        """
+
         self.config = config
         self.training_dataset = None
         self.valid_dataset = None
@@ -190,6 +210,16 @@ class MassSubwordDataLoader:
 
     # ToDo mode obsolete
     def build(self, batch_size, mode='translate'):
+        """Build data loader for translation task
+
+        :param batch_size: int
+
+        Notes:
+            This will set self.training_dataset, self.valid_dataset and
+            self.test_dataset
+
+        """
+
         dl_hparams = self.config["data_loader"]["hyper_params"]
         vocabulary_name = dl_hparams["vocabulary_name"]
 
@@ -286,17 +316,24 @@ class MassSubwordDataLoader:
 
 
 class MassSubwordDataLoaderPretraining:
-    """
-        Dataset for bilingual corpora at subword level.
+    """Data loader for MASS pretraining task
 
+    Notes:
         Special tokens:
-        - 0 for MASK
-        - vocab_size for BOS
-        - vocab_size + 1 for EOS
+            - 0 for MASK
+            - vocab_size for BOS
+            - vocab_size + 1 for EOS
     """
 
     def __init__(self, config: dict, raw_english_test_set_file_path=None,
                  **kwargs):
+        """Initialize data loader for MASS pretraining task
+
+        :param config: dictionary, parameters for the data loader
+        :param raw_english_test_set_file_path: str, text file for testing
+
+        """
+
         self.config = config
         self.training_dataset = None
         self.valid_dataset = None
@@ -309,6 +346,16 @@ class MassSubwordDataLoaderPretraining:
 
     # ToDo mode obsolete
     def build(self, batch_size, mode='translate'):
+        """Build data loader for MASS pretraining task
+
+        :param batch_size: int
+
+        Notes:
+            This will set self.training_dataset, self.valid_dataset and
+            self.test_dataset
+
+        """
+
         dl_hparams = self.config["data_loader"]["hyper_params"]
         vocabulary_name = dl_hparams["vocabulary_name"]
 
@@ -320,8 +367,8 @@ class MassSubwordDataLoaderPretraining:
         print(self.vocab_size_source)
 
         # ToDo use the whole dataset
-        sentences_both_train = datasets['sentences_all_train'].shuffle(buffer_size=500000).take(30000)
-        sentences_both_validation = datasets['sentences_all_validation'].shuffle(buffer_size=500000).take(5000)
+        sentences_both_train = datasets['sentences_all_train'].shuffle(buffer_size=500000).take(100000)
+        sentences_both_validation = datasets['sentences_all_validation'].shuffle(buffer_size=500000).take(100000)
         # sentences_both_train = datasets['sentences_all_train'].shuffle(buffer_size=500000)
         # sentences_both_validation = datasets['sentences_all_validation'].shuffle(buffer_size=500000)
 

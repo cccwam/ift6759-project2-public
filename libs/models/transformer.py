@@ -1,4 +1,11 @@
-# Code source: https://www.tensorflow.org/tutorials/text/transformer
+"""Transformer neural network
+
+Notes:
+    Most code blocks are taken from
+    https://www.tensorflow.org/tutorials/text/transformer
+
+"""
+
 import os
 import time
 import typing
@@ -6,6 +13,7 @@ import typing
 import tensorflow as tf
 import numpy as np
 
+# ToDo Remove this when obsolete
 # from libs.helpers import get_online_data_loader
 # from libs.models.helpers import load_pretrained_layers
 
@@ -583,6 +591,14 @@ def builder(config: typing.Dict[typing.AnyStr, typing.Any]):
 
 
 def loss_function_for_transformer(real, pred):
+    """Loss function for transformer model.
+
+    :param real: target
+    :param pred: prediction
+    :return: loss
+
+    """
+
     loss_object = tf.keras.losses.SparseCategoricalCrossentropy(
         from_logits=True, reduction='none')
     mask = tf.math.logical_not(tf.math.equal(real, 0))
@@ -595,6 +611,8 @@ def loss_function_for_transformer(real, pred):
 
 
 class CustomSchedule(tf.keras.optimizers.schedules.LearningRateSchedule):
+    """Custom learning rate schedule for transformer."""
+
     def __init__(self, d_model, warmup_steps=4000):
         super(CustomSchedule, self).__init__()
 
@@ -619,6 +637,13 @@ class CustomSchedule(tf.keras.optimizers.schedules.LearningRateSchedule):
 
 
 def load_transformer(config):
+    """Load transformer model
+
+    :param config: dictionary, parameters of model, including source file
+    :return: tf.keras.Model, the restored transformer model from file
+
+    """
+
     return tf.keras.models.load_model(
         config['model']['source'],
         custom_objects={'Encoder': Encoder,
@@ -628,6 +653,15 @@ def load_transformer(config):
 
 
 def inference(tokenizer, model, test_dataset):
+    """Inference step for transformer.
+
+    :param tokenizer: tokenizer used for sentence reconstruction
+    :param model: tf.keras.Model, the model to use
+    :param test_dataset: tokenized test sentences to translate
+    :return: list of sentences, the translated sentences
+
+    """
+
     begin_token = tokenizer.vocab_size
     end_token = tokenizer.vocab_size + 1
 
