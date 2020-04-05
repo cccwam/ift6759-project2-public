@@ -6,6 +6,12 @@ from transformers import BertConfig, TFBertForMaskedLM
 
 logger = logging.getLogger(__name__)
 
+"""
+    BERT model for the translation task and translation language model task.
+
+    THIS IS THE MODEL USED FOR THE PROJECT 2 OF IFT6759
+"""
+
 
 def builder(
         config: typing.Dict[typing.AnyStr, typing.Any]):
@@ -35,7 +41,7 @@ def builder(
                                hidden_size=hidden_size)
 
     if "pretrained_model_huggingface" in model_hparams:
-        # TODO test
+        # TODO test to reload
         bert_model = TFBertForMaskedLM(configuration).from_pretrained(model_hparams["pretrained_model_huggingface"])
     else:
         # Initializing a model from the configuration

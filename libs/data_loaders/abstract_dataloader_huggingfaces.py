@@ -93,7 +93,7 @@ class AbstractHuggingFacesTokenizer(AbstractDataloader, ABC):
         return tokenizer
 
     @staticmethod
-    def _decode(tokens, tokenizer:BaseTokenizer):
+    def _decode(tokens, tokenizer: BaseTokenizer):
         return tokenizer.decode(tokens)
 
     def _load_tokenizer(self,
@@ -173,32 +173,33 @@ class AbstractHuggingFacesTokenizer(AbstractDataloader, ABC):
 
         # Inspiration from https://www.tensorflow.org/guide/data#applying_arbitrary_python_logic
         def _apply_mask_eager(inputs, output):
-            input_shape = tf.shape(inputs)
-            masks = distrib_mask.sample(input_shape, seed=42)  # TODO set seed
+            input_shape = tf.shape(inputs)  # Shape Seq Length
+
+            # TODO set seed
+            masks = distrib_mask.sample(input_shape, seed=42)  # Shape Seq Length * Probability for each class (3)
             masks = tf.cast(masks, dtype=tf.int32)
             random_tokens = distrib_random.sample(input_shape, seed=42)  # TODO set seed
             random_tokens = tf.cast(random_tokens, dtype=tf.int32)
 
             # Replace with mask
             # One is the mask token id
-            inputs_masked = tf.where(tf.equal(masks[:, 2], 1), inputs, tf.ones(input_shape, dtype=tf.int32))
+            inputs_masked = tf.where(tf.math.equal(masks[:, 2], 1), inputs, tf.ones(input_shape, dtype=tf.int32))
 
             # Replace with random token
-            inputs_masked = tf.where(tf.equal(masks[:, 1], 1), inputs_masked, random_tokens)
+            inputs_masked = tf.where(tf.math.equal(masks[:, 1], 1), inputs_masked, random_tokens)
 
-            output_masked = tf.where(tf.equal(masks[:, 0], 1), output, tf.zeros(input_shape, dtype=tf.int32))
-            return inputs_masked, output_masked
+            return inputs_masked, output
 
         def apply_mask(x, y):
             inputs, attention_masks, tokens_type_ids = x
-            inputs_masked, y_masked = tf.py_function(_apply_mask_eager, [inputs, y], [tf.int32, tf.int32])
+            inputs_masked, y = tf.py_function(_apply_mask_eager, [inputs, y], [tf.int32, tf.int32])
 
-            return (inputs_masked, attention_masks, tokens_type_ids), y_masked
+            return (inputs_masked, attention_masks, tokens_type_ids), y
 
         def apply_mask_single_input(x, y):
-            inputs_masked, y_masked = tf.py_function(_apply_mask_eager, [x, y], [tf.int32, tf.int32])
+            inputs_masked, y = tf.py_function(_apply_mask_eager, [x, y], [tf.int32, tf.int32])
 
-            return inputs_masked, y_masked
+            return inputs_masked, y
 
         if with_multi_inputs:
             return ds.map(map_func=apply_mask)

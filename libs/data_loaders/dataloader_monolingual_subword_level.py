@@ -2,6 +2,7 @@ import logging
 from abc import ABC
 from typing import List
 
+import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 from tokenizers import (Encoding)
@@ -82,17 +83,29 @@ class MonolingualCausalLMDataloaderSubword(AbstractMonolingualDataloaderSubword,
             yield (inputs, output)
 
 
-class MonolingualMaskLMDataloaderSubword(AbstractMonolingualDataloaderSubword,
-                                         AbstractMonolingualCausalLMDataloader):
+class MonolingualMaskLMDataloaderSubword(AbstractMonolingualDataloaderSubword):
     """
-        Dataset for monolingual corpora at subword level generating input sentence and the shifted input sequence
+        Dataset for monolingual corpora at subword level
+            - Inputs: One sentence in one language masked according to masked language model (with attention mask,
+            and tokens_type_id )
+            - Targets:  Predicts the masked tokens
+
 
     """
 
     def __init__(self, config: dict, raw_english_test_set_file_path: str):
         AbstractMonolingualDataloaderSubword.__init__(self, config=config,
                                                       raw_english_test_set_file_path=raw_english_test_set_file_path)
-        AbstractMonolingualCausalLMDataloader.__init__(self, config=config)
+
+        self._tokens_type: int = self._preprocessed_data_path["tokens_type"]
+        assert self._tokens_type is not None, "Missing _tokens_type in config"
+
+        self._output_types = ((tf.int32, tf.int32, tf.int32),
+                              tf.int32)
+        self._output_shapes = ((tf.TensorShape([None]), tf.TensorShape([None]), tf.TensorShape([None])),
+                               tf.TensorShape([None]))
+        self._padded_shapes = ((self._seq_length, self._seq_length, self._seq_length),
+                               self._seq_length)
 
     def _my_generator(self, source_numericalized: List[Encoding]):
         for i in range(len(source_numericalized)):
@@ -103,16 +116,18 @@ class MonolingualMaskLMDataloaderSubword(AbstractMonolingualDataloaderSubword,
             attention_masks = np.zeros([self._seq_length], dtype=int)
             attention_masks[:len(source_numericalized[i].ids)] = 1
 
-            # TODO add management of token_type_ids = 1 for French
-            tokens_type_ids = tf.zeros([self._seq_length], dtype=tf.int32)
+            tokens_type_ids = tf.fill([self._seq_length], value=self._tokens_type)
+            tokens_type_ids = tf.cast(tokens_type_ids, dtype=tf.int32)
 
-            yield ((inputs, attention_masks, tokens_type_ids), inputs)
+            output = inputs
+
+            yield ((inputs, attention_masks, tokens_type_ids), output)
 
     def _hook_dataset_post_precessing(self, ds: tf.data.Dataset):
         # 10% nothing to do, 10% random word, 80% mask
-        distrib_mask = tfp.distributions.Multinomial(total_count=3, probs=[0.1, 0.1, 0.8])
+        distrib_mask = tfp.distributions.Multinomial(total_count=1, probs=[0.1, 0.1, 0.8])
 
-        distrib_random = tfp.distributions.Uniform(low=len(self._special_tokens), high=self._vocab_size_source)
+        distrib_random = tfp.distributions.Uniform(low=len(self._special_tokens), high=self._vocab_size)
 
         return self._apply_mask_for_mlm(ds=ds,
                                         distrib_mask=distrib_mask,

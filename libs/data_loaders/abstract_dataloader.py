@@ -120,8 +120,8 @@ class AbstractMonolingualDataloader(AbstractDataloader, ABC):
         raise NotImplementedError
 
     def _get_generator(self):
-        partial(self._my_generator,
-                source_numericalized=self._source_numericalized)
+        return partial(self._my_generator,
+                       source_numericalized=self._source_numericalized)
 
 
 class AbstractMonolingualCausalLMDataloader:

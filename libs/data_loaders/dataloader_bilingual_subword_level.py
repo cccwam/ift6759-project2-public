@@ -110,8 +110,6 @@ class BilingualTranslationLMDataloaderSubword(AbstractBilingualDataloaderSubword
         self._padded_shapes = ((self._consolidated_seq, self._consolidated_seq, self._consolidated_seq),
                                self._consolidated_seq)
 
-    # TODO add monolingual corpus
-    # TODO add also label is translation or not
     def _my_generator(self, source_numericalized: List[Encoding], target_numericalized: List[Encoding]):
         for i in range(len(source_numericalized)):
             # zero is the pad token id
@@ -141,7 +139,74 @@ class BilingualTranslationLMDataloaderSubword(AbstractBilingualDataloaderSubword
 
     def _hook_dataset_post_precessing(self, ds: tf.data.Dataset):
         # 10% nothing to do, 10% random word, 80% mask
-        distrib_mask = tfp.distributions.Multinomial(total_count=3, probs=[0.1, 0.1, 0.8])
+        distrib_mask = tfp.distributions.Multinomial(total_count=1, probs=[0.1, 0.1, 0.8])
+
+        distrib_random = tfp.distributions.Uniform(low=len(self._special_tokens), high=self._vocab_size_source)
+
+        return self._apply_mask_for_mlm(ds=ds,
+                                        distrib_mask=distrib_mask,
+                                        distrib_random=distrib_random)
+
+    def decode(self, tokens: List[int]):
+        return self._decode(tokens=tokens, tokenizer=self._tokenizer_target)
+
+
+# TODO it should not be a subclass of AbstractBilingualDataloader because there is more inputs
+class BilingualCustomPretrainingDataloaderSubword(AbstractBilingualDataloaderSubword):
+    """
+        Dataset for the custom pretraining taks (inspired by XLM translation language model idea):
+            - Inputs: Two pairs of sentences, one in English and on in French.
+                Tokens are masked like in masked language model
+            - Targets:  Predicts the masked tokens and if it's a pair of translated sentence of not (binary)
+
+    """
+
+    def __init__(self, config: dict, raw_english_test_set_file_path: str):
+        AbstractBilingualDataloaderSubword.__init__(self, config=config,
+                                                    raw_english_test_set_file_path=raw_english_test_set_file_path)
+        self._output_types = ((tf.int32, tf.int32, tf.int32),
+                              (tf.int32, tf.float32,))
+        self._output_shapes = ((tf.TensorShape([None]), tf.TensorShape([None]), tf.TensorShape([None])),
+                               (tf.TensorShape([None]), tf.TensorShape([None])))
+        self._consolidated_seq = self._seq_length_source + self._seq_length_target
+        self._padded_shapes = ((self._consolidated_seq, self._consolidated_seq, self._consolidated_seq),
+                               self._consolidated_seq, 1)
+
+    # TODO add monolingual corpus
+    # TODO add also label is translation or not
+    # def _my_generator(self,
+    #                   source_numericalized: List[Encoding],
+    #                   target_numericalized: List[Encoding],
+    #                   is_translation: bool):
+    #     for i in range(len(source_numericalized)):
+    #         # zero is the pad token id
+    #         source = np.zeros([self._seq_length_source], dtype=int)
+    #         source[:len(source_numericalized[i].ids)] = source_numericalized[i].ids
+    #
+    #         # zero is the pad token id
+    #         target = np.zeros([self._seq_length_target], dtype=int)
+    #         target[:len(target_numericalized[i].ids)] = target_numericalized[i].ids
+    #
+    #         attention_masks = np.zeros([self._consolidated_seq], dtype=int)
+    #         attention_masks[:len(source_numericalized[i].ids)] = 1
+    #
+    #         sent_2_start_idx = len(source_numericalized[i].ids)
+    #         sent_2_end_idx = sent_2_start_idx + len(target_numericalized[i].ids)
+    #         attention_masks[sent_2_start_idx:sent_2_end_idx] = 1
+    #
+    #         tokens_type_ids = tf.concat(
+    #             [tf.zeros([self._seq_length_source], dtype=tf.int32),
+    #              tf.ones([self._seq_length_target], dtype=tf.int32)],
+    #             axis=-1)
+    #
+    #         inputs = tf.concat([source, target], axis=-1)
+    #         output = inputs
+    #
+    #         yield ((inputs, attention_masks, tokens_type_ids, tf.convert_to_tensor(isinstance())), output)
+
+    def _hook_dataset_post_precessing(self, ds: tf.data.Dataset):
+        # 10% nothing to do, 10% random word, 80% mask
+        distrib_mask = tfp.distributions.Multinomial(total_count=1, probs=[0.1, 0.1, 0.8])
 
         distrib_random = tfp.distributions.Uniform(low=len(self._special_tokens), high=self._vocab_size_source)
 

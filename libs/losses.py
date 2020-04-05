@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 
 
 def mlm_loss(y_true, y_pred):
-    mask = tf.math.logical_not(tf.math.equal(y_true, 0)) # Batch size * Seq Length
+    mask = tf.math.logical_not(tf.math.equal(y_true, 0))  # Batch size * Seq Length
     loss_ = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True, reduction='none')(y_true, y_pred)
 
     mask = tf.cast(mask, dtype=loss_.dtype)
@@ -18,4 +18,4 @@ def mlm_loss(y_true, y_pred):
 
     loss = numerator / denominator
 
-    return tf.reduce_mean(loss) # Average over samples
+    return tf.reduce_mean(loss)  # Average over samples
