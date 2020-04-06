@@ -43,6 +43,9 @@
         100
       ],
       "optimizer": "adam",
+      "metrics": [
+        "sparse_accuracy"
+      ],
       "batch_size": [
         64
       ],
