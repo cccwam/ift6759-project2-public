@@ -1,4 +1,3 @@
-import logging
 import typing
 
 from libs.models.bert_mt_v1 import builder

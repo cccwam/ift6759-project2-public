@@ -1,5 +1,3 @@
-import logging
-
 import tensorflow as tf
 
 logger = tf.get_logger()

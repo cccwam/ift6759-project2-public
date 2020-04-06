@@ -1,5 +1,3 @@
-import logging
-
 import tensorflow as tf
 
 from libs.helpers import get_online_model, load_dict, get_online_data_loader

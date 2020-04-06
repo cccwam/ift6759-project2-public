@@ -1,5 +1,3 @@
-import logging
-
 import numpy as np
 import sacrebleu
 import tensorflow as tf
@@ -28,7 +26,8 @@ class BleuIntervalEvaluation(tf.keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs=None):
         if epoch % self._interval == 0:
             score = []
-            for x, y_true in self._dataloader.valid_dataset_for_callbacks.take(self._nsamples // self._batch_size):
+            n_step = (self._nsamples // self._batch_size)
+            for x, y_true in self._dataloader.valid_dataset_for_callbacks.take(n_step):
                 y_pred = self.model.predict(x, verbose=0)
                 score += [self.bleu_graph_mode(y_true, y_pred)]
             score = np.mean(score)
@@ -55,7 +54,7 @@ class BleuIntervalEvaluation(tf.keras.callbacks.Callback):
             bleu_score = sacrebleu.corpus_bleu(pred_sentence, true_sentence).score
 
             # To display some examples in logs
-            if np.random.randint(low=0, high=self._nsamples * self._batch_size * 4) == 0:
+            if np.random.randint(low=0, high=self._nsamples * self._batch_size * 2) == 0:
                 logger.info(f" BLEU Score {bleu_score} for {pred_sentence} - {true_sentence}")
 
             return tf.convert_to_tensor(bleu_score)
