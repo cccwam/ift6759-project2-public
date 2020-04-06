@@ -1,23 +1,21 @@
 {
   "model": {
     "definition": {
-      "module": "libs.models.transformer_eng",
+      "module": "libs.models.bert_mt_encoder_only_v1",
       "name": "builder"
     },
     "hyper_params": {
-      "name": "TRANSFORMER_BPE_V1_ENG",
-      "num_layers": 3,
-      "d_model": 128,
-      "num_heads": 4,
-      "dff": 512,
-      "dropout_rate": 0.2
+      "name": "BERT-Small",
+      "num_hidden_layers": 4,
+      "num_attention_heads": 8,
+      "hidden_size": 512
     },
     "source": ""
   },
   "data_loader": {
     "definition": {
       "module": "libs.data_loaders.dataloader_bilingual_subword_level",
-      "name": "BilingualTransformersDataloaderSubword"
+      "name": "BilingualTranslationEncoderOnlyDataloaderSubword"
     },
     "hyper_params": {
       "preprocessed_data_path": {
@@ -61,18 +59,19 @@
   "trainer": {
     "hyper_params": {
       "loss": "mlm_loss",
-      "lr_rate": [
-        3e-3
-      ],
-      "epochs": [
-        2
+      "metrics": [
+        "sparse_accuracy",
+        "bleu"
       ],
       "optimizer": "adam",
-      "metrics": [
-        "sparse_accuracy"
+      "lr_rate": [
+        3e-4
+      ],
+      "epochs": [
+        30
       ],
       "batch_size": [
-        64
+        8
       ],
       "patience": [
         2

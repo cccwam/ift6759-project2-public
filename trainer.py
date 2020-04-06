@@ -5,14 +5,16 @@ import argparse
 import logging
 import typing
 from pathlib import Path
+from typing import List
 
 import tensorflow as tf
 from tensorboard.plugins.hparams import api as hp
 
 from libs import helpers
+from libs.callbacks import CustomCheckpoint
 from libs.data_loaders.abstract_dataloader import AbstractDataloader
 
-logger = logging.getLogger(__name__)
+logger = tf.get_logger()
 
 
 def main(
@@ -43,13 +45,13 @@ def train_models(
         tensorboard_tracking_folder: Path
 ):
     """
-    # TODO review doc
     Train the possible combinations of models based on the hyper parameters defined in  config
 
     :param config: The configuration dictionary. It must follow configs/user/schema.json
     :param tensorboard_tracking_folder: The TensorBoard tracking folder
     """
     model_dict = config['model']
+    model_dict_hparams = config['model']['hyper_params']
     data_loader_dict = config['data_loader']
     trainer_hyper_params = config['trainer']['hyper_params']
 
@@ -65,6 +67,9 @@ def train_models(
     data_loader_name = helpers.get_module_name(data_loader_dict)
 
     hp_model = hp.HParam('model_class', hp.Discrete([model_name]))
+    hp_model_hparams = [hp.HParam(k, hp.Discrete([v])) for k, v in model_dict_hparams.items()]
+    hp_model_hparams = {hparam: hparam.domain.values[0] for hparam in hp_model_hparams}
+
     hp_dataloader = hp.HParam('dataloader_class', hp.Discrete([data_loader_name]))
     hp_dataloader_hparams = hp.HParam('dataloader_id', hp.Discrete([data_loader.get_hparams()]))
 
@@ -88,12 +93,7 @@ def train_models(
     hp_learning_rate = hp.HParam('learning_rate', hp.Discrete(trainer_hyper_params["lr_rate"]))
     hp_patience = hp.HParam('patience', hp.Discrete(trainer_hyper_params["patience"]))
 
-    # ToDo Better way to differentiate different data loading logic
-    if 'mode' in config['data_loader']['hyper_params']:
-        data_loader.build(batch_size=hp_batch_size.domain.values[0], mode=config['data_loader']['hyper_params']['mode'])
-    else:
-        data_loader.build(batch_size=hp_batch_size.domain.values[0])
-    training_dataset, valid_dataset = data_loader.training_dataset, data_loader.valid_dataset
+    data_loader.build(batch_size=hp_batch_size.domain.values[0])
 
     # Main loop to iterate over all possible hyper parameters
     variation_num = 0
@@ -101,27 +101,21 @@ def train_models(
         for learning_rate in hp_learning_rate.domain.values:
             for dropout in hp_dropout.domain.values:
                 for patience in hp_patience.domain.values:
+                    hparams = {
+                        hp_batch_size: hp_batch_size.domain.values[0],
+                        hp_model: hp_model.domain.values[0],
+                        hp_dataloader: hp_dataloader.domain.values[0],
+                        hp_dataloader_hparams: hp_dataloader_hparams.domain.values[0],
+                        hp_epochs: epochs,
+                        hp_learning_rate: learning_rate,
+                        hp_patience: patience,
+                    }
+
                     if dropout != -1.:
-                        hparams = {  # TODO add model hparams + refactoring ?
-                            hp_batch_size: hp_batch_size.domain.values[0],
-                            hp_model: hp_model.domain.values[0],
-                            hp_dataloader: hp_dataloader.domain.values[0],
-                            hp_dataloader_hparams: hp_dataloader_hparams.domain.values[0],
-                            hp_epochs: epochs,
-                            hp_dropout: dropout,
-                            hp_learning_rate: learning_rate,
-                            hp_patience: patience,
-                        }
-                    else:
-                        hparams = {
-                            hp_batch_size: hp_batch_size.domain.values[0],
-                            hp_model: hp_model.domain.values[0],
-                            hp_dataloader: hp_dataloader.domain.values[0],
-                            hp_dataloader_hparams: hp_dataloader_hparams.domain.values[0],
-                            hp_epochs: epochs,
-                            hp_learning_rate: learning_rate,
-                            hp_patience: patience,
-                        }
+                        hparams[hp_dropout] = dropout
+
+                    # model hparams to tensorboard
+                    hparams = {**hparams, **hp_model_hparams}
 
                     # Copy the user config for the specific current model
                     current_user_dict = config.copy()
@@ -139,8 +133,10 @@ def train_models(
                         tensorboard_log_dir = str(tensorboard_experiment_id / str(variation_num))
                         # Fileformat must be hdf5, otherwise bug
                         # https://github.com/tensorflow/tensorflow/issues/34127
+                        # TODO check if tf is working
+                        # https://stackoverflow.com/questions/59656096/trouble-saving-tf-keras-model-with-bert-huggingface-classifier
                         checkpoints_path = str(tensorboard_log_dir) + "/" + (tensorboard_experiment_name +
-                                                                             ".{epoch:02d}-{val_loss:.2f}.hdf5")
+                                                                             ".{epoch:02d}-{val_loss:.2f}.tf")
                         logger.info(f"Start variation id: " + str(tensorboard_log_dir))
                     else:
                         tensorboard_log_dir, checkpoints_path = None, None
@@ -148,14 +144,15 @@ def train_models(
 
                     train_model(
                         model=model,
-                        training_dataset=training_dataset,
-                        valid_dataset=valid_dataset,
-                        validation_steps=data_loader.validation_steps,
+                        dataloader=data_loader,
                         tensorboard_log_dir=tensorboard_log_dir,
                         hparams=hparams,
                         mirrored_strategy=mirrored_strategy,
                         epochs=epochs,
                         learning_rate=learning_rate,
+                        loss=trainer_hyper_params["loss"],
+                        optimizer=trainer_hyper_params["optimizer"],
+                        metrics=trainer_hyper_params["metrics"],
                         patience=patience,
                         checkpoints_path=checkpoints_path
                     )
@@ -173,75 +170,73 @@ def train_models(
 
 def train_model(
         model: tf.keras.Model,
-        training_dataset: tf.data.Dataset,
-        valid_dataset: tf.data.Dataset,
-        validation_steps: int,
+        dataloader: AbstractDataloader,
         tensorboard_log_dir: str,
         hparams,
         mirrored_strategy,
         epochs: int,
         learning_rate: float,
+        loss: str,
+        optimizer: str,
+        metrics: List[str],
         patience: int,
         checkpoints_path: str
 ):
     """
     The training loop for a single model
-
     :param model: The tf.keras.Model to train
-    :param training_dataset: The training dataset
-    :param valid_dataset: The validation dataset to evaluate training progress
-    :param validation_steps: Number of minibatch for the validation dataset
+    :param dataloader: The dataloader
     :param tensorboard_log_dir: Path of where to store TensorFlow logs
     :param hparams: A dictionary of TensorBoard.plugins.hparams.api.hp.HParam to track on TensorBoard
     :param mirrored_strategy: A tf.distribute.MirroredStrategy on how many GPUs to use during training
     :param epochs: The epochs hyper parameter
     :param learning_rate: The learning rate hyper parameter
+    :param loss: loss function name
+    :param optimizer: optimizer function name
     :param patience: The early stopping patience hyper parameter
     :param checkpoints_path: Path of where to store TensorFlow checkpoints
-
+    :param metrics: list of metrics
     """
 
-    # Multi GPU setup
-    # ToDo: Is using the model 'lr' attribute a good way to bypass compile_model?
-    # Since the transformer uses a custom learning rate scheduler, the
-    # logic in compile_model does not apply here.
-    fit_kwargs = {}
-    if mirrored_strategy is not None and mirrored_strategy.num_replicas_in_sync > 1:
-        with mirrored_strategy.scope():
-            if hasattr(model, 'lr'):
-                # ToDo better checkpoint handling
-                compiled_model = model
-                fit_kwargs['ckpt_manager'] = compiled_model.load_checkpoint()
-            else:
-                compiled_model = helpers.compile_model(model, learning_rate=learning_rate)
-    else:
-        if hasattr(model, 'lr'):
-            # ToDo better checkpoint handling
-            compiled_model = model
-            fit_kwargs['ckpt_manager'] = compiled_model.load_checkpoint()
-        else:
-            compiled_model = helpers.compile_model(model, learning_rate=learning_rate)
-
     if tensorboard_log_dir is not None:
+
+        # For the BLEU score which is computed in a callback on epoch end
+        file_writer = tf.summary.create_file_writer(tensorboard_log_dir + "/validation")
+        file_writer.set_as_default()
+
         # Workaround for https://github.com/tensorflow/tensorboard/issues/2412
         callbacks = [tf.keras.callbacks.TensorBoard(log_dir=tensorboard_log_dir, profile_batch=0),
-                     tf.keras.callbacks.ModelCheckpoint(filepath=checkpoints_path, save_weights_only=False,
-                                                        monitor='val_loss'),
+                     CustomCheckpoint(filepath=checkpoints_path, save_weights_only=False,
+                                      save_best_only=True, monitor='val_loss'),
                      hp.KerasCallback(writer=str(tensorboard_log_dir), hparams=hparams)]
     else:
         callbacks = []
 
-    callbacks += [
-        tf.keras.callbacks.EarlyStopping(patience=patience)
-    ]
+    # Multi GPU setup
+    if mirrored_strategy is not None and mirrored_strategy.num_replicas_in_sync > 1:
+        with mirrored_strategy.scope():
+            compiled_model, additional_callbacks = helpers.compile_model(model=model,
+                                                                         dataloader=dataloader,
+                                                                         loss=loss,
+                                                                         optimizer=optimizer,
+                                                                         metrics=metrics,
+                                                                         learning_rate=learning_rate)
+    else:
+        compiled_model, additional_callbacks = helpers.compile_model(model=model,
+                                                                     dataloader=dataloader,
+                                                                     loss=loss,
+                                                                     optimizer=optimizer,
+                                                                     metrics=metrics,
+                                                                     learning_rate=learning_rate)
+
+    callbacks += [tf.keras.callbacks.EarlyStopping(patience=patience)] + additional_callbacks
 
     compiled_model.fit(
-        training_dataset,
+        dataloader.training_dataset,
         epochs=epochs,
         callbacks=callbacks,
-        validation_data=valid_dataset,
-        validation_steps=validation_steps,
-        **fit_kwargs
+        validation_data=dataloader.valid_dataset,
+        validation_steps=dataloader.validation_steps
     )
 
 
@@ -256,9 +251,9 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.verbose:
-        logging.getLogger().setLevel(logging.DEBUG)
+        logger.setLevel(logging.DEBUG)
     else:
-        logging.getLogger().setLevel(logging.INFO)
+        logger.setLevel(logging.INFO)
 
     logger.info("Start")
 

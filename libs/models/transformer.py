@@ -3,11 +3,11 @@ import os
 import time
 import typing
 
-import tensorflow as tf
 import numpy as np
+import tensorflow as tf
 
-from libs.helpers import loss_function_for_transformer as loss_function
 from libs.helpers import get_online_data_loader
+from libs.helpers import loss_function_for_transformer as loss_function
 from libs.models.helpers import load_pretrained_layers
 
 
@@ -288,6 +288,7 @@ class Transformer(tf.keras.Model):
 
         self.final_layer = tf.keras.layers.Dense(vocab_size_target)
 
+        # TODO this must be out of the model logic
         self.lr = CustomSchedule(d_model)
         self.optimizer = tf.keras.optimizers.Adam(
             self.lr, beta_1=0.9, beta_2=0.98, epsilon=1e-9)
@@ -313,6 +314,7 @@ class Transformer(tf.keras.Model):
 
         return final_output, attention_weights
 
+    # TODO why using checkpoint
     def load_checkpoint(self):
         # ToDo customize checkpoint save directory
         checkpoint_path = os.path.join(
@@ -328,6 +330,7 @@ class Transformer(tf.keras.Model):
 
         return ckpt_manager
 
+    # TODO why custom fit ?
     def fit(self, x=None, epochs=1, callbacks=None,
             validation_data=None, validation_steps=None, **kwargs):
         ckpt_manager = kwargs['ckpt_manager']
@@ -407,7 +410,9 @@ class Transformer(tf.keras.Model):
             print(
                 'Time taken for 1 epoch: {} secs\n'.format(time.time() - start))
 
+    # TODO why evaluate
     def evaluate(self, encoder_input, transformer_output, end_token):
+        # TODO see below
         # This limit in i should be MAX_LENGTH, but no longer using it so...
         for slen in range(100):
             enc_padding_mask, combined_mask, dec_padding_mask = \
@@ -503,6 +508,7 @@ def builder(config: typing.Dict[typing.AnyStr, typing.Any]):
         pe_target=vocab_size_target, rate=dropout_rate,
         model_name=model_hparams["name"])
 
+    # TODO this doesn't make sense to have the model calling the dataloader
     if "pretrained_layers" in config["model"]["hyper_params"]:
         print("Entering pretraining procedure")
         print("Retrieving data loader")

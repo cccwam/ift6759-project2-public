@@ -56,20 +56,14 @@ def train_bpe_tokenizer(data_path,
 
     logger.info(f"Train {tokenizer_algorithm}")
 
-    tokenizer_fr: BaseTokenizer = import_from(
-        "tokenizers",
-        tokenizer_algorithm
-    )(dropout=dropout)
+    tokenizer_fr: BaseTokenizer = import_from("tokenizers", tokenizer_algorithm)(dropout=dropout)
 
     with tempfile.NamedTemporaryFile(mode="w", dir=tmp_path) as tmp:
         raw_consolidated_corpus = [" ".join(l) for l in train_lang2_fr_tokenized + unaligned_fr_tokenized]
         tmp.writelines(raw_consolidated_corpus)
         tokenizer_fr.train(files=[tmp.name], show_progress=True, vocab_size=vocab_size_fr)
 
-    tokenizer_en: BaseTokenizer = import_from(
-        "tokenizers",
-        tokenizer_algorithm
-    )(dropout=dropout)
+    tokenizer_en: BaseTokenizer = import_from("tokenizers", tokenizer_algorithm)(dropout=dropout)
 
     with tempfile.NamedTemporaryFile(mode="w", dir=tmp_path) as tmp:
         raw_consolidated_corpus = [" ".join(l) for l in train_lang1_en_tokenized + unaligned_en_tokenized]
