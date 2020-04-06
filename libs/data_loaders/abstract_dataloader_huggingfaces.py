@@ -168,6 +168,7 @@ class AbstractHuggingFacesTokenizer(AbstractDataloader, ABC):
     def _apply_mask_for_mlm(ds: tf.data.Dataset,
                             distrib_mask_actions: tfp.distributions.Multinomial,
                             distrib_random: tfp.distributions.Uniform,
+                            vocab_size: int,
                             with_multi_inputs=True):
         """
             Apply mask for masked language model
@@ -183,6 +184,18 @@ class AbstractHuggingFacesTokenizer(AbstractDataloader, ABC):
         Returns:
 
         """
+
+        # Do action only for 15% of tokens (and mask output for others)
+        prob_mask_idx = 0.15
+        # 10% nothing to do, 10% random word, 80% mask
+        # prob_nothing, prob_random_replacement, prob_replace_by_mask \
+        prob_mask_actions = np.array([0.1, 0.1, 0.8])
+        prob_mask_actions = prob_mask_actions * prob_mask_idx
+        prob_mask_actions = np.append(prob_mask_actions, [1 - sum(prob_mask_actions)]).tolist()
+        distrib_mask = tfp.distributions.Multinomial(total_count=1,
+                                                     probs=prob_mask_actions)
+
+        distrib_random = tfp.distributions.Uniform(low=len(self._special_tokens), high=vocab_size)
 
         # Inspiration from https://www.tensorflow.org/guide/data#applying_arbitrary_python_logic
         def _apply_mask_eager(inputs, output):
@@ -222,3 +235,5 @@ class AbstractHuggingFacesTokenizer(AbstractDataloader, ABC):
             return ds.map(map_func=apply_mask)
         else:
             return ds.map(map_func=apply_mask_single_input)
+
+
