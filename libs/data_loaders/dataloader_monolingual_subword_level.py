@@ -4,7 +4,6 @@ from typing import List
 
 import numpy as np
 import tensorflow as tf
-import tensorflow_probability as tfp
 from tokenizers import (Encoding)
 
 from libs.data_loaders.abstract_dataloader import AbstractMonolingualDataloader, \
@@ -123,10 +122,7 @@ class MonolingualMaskLMDataloaderSubword(AbstractMonolingualDataloaderSubword):
 
             yield ((inputs, attention_masks, tokens_type_ids), output)
 
-
-
     def _hook_dataset_post_precessing(self, ds: tf.data.Dataset):
-
         return self._apply_mask_for_mlm(ds=ds,
                                         distrib_mask_actions=distrib_mask,
                                         distrib_random=distrib_random,

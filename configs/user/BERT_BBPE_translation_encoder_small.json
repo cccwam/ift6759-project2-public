@@ -1,7 +1,7 @@
 {
   "model": {
     "definition": {
-      "module": "libs.models.bert_mt_v1",
+      "module": "libs.models.bert_mt_encoder_only_v1",
       "name": "builder"
     },
     "hyper_params": {
@@ -15,7 +15,7 @@
   "data_loader": {
     "definition": {
       "module": "libs.data_loaders.dataloader_bilingual_subword_level",
-      "name": "BilingualTranslationDataloaderSubword"
+      "name": "BilingualTranslationEncoderOnlyDataloaderSubword"
     },
     "hyper_params": {
       "preprocessed_data_path": {

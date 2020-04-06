@@ -4,7 +4,6 @@ from typing import List
 
 import numpy as np
 import tensorflow as tf
-import tensorflow_probability as tfp
 from tokenizers import (Encoding)
 
 from libs.data_loaders.abstract_dataloader import AbstractBilingualDataloader, AbstractBilingualSeq2SeqDataloader, \
@@ -221,7 +220,7 @@ class BilingualTranslationLMDataloaderSubword(AbstractBilingualDataloaderSubword
 #     return self._decode(tokens=tokens, tokenizer=self._tokenizer_target)
 
 
-class BilingualTranslationDataloaderSubword(AbstractBilingualDataloaderSubword):
+class BilingualTranslationEncoderOnlyDataloaderSubword(AbstractBilingualDataloaderSubword):
     """
         Dataset for bilingual corpora at subword level generating input sentence, target sentence
         and masking the input for sentence 2.

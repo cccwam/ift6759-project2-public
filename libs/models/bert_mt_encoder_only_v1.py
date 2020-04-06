@@ -44,7 +44,7 @@ def builder(
     if "pretrained_model_huggingface" in model_hparams:
         pretrained_model_huggingface_path: str = model_hparams["pretrained_model_huggingface"]
         logger.info(f"Load existing model from {pretrained_model_huggingface_path}")
-        bert_model = TFBertForMaskedLM(configuration).from_pretrained(pretrained_model_huggingface_path)
+        bert_model = TFBertForMaskedLM.from_pretrained(pretrained_model_huggingface_path)
     else:
         logger.info(f"No existing model")
         # Initializing a model from the configuration

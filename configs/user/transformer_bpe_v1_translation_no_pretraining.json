@@ -60,6 +60,7 @@
   },
   "trainer": {
     "hyper_params": {
+      "loss": "mlm_loss",
       "lr_rate": [
         3e-3
       ],
