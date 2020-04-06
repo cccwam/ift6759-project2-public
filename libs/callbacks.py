@@ -4,7 +4,7 @@ from pathlib import Path
 import tensorflow as tf
 from transformers import TFPreTrainedModel
 
-logger = logging.getLogger(__name__)
+logger = tf.get_logger()
 
 
 class CustomCheckpoint(tf.keras.callbacks.ModelCheckpoint):

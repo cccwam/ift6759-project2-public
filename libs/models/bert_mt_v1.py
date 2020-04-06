@@ -4,7 +4,7 @@ import typing
 import tensorflow as tf
 from transformers import BertConfig, TFBertForMaskedLM
 
-logger = logging.getLogger(__name__)
+logger = tf.get_logger()
 
 """
     BERT model for the translation task and translation language model task.

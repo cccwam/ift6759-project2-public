@@ -14,7 +14,7 @@ from libs import helpers
 from libs.callbacks import CustomCheckpoint
 from libs.data_loaders.abstract_dataloader import AbstractDataloader
 
-logger = logging.getLogger(__name__)
+logger = tf.get_logger()
 
 
 def main(
@@ -251,9 +251,9 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.verbose:
-        logging.getLogger().setLevel(logging.DEBUG)
+        logger.setLevel(logging.DEBUG)
     else:
-        logging.getLogger().setLevel(logging.INFO)
+        logger.setLevel(logging.INFO)
 
     logger.info("Start")
 

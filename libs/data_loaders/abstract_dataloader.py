@@ -5,7 +5,7 @@ from typing import Optional
 
 import tensorflow as tf
 
-logger = logging.getLogger(__name__)
+logger = tf.get_logger()
 
 
 class AbstractDataloader:
@@ -24,6 +24,8 @@ class AbstractDataloader:
         self._samples_for_test: int = self._dl_hparams["samples_for_test"]
         self._samples_for_valid: int = self._dl_hparams["samples_for_valid"]
         self._samples_for_train: int = self._dl_hparams["samples_for_train"]
+
+        # TODO add # samples to  in Tensorboard
 
         # To be initialized in build method (because called for each experiment during hparams search)
         self.test_dataset: Optional[tf.data.Dataset] = None

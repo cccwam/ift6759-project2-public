@@ -4,7 +4,7 @@ import tensorflow as tf
 
 from libs.helpers import get_online_model, load_dict, get_online_data_loader
 
-logger = logging.getLogger(__name__)
+logger = tf.get_logger()
 
 
 def load_pretrained_layers(config: dict, my_model: tf.keras.Model):

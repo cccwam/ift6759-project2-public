@@ -9,7 +9,7 @@ from tokenizers.implementations import BaseTokenizer
 
 from libs.helpers import import_from
 
-logger = logging.getLogger(__name__)
+logger = tf.get_logger()
 logging.basicConfig(level=logging.INFO)
 
 

@@ -13,7 +13,7 @@ from libs.data_loaders import AbstractDataloader
 from libs.losses import mlm_loss
 from libs.metrics import perplexity, BleuIntervalEvaluation, perplexity_mlm
 
-logger = logging.getLogger(__name__)
+logger = tf.get_logger()
 
 
 def import_from(module, name):

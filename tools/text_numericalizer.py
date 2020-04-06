@@ -4,7 +4,7 @@ from pathlib import Path
 
 import fire
 
-logger = logging.getLogger(__name__)
+logger = tf.get_logger()
 logging.basicConfig(level=logging.INFO)
 
 

@@ -7,7 +7,7 @@ import tensorflow as tf
 from libs.data_loaders import AbstractDataloader
 from libs.losses import mlm_loss
 
-logger = logging.getLogger(__name__)
+logger = tf.get_logger()
 
 
 class BleuIntervalEvaluation(tf.keras.callbacks.Callback):
@@ -61,7 +61,7 @@ class BleuIntervalEvaluation(tf.keras.callbacks.Callback):
             return tf.convert_to_tensor(bleu_score)
 
         stack = tf.stack([y_true, y_pred.argmax(-1)], axis=1)
-        return tf.reduce_mean(tf.map_fn(compute_bleu, stack, dtype=tf.float32, parallel_iterations=10))
+        return tf.reduce_mean(tf.map_fn(compute_bleu, stack, dtype=tf.float32))
 
 
 def perplexity(y_true, y_pred):

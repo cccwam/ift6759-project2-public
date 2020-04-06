@@ -13,7 +13,7 @@ from tokenizers.implementations import BaseTokenizer
 from libs.data_loaders import AbstractDataloader
 from libs.helpers import import_from
 
-logger = logging.getLogger(__name__)
+logger = tf.get_logger()
 
 
 class AbstractHuggingFacesTokenizer(AbstractDataloader, ABC):

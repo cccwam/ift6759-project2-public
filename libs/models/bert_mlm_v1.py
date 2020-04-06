@@ -3,7 +3,7 @@ import typing
 
 from libs.models.bert_mt_v1 import builder
 
-logger = logging.getLogger(__name__)
+logger = tf.get_logger()
 
 """
     BERT model for a masked language model task for one language only.

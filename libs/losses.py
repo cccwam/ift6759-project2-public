@@ -2,7 +2,7 @@ import logging
 
 import tensorflow as tf
 
-logger = logging.getLogger(__name__)
+logger = tf.get_logger()
 
 
 def mlm_loss(y_true, y_pred):

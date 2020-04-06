@@ -11,7 +11,7 @@ from libs.data_loaders.abstract_dataloader import AbstractBilingualDataloader, A
     AbstractBilingualTransformersDataloader
 from libs.data_loaders.abstract_dataloader_huggingfaces import AbstractHuggingFacesTokenizer
 
-logger = logging.getLogger(__name__)
+logger = tf.get_logger()
 
 
 class AbstractBilingualDataloaderSubword(AbstractBilingualDataloader, AbstractHuggingFacesTokenizer, ABC):
