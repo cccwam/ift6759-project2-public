@@ -180,7 +180,7 @@ def compile_model(model,
     mapping_metrics = {
         "perplexity": perplexity,  # For language model task
         "perplexity_mlm": perplexity_mlm,
-        #        "bleu_eager_mode": bleu_eager_mode,  # For translation task but it's too slow to run during training
+        #        "bleu": bleu,  # For translation task but it's too slow to run during training
         "sparse_accuracy": tf.keras.metrics.SparseCategoricalAccuracy(),  # Generic for classification
     }
 

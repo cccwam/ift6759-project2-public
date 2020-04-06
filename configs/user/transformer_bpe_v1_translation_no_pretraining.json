@@ -67,6 +67,7 @@
       "epochs": [
         2
       ],
+      "optimizer": "adam",
       "batch_size": [
         64
       ],
