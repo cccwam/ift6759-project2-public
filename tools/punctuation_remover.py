@@ -5,7 +5,7 @@ import os
 
 import tqdm
 
-logger = tf.get_logger()
+logger = logging.getLogger(__name__)
 
 PUNCTUATION = {",", ";", ":", "!", "?", ".", "'", '"', "(", ")", "...", "[", "]", "{", "}"}
 

@@ -9,7 +9,7 @@ import spacy
 import tqdm
 from sklearn.utils import shuffle
 
-logger = tf.get_logger()
+logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 

@@ -7,7 +7,7 @@ import re
 import spacy
 import tqdm
 
-logger = tf.get_logger()
+logger = logging.getLogger(__name__)
 
 
 def main():
