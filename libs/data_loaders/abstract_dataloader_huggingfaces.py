@@ -163,8 +163,8 @@ class AbstractHuggingFacesTokenizer(AbstractDataloader, ABC):
     def _add_bos_eos(self, s: List[str]):
         return self._bos + " ".join(s) + self._eos
 
-    @staticmethod
-    def _apply_mask_for_mlm(ds: tf.data.Dataset,
+    def _apply_mask_for_mlm(self,
+                            ds: tf.data.Dataset,
                             vocab_size: int,
                             with_multi_inputs=True):
         """
@@ -172,6 +172,7 @@ class AbstractHuggingFacesTokenizer(AbstractDataloader, ABC):
 
         Args:
             ds: dataset
+            vocab_size: vocab size
             with_multi_inputs:
 
         Returns:
