@@ -11,6 +11,7 @@ import tensorflow as tf
 from libs.data_loaders import AbstractDataloader
 from libs.losses import mlm_loss
 from libs.metrics import perplexity, BleuIntervalEvaluation, perplexity_mlm
+from libs.models import transformer
 
 logger = tf.get_logger()
 
@@ -119,25 +120,11 @@ def prepare_model(
         else:
             raise FileNotFoundError(f'Error: The file {default_model_path} does not exist.')
 
-    # ToDo Better handling of models that support .load_model vs those who don't
-    try:
+    print(f"Loading model: {model_source}")
+    if config["model"]["definition"]["module"] == 'libs.models.transformerv2':
+        model = transformer.load_transformer(config)
+    else:
         model = tf.keras.models.load_model(model_source)
-    except ValueError:
-        print("Retrieving data loader for task")
-        data_loader = get_online_data_loader(config)
-        data_loader.build(
-            batch_size=64,
-            mode=config['data_loader']['hyper_params']['mode'])
-        training_dataset, _ = \
-            data_loader.training_dataset, data_loader.valid_dataset
-        model = get_online_model(config)
-        print("Initial fit on 1 batch to build model")
-        model.fit(
-            training_dataset.take(1), validation_steps=2,
-            ckpt_manager=None)
-        print("Loading weights")
-        model.load_weights(model_source)
-
     return model
 
 
@@ -165,7 +152,8 @@ def compile_model(model,
                   dataloader: AbstractDataloader,
                   loss: str,
                   optimizer: str,
-                  metrics: List[str] = None):
+                  metrics: List[str] = None,
+                  config=None):
     """
         Helper function to compile a new model at each variation of the experiment
     :param learning_rate:
@@ -189,9 +177,13 @@ def compile_model(model,
         "mlm_loss": mlm_loss
     }
 
+    d_model = config['model']['hyper_params']['d_model']
     mapping_optimizer = {
         "adam": tf.keras.optimizers.Adam(learning_rate=learning_rate),
-        "rmsprop": tf.keras.optimizers.RMSprop(learning_rate=learning_rate)
+        "rmsprop": tf.keras.optimizers.RMSprop(learning_rate=learning_rate),
+        "adam-transformer": tf.keras.optimizers.Adam(
+            transformer.CustomSchedule(d_model), beta_1=0.9, beta_2=0.98,
+            epsilon=1e-9)
     }
 
     metric_funcs, additional_callbacks = [], []
@@ -225,15 +217,3 @@ def get_mirrored_strategy():
     logger.debug('Number of used GPU devices: {}'.format(mirrored_strategy.num_replicas_in_sync))
     logger.debug("------------")
     return mirrored_strategy
-
-
-def loss_function_for_transformer(real, pred):
-    loss_object = tf.keras.losses.SparseCategoricalCrossentropy(
-        from_logits=True, reduction='none')
-    mask = tf.math.logical_not(tf.math.equal(real, 0))
-    loss_ = loss_object(real, pred)
-
-    mask = tf.cast(mask, dtype=loss_.dtype)
-    loss_ *= mask
-
-    return tf.reduce_mean(loss_)

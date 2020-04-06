@@ -1,14 +1,15 @@
-# Code source: https://www.tensorflow.org/tutorials/text/transformer
-import os
-import time
-import typing
+"""Transformer neural network
+
+Notes:
+    Most code blocks are taken from
+    https://www.tensorflow.org/tutorials/text/transformer
+
+"""
 
 import numpy as np
 import tensorflow as tf
 
-from libs.helpers import get_online_data_loader
-from libs.helpers import loss_function_for_transformer as loss_function
-from libs.models.helpers import load_pretrained_layers
+from libs import losses
 
 
 def scaled_dot_product_attention(q, k, v, mask):
@@ -65,6 +66,14 @@ class MultiHeadAttention(tf.keras.layers.Layer):
 
         self.dense = tf.keras.layers.Dense(d_model)
 
+    def get_config(self):
+        config = super().get_config().copy()
+        config.update({
+            'd_model': self.d_model,
+            'num_layers': self.num_layers,
+        })
+        return config
+
     def split_heads(self, x, batch_size):
         """Split the last dimension into (num_heads, depth).
         Transpose the result such that the shape is
@@ -115,8 +124,13 @@ def point_wise_feed_forward_network(d_model, dff):
 
 
 class EncoderLayer(tf.keras.layers.Layer):
-    def __init__(self, d_model, num_heads, dff, rate=0.1):
+    def __init__(self, d_model, num_heads, dff, dropout_rate=0.1):
         super(EncoderLayer, self).__init__()
+
+        self.d_model = d_model
+        self.num_heads = num_heads
+        self.dff = dff
+        self.dropout_rate = dropout_rate
 
         self.mha = MultiHeadAttention(d_model, num_heads)
         self.ffn = point_wise_feed_forward_network(d_model, dff)
@@ -124,8 +138,18 @@ class EncoderLayer(tf.keras.layers.Layer):
         self.layernorm1 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
         self.layernorm2 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
 
-        self.dropout1 = tf.keras.layers.Dropout(rate)
-        self.dropout2 = tf.keras.layers.Dropout(rate)
+        self.dropout1 = tf.keras.layers.Dropout(dropout_rate)
+        self.dropout2 = tf.keras.layers.Dropout(dropout_rate)
+
+    def get_config(self):
+        config = super().get_config().copy()
+        config.update({
+            'd_model': self.d_model,
+            'num_heads': self.num_heads,
+            'dff': self.dff,
+            'dropout_rate': self.dropout_rate,
+        })
+        return config
 
     def call(self, x, training, mask):
         attn_output, _ = self.mha(x, x, x, mask)
@@ -143,8 +167,13 @@ class EncoderLayer(tf.keras.layers.Layer):
 
 
 class DecoderLayer(tf.keras.layers.Layer):
-    def __init__(self, d_model, num_heads, dff, rate=0.1):
+    def __init__(self, d_model, num_heads, dff, dropout_rate=0.1):
         super(DecoderLayer, self).__init__()
+
+        self.d_model = d_model
+        self.num_heads = num_heads
+        self.dff = dff
+        self.dropout_rate = dropout_rate
 
         self.mha1 = MultiHeadAttention(d_model, num_heads)
         self.mha2 = MultiHeadAttention(d_model, num_heads)
@@ -155,9 +184,19 @@ class DecoderLayer(tf.keras.layers.Layer):
         self.layernorm2 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
         self.layernorm3 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
 
-        self.dropout1 = tf.keras.layers.Dropout(rate)
-        self.dropout2 = tf.keras.layers.Dropout(rate)
-        self.dropout3 = tf.keras.layers.Dropout(rate)
+        self.dropout1 = tf.keras.layers.Dropout(dropout_rate)
+        self.dropout2 = tf.keras.layers.Dropout(dropout_rate)
+        self.dropout3 = tf.keras.layers.Dropout(dropout_rate)
+
+    def get_config(self):
+        config = super().get_config().copy()
+        config.update({
+            'd_model': self.d_model,
+            'num_heads': self.num_heads,
+            'dff': self.dff,
+            'dropout_rate': self.dropout_rate,
+        })
+        return config
 
     def call(self, x, enc_output, training, look_ahead_mask, padding_mask):
         # enc_output.shape == (batch_size, input_seq_len, d_model)
@@ -205,20 +244,38 @@ def positional_encoding(position, d_model):
 
 class Encoder(tf.keras.layers.Layer):
     def __init__(self, num_layers, d_model, num_heads, dff, vocab_size_source,
-                 maximum_position_encoding, rate=0.1):
+                 maximum_position_encoding, dropout_rate=0.1, **kwargs):
         super(Encoder, self).__init__()
 
-        self.d_model = d_model
         self.num_layers = num_layers
+        self.d_model = d_model
+        self.num_heads = num_heads
+        self.dff = dff
+        self.vocab_size_source = vocab_size_source
+        self.maximum_position_encoding = maximum_position_encoding
+        self.dropout_rate = dropout_rate
 
         self.embedding = tf.keras.layers.Embedding(vocab_size_source, d_model)
         self.pos_encoding = positional_encoding(maximum_position_encoding,
                                                 self.d_model)
 
-        self.enc_layers = [EncoderLayer(d_model, num_heads, dff, rate)
+        self.enc_layers = [EncoderLayer(d_model, num_heads, dff, dropout_rate)
                            for _ in range(num_layers)]
 
-        self.dropout = tf.keras.layers.Dropout(rate)
+        self.dropout = tf.keras.layers.Dropout(dropout_rate)
+
+    def get_config(self):
+        config = super().get_config().copy()
+        config.update({
+            'num_layers': self.num_layers,
+            'd_model': self.d_model,
+            'num_heads': self.num_heads,
+            'dff': self.dff,
+            'vocab_size_source': self.vocab_size_source,
+            'maximum_position_encoding': self.maximum_position_encoding,
+            'dropout_rate': self.dropout_rate,
+        })
+        return config
 
     def call(self, x, training, mask):
         seq_len = tf.shape(x)[1]
@@ -238,8 +295,16 @@ class Encoder(tf.keras.layers.Layer):
 
 class Decoder(tf.keras.layers.Layer):
     def __init__(self, num_layers, d_model, num_heads, dff, vocab_size_target,
-                 maximum_position_encoding, rate=0.1):
+                 maximum_position_encoding, dropout_rate=0.1, **kwargs):
         super(Decoder, self).__init__()
+
+        self.num_layers = num_layers
+        self.d_model = d_model
+        self.num_heads = num_heads
+        self.dff = dff
+        self.vocab_size_target = vocab_size_target
+        self.maximum_position_encoding = maximum_position_encoding
+        self.dropout_rate = dropout_rate
 
         self.d_model = d_model
         self.num_layers = num_layers
@@ -248,9 +313,22 @@ class Decoder(tf.keras.layers.Layer):
         self.pos_encoding = positional_encoding(maximum_position_encoding,
                                                 d_model)
 
-        self.dec_layers = [DecoderLayer(d_model, num_heads, dff, rate)
+        self.dec_layers = [DecoderLayer(d_model, num_heads, dff, dropout_rate)
                            for _ in range(num_layers)]
-        self.dropout = tf.keras.layers.Dropout(rate)
+        self.dropout = tf.keras.layers.Dropout(dropout_rate)
+
+    def get_config(self):
+        config = super().get_config().copy()
+        config.update({
+            'num_layers': self.num_layers,
+            'd_model': self.d_model,
+            'num_heads': self.num_heads,
+            'dff': self.dff,
+            'vocab_size_target': self.vocab_size_target,
+            'maximum_position_encoding': self.maximum_position_encoding,
+            'dropout_rate': self.dropout_rate,
+        })
+        return config
 
     def call(self, x, enc_output, training, look_ahead_mask, padding_mask):
         seq_len = tf.shape(x)[1]
@@ -272,190 +350,6 @@ class Decoder(tf.keras.layers.Layer):
 
         # x.shape == (batch_size, target_seq_len, d_model)
         return x, attention_weights
-
-
-class Transformer(tf.keras.Model):
-    def __init__(self, num_layers, d_model, num_heads, dff, vocab_size_source,
-                 vocab_size_target, pe_input, pe_target, rate=0.1,
-                 model_name='Transformer'):
-        super(Transformer, self).__init__()
-
-        self.encoder = Encoder(num_layers, d_model, num_heads, dff,
-                               vocab_size_source, pe_input, rate)
-
-        self.decoder = Decoder(num_layers, d_model, num_heads, dff,
-                               vocab_size_target, pe_target, rate)
-
-        self.final_layer = tf.keras.layers.Dense(vocab_size_target)
-
-        # TODO this must be out of the model logic
-        self.lr = CustomSchedule(d_model)
-        self.optimizer = tf.keras.optimizers.Adam(
-            self.lr, beta_1=0.9, beta_2=0.98, epsilon=1e-9)
-        self.train_loss = tf.keras.metrics.Mean(name='train_loss')
-        self.train_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(
-            name='train_accuracy')
-        self.validation_loss = tf.keras.metrics.Mean(name='validation_loss')
-        self.validation_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(
-            name='validation_accuracy')
-        self.model_name = model_name
-
-    def call(self, enc_inp, dec_inp, training, enc_padding_mask, look_ahead_mask,
-             dec_padding_mask):
-        enc_output = self.encoder(enc_inp, training, enc_padding_mask)
-        # (batch_size, inp_seq_len, d_model)
-
-        # dec_output.shape == (batch_size, tar_seq_len, d_model)
-        dec_output, attention_weights = self.decoder(
-            dec_inp, enc_output, training, look_ahead_mask, dec_padding_mask)
-
-        final_output = self.final_layer(
-            dec_output)  # (batch_size, tar_seq_len, vocab_size_target)
-
-        return final_output, attention_weights
-
-    # TODO why using checkpoint
-    def load_checkpoint(self):
-        # ToDo customize checkpoint save directory
-        checkpoint_path = os.path.join(
-            os.environ['HOME'], f"ift6759_p2_checkpoints/{self.model_name}")
-        ckpt = tf.train.Checkpoint(transformer=self,
-                                   optimizer=self.optimizer)
-        ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_path,
-                                                  max_to_keep=3)
-        # if a checkpoint exists, restore the latest checkpoint.
-        if ckpt_manager.latest_checkpoint:
-            ckpt.restore(ckpt_manager.latest_checkpoint)
-            print('Latest checkpoint restored!!')
-
-        return ckpt_manager
-
-    # TODO why custom fit ?
-    def fit(self, x=None, epochs=1, callbacks=None,
-            validation_data=None, validation_steps=None, **kwargs):
-        ckpt_manager = kwargs['ckpt_manager']
-
-        @tf.function(experimental_relax_shapes=True)
-        def train_step(inp, tar):
-            tar_inp = tar[:, :-1]
-            tar_real = tar[:, 1:]
-
-            enc_padding_mask, combined_mask, dec_padding_mask = create_masks(inp, tar_inp)
-
-            with tf.GradientTape() as tape:
-                predictions, _ = self(inp, tar_inp, True, enc_padding_mask,
-                                      combined_mask, dec_padding_mask)
-                loss = loss_function(tar_real, predictions)
-
-            gradients = tape.gradient(loss, self.trainable_variables)
-            self.optimizer.apply_gradients(
-                zip(gradients, self.trainable_variables))
-
-            self.train_loss(loss)
-            self.train_accuracy(tar_real, predictions)
-
-        @tf.function(experimental_relax_shapes=True)
-        def validation_step(inp, tar):
-            tar_inp = tar[:, :-1]
-            tar_real = tar[:, 1:]
-
-            enc_padding_mask, combined_mask, dec_padding_mask = create_masks(
-                inp, tar_inp)
-
-            predictions, _ = self.call(inp, tar_inp, True, enc_padding_mask,
-                                       combined_mask, dec_padding_mask)
-            loss = loss_function(tar_real, predictions)
-
-            self.validation_loss(loss)
-            self.validation_accuracy(tar_real, predictions)
-
-        for epoch in range(epochs):
-            start = time.time()
-
-            self.train_loss.reset_states()
-            self.train_accuracy.reset_states()
-
-            for (batch, (inp0, tar0)) in enumerate(x):
-                train_step(inp0, tar0)
-
-                if batch % 50 == 0:
-                    print(
-                        'Epoch {} Batch {} Loss {:.4f} Accuracy {:.4f}'.format(
-                            epoch + 1, batch, self.train_loss.result(),
-                            self.train_accuracy.result()))
-
-            if (epoch + 1) % 5 == 0:
-                ckpt_save_path = ckpt_manager.save()
-                print(
-                    'Saving checkpoint for epoch {} at {}'.format(
-                        epoch + 1, ckpt_save_path))
-
-            print(
-                'Epoch {} Loss {:.4f} Accuracy {:.4f}'.format(
-                    epoch + 1, self.train_loss.result(),
-                    self.train_accuracy.result()))
-
-            if (epoch + 1) % validation_steps == 0:
-                self.validation_loss.reset_states()
-                self.validation_accuracy.reset_states()
-
-                for (batch, (inp0, tar0)) in enumerate(validation_data):
-                    validation_step(inp0, tar0)
-
-                print(
-                    'Epoch {} Validation Loss {:.4f} Validation Accuracy {:.4f}'.format(
-                        epoch + 1, self.validation_loss.result(),
-                        self.validation_accuracy.result()))
-
-            print(
-                'Time taken for 1 epoch: {} secs\n'.format(time.time() - start))
-
-    # TODO why evaluate
-    def evaluate(self, encoder_input, transformer_output, end_token):
-        # TODO see below
-        # This limit in i should be MAX_LENGTH, but no longer using it so...
-        for slen in range(100):
-            enc_padding_mask, combined_mask, dec_padding_mask = \
-                create_masks(encoder_input, transformer_output)
-
-            # predictions.shape == (batch_size, seq_len, vocab_size)
-            predictions, attention_weights = self(encoder_input,
-                                                  transformer_output,
-                                                  False,
-                                                  enc_padding_mask,
-                                                  combined_mask,
-                                                  dec_padding_mask)
-
-            # select the last word from the seq_len dimension
-            predictions = predictions[:, -1:, :]  # (batch_size, 1, vocab_size)
-
-            predicted_id = tf.cast(tf.argmax(predictions, axis=-1), tf.int32)
-
-            # return the result if the predicted_id is equal to the end token
-            if predicted_id == end_token:
-                return tf.squeeze(transformer_output, axis=0), attention_weights
-
-            # concatentate the predicted_id to the output which is given to the
-            # decoder as its input.
-            transformer_output = tf.concat([transformer_output, predicted_id], axis=-1)
-
-        return tf.squeeze(transformer_output, axis=0), attention_weights
-
-
-class CustomSchedule(tf.keras.optimizers.schedules.LearningRateSchedule):
-    def __init__(self, d_model, warmup_steps=4000):
-        super(CustomSchedule, self).__init__()
-
-        self.d_model = d_model
-        self.d_model = tf.cast(self.d_model, tf.float32)
-
-        self.warmup_steps = warmup_steps
-
-    def __call__(self, step):
-        arg1 = tf.math.rsqrt(step)
-        arg2 = step * (self.warmup_steps ** -1.5)
-
-        return tf.math.rsqrt(self.d_model) * tf.math.minimum(arg1, arg2)
 
 
 def create_padding_mask(seq):
@@ -489,39 +383,108 @@ def create_masks(inp, tar):
     return enc_padding_mask, combined_mask, dec_padding_mask
 
 
-def builder(config: typing.Dict[typing.AnyStr, typing.Any]):
-    # noinspection PyShadowingNames,DuplicatedCode
-    model_hparams = config["model"]["hyper_params"]
-    dl_hparams = config["data_loader"]["hyper_params"]
+class CustomSchedule(tf.keras.optimizers.schedules.LearningRateSchedule):
+    """Custom learning rate schedule for transformer."""
 
-    num_layers = model_hparams["num_layers"]
-    d_model = model_hparams["d_model"]
-    num_heads = model_hparams["num_heads"]
-    dff = model_hparams["dff"]
-    dropout_rate = model_hparams["dropout_rate"]
-    vocab_size_source = dl_hparams["vocab_size_source"]
-    vocab_size_target = dl_hparams["vocab_size_target"]
+    def __init__(self, d_model, warmup_steps=4000):
+        super(CustomSchedule, self).__init__()
 
-    transformer_tl = Transformer(
-        num_layers, d_model, num_heads, dff, vocab_size_source,
-        vocab_size_target, pe_input=vocab_size_source,
-        pe_target=vocab_size_target, rate=dropout_rate,
-        model_name=model_hparams["name"])
+        self.d_model = d_model
+        self.d_model_cast = tf.cast(self.d_model, tf.float32)
 
-    # TODO this doesn't make sense to have the model calling the dataloader
-    if "pretrained_layers" in config["model"]["hyper_params"]:
-        print("Entering pretraining procedure")
-        print("Retrieving data loader")
-        task_data_loader = get_online_data_loader(config)
-        task_data_loader.build(
-            batch_size=64, mode=config['data_loader']['hyper_params']['mode'])
-        training_dataset, _ = \
-            task_data_loader.training_dataset, task_data_loader.valid_dataset
-        print("Initial fit on 1 batch to build main task model")
-        transformer_tl.fit(
-            training_dataset.take(1), validation_steps=2, ckpt_manager=None)
-        print("Loading pretrained layers")
-        load_pretrained_layers(config, transformer_tl)
-        print("Completed loading weights from pretrained model")
+        self.warmup_steps = warmup_steps
 
-    return transformer_tl
+    def get_config(self):
+        # config = super().get_config().copy()
+        config = {
+            'd_model': self.d_model,
+            'warmup_steps': self.warmup_steps,
+        }
+        return config
+
+    def __call__(self, step):
+        arg1 = tf.math.rsqrt(step)
+        arg2 = step * (self.warmup_steps ** -1.5)
+
+        return tf.math.rsqrt(self.d_model_cast) * tf.math.minimum(arg1, arg2)
+
+
+def load_transformer(config):
+    """Load transformer model
+
+    :param config: dictionary, parameters of model, including source file
+    :return: tf.keras.Model, the restored transformer model from file
+
+    """
+
+    return tf.keras.models.load_model(
+        config['model']['source'],
+        custom_objects={'Encoder': Encoder,
+                        'Decoder': Decoder,
+                        'CustomSchedule': CustomSchedule,
+                        'mlm_loss': losses.mlm_loss})
+
+
+def inference(tokenizer, model, test_dataset):
+    """Inference step for transformer.
+
+    :param tokenizer: tokenizer used for sentence reconstruction
+    :param model: tf.keras.Model, the model to use
+    :param test_dataset: tokenized test sentences to translate
+    :return: list of sentences, the translated sentences
+
+    """
+
+    begin_token = tokenizer.vocab_size
+    end_token = tokenizer.vocab_size + 1
+
+    # ToDo actually fetch by name
+    encoder = model.layers[3]
+    # encoder = [layer for layer in model.layers if layer.name=='Encoder'][0]
+    decoder = model.layers[5]
+    # decoder = [layer for layer in model.layers if layer.name == 'Decoder'][0]
+    final_layer = model.layers[6]
+    # final_layer = [layer for layer in model.layers if layer.name == '???'][0]
+    all_predictions = []
+    for i, test_inp in enumerate(test_dataset):
+        # ToDo better verbosity
+        print(i)
+        enc_inp, dec_inp, padding_mask, combined_mask = test_inp
+        enc_output = encoder(enc_inp, False, padding_mask)
+        # ToDo allow different max length?
+        for slen in range(100):
+            dec_output, attention_weights = decoder(
+                dec_inp, enc_output, False, combined_mask,
+                padding_mask)
+            final_output = final_layer(dec_output)
+            # final_output.shape == (batch_size, seq_len, vocab_size)
+
+            # select the last word from the seq_len dimension
+            predictions = final_output[:, -1:, :]
+            # (batch_size, 1, vocab_size)
+
+            predicted_id = tf.cast(tf.argmax(predictions, axis=-1),
+                                   tf.int32)  # (batch_size, 1)
+
+            # ToDo reimplement this stop criteria in batch?
+            # return the result if the predicted_id is equal to the end token
+            # if predicted_id == end_token:
+            #     return tf.squeeze(transformer_output,
+            #                       axis=0), attention_weights
+
+            # concatentate the predicted_id to the output which is given to the
+            # decoder as its input.
+            dec_inp = tf.concat([dec_inp, predicted_id], axis=-1)
+
+        for i in range(dec_inp.shape[0]):
+            sent_ids = []
+            for j in dec_inp[i]:
+                if j == begin_token:
+                    continue
+                if j == end_token:
+                    break
+                sent_ids.append(j)
+            predicted_sentence = tokenizer.decode(sent_ids)
+            all_predictions.append(predicted_sentence)
+
+    return all_predictions

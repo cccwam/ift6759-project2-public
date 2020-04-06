@@ -125,9 +125,13 @@ def train_models(
 
                     if mirrored_strategy is not None and mirrored_strategy.num_replicas_in_sync > 1:
                         with mirrored_strategy.scope():
-                            model = helpers.get_online_model(config)
+                            # ToDo sometimes we need to reload?
+                            model = helpers.get_model(config)
+                            # model = helpers.get_online_model(config)
                     else:
-                        model = helpers.get_online_model(config)
+                        # ToDo sometimes we need to reload?
+                        model = helpers.get_model(config)
+                        # model = helpers.get_online_model(config)
 
                     if tensorboard_tracking_folder is not None:
                         tensorboard_log_dir = str(tensorboard_experiment_id / str(variation_num))
@@ -154,18 +158,13 @@ def train_models(
                         optimizer=trainer_hyper_params["optimizer"],
                         metrics=trainer_hyper_params["metrics"],
                         patience=patience,
-                        checkpoints_path=checkpoints_path
+                        checkpoints_path=checkpoints_path,
+                        config=config
                     )
                     variation_num += 1
 
     # Save final model
-    # ToDo Use better logic for models that support .save and those that don't
-    try:
-        model.save(helpers.generate_model_name(config))
-    except NotImplementedError:
-        model.save_weights(
-            helpers.generate_model_name(config).rstrip('.hdf5') + '.h5',
-            save_format='h5')
+    model.save(helpers.generate_model_name(config))
 
 
 def train_model(
@@ -180,7 +179,8 @@ def train_model(
         optimizer: str,
         metrics: List[str],
         patience: int,
-        checkpoints_path: str
+        checkpoints_path: str,
+        config,
 ):
     """
     The training loop for a single model
@@ -220,14 +220,16 @@ def train_model(
                                                                          loss=loss,
                                                                          optimizer=optimizer,
                                                                          metrics=metrics,
-                                                                         learning_rate=learning_rate)
+                                                                         learning_rate=learning_rate,
+                                                                         config=config)
     else:
         compiled_model, additional_callbacks = helpers.compile_model(model=model,
                                                                      dataloader=dataloader,
                                                                      loss=loss,
                                                                      optimizer=optimizer,
                                                                      metrics=metrics,
-                                                                     learning_rate=learning_rate)
+                                                                     learning_rate=learning_rate,
+                                                                     config=config)
 
     callbacks += [tf.keras.callbacks.EarlyStopping(patience=patience)] + additional_callbacks
 
