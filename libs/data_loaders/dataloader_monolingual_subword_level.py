@@ -124,8 +124,6 @@ class MonolingualMaskLMDataloaderSubword(AbstractMonolingualDataloaderSubword):
 
     def _hook_dataset_post_precessing(self, ds: tf.data.Dataset):
         return self._apply_mask_for_mlm(ds=ds,
-                                        distrib_mask_actions=distrib_mask,
-                                        distrib_random=distrib_random,
                                         vocab_size=self._vocab_size)
 
 

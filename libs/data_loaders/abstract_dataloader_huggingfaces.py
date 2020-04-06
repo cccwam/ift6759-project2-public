@@ -5,6 +5,7 @@ from abc import ABC
 from pathlib import Path
 from typing import List
 
+import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 from tokenizers.implementations import BaseTokenizer
@@ -164,8 +165,6 @@ class AbstractHuggingFacesTokenizer(AbstractDataloader, ABC):
 
     @staticmethod
     def _apply_mask_for_mlm(ds: tf.data.Dataset,
-                            distrib_mask_actions: tfp.distributions.Multinomial,
-                            distrib_random: tfp.distributions.Uniform,
                             vocab_size: int,
                             with_multi_inputs=True):
         """
@@ -173,10 +172,6 @@ class AbstractHuggingFacesTokenizer(AbstractDataloader, ABC):
 
         Args:
             ds: dataset
-            distrib_mask_actions: Multinomial distribution for 4 class
-                3 for mask actions: do nothing, random token replacement, mask replacement.
-                1 for doing nothing on inputs but mask outputs
-            distrib_random: Uniform distribution of vocab size (without special tokens
             with_multi_inputs:
 
         Returns:
@@ -201,8 +196,8 @@ class AbstractHuggingFacesTokenizer(AbstractDataloader, ABC):
             output_shape = tf.shape(output)  # Shape Seq Length
 
             # TODO set seed
-            masks = distrib_mask_actions.sample(input_shape,
-                                                seed=42)  # Shape Seq Length * Probability for each class (4)
+            masks = distrib_mask.sample(input_shape,
+                                        seed=42)  # Shape Seq Length * Probability for each class (4)
             masks = tf.cast(masks, dtype=tf.int32)
             random_tokens = distrib_random.sample(input_shape, seed=42)  # TODO set seed
             random_tokens = tf.cast(random_tokens, dtype=tf.int32)

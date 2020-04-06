@@ -1,6 +1,7 @@
 import typing
 
 from libs.models.bert_mt_encoder_only_v1 import builder
+import tensorflow as tf
 
 logger = tf.get_logger()
 
