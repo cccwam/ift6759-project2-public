@@ -34,11 +34,16 @@
   },
   "trainer": {
     "hyper_params": {
+      "loss": "mlm_loss",
       "lr_rate": [
         -1
       ],
       "epochs": [
         40
+      ],
+      "optimizer": "adam",
+      "metrics": [
+        "sparse_accuracy"
       ],
       "batch_size": [
         64

@@ -16,7 +16,7 @@ logging.basicConfig(level=logging.INFO)
 def my_tokenizer(data_path,
                  output_path,
                  should_shuffle=True,
-                 shuffle_seed=42):
+                 shuffle_seed=42):  # TODO set seed
     """
         Inspired by the notebook EDA-FM-13032020.ipynb
         This function will normalize monolingual and bilingual corpora.

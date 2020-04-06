@@ -1,16 +1,19 @@
 import json
-import logging
 import os
 import uuid
 from datetime import datetime
 from pathlib import Path
+from typing import List
 
 import jsonschema
 import tensorflow as tf
 
+from libs.data_loaders import AbstractDataloader
+from libs.losses import mlm_loss
+from libs.metrics import perplexity, BleuIntervalEvaluation, perplexity_mlm
 from libs.models import transformer
 
-logger = logging.getLogger(__name__)
+logger = tf.get_logger()
 
 
 def import_from(module, name):
@@ -144,40 +147,62 @@ def get_tensorboard_experiment_id(experiment_name, tensorboard_tracking_folder: 
     return tensorboard_tracking_folder / model_sub_folder
 
 
-def compile_model(model, learning_rate, config=None):
+def compile_model(model,
+                  learning_rate: float,
+                  dataloader: AbstractDataloader,
+                  loss: str,
+                  optimizer: str,
+                  metrics: List[str] = None,
+                  config=None):
     """
         Helper function to compile a new model at each variation of the experiment
     :param learning_rate:
-    :param model:
-    :return:
+    :param dataloader: dataloader
+    :param loss: loss function name
+    :param optimizer: optimizer function name
+    :param model: model to be compiled
+    :param metrics: list of metrics
+    :return: compiled model and additional callbacks (for metrics which are too slow to run on training set)
     """
 
-    model_instance = model
+    mapping_metrics = {
+        "perplexity": perplexity,  # For language model task
+        "perplexity_mlm": perplexity_mlm,
+        #        "bleu": bleu,  # For translation task but it's too slow to run during training
+        "sparse_accuracy": tf.keras.metrics.SparseCategoricalAccuracy(),  # Generic for classification
+    }
 
-    # ToDo identify how to select optimizer
-    if learning_rate == -1:
-        d_model = config['model']['hyper_params']['d_model']
-        optimizer = tf.keras.optimizers.Adam(
+    mapping_loss = {
+        "sparse_categorical_cross_entropy": tf.keras.losses.SparseCategoricalCrossentropy(),
+        "mlm_loss": mlm_loss
+    }
+
+    d_model = config['model']['hyper_params']['d_model']
+    mapping_optimizer = {
+        "adam": tf.keras.optimizers.Adam(learning_rate=learning_rate),
+        "rmsprop": tf.keras.optimizers.RMSprop(learning_rate=learning_rate),
+        "adam-transformer" : tf.keras.optimizers.Adam(
             transformer.CustomSchedule(d_model), beta_1=0.9, beta_2=0.98,
             epsilon=1e-9)
-    else:
-        optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
+    }
 
-    # TODO to review this
-    #   Likely that we should have more than 1 loss
-    #   Also we should be able to optimizer
-    # Add also BLEU
-    if learning_rate == -1:
-        model_instance.compile(
-            optimizer=optimizer,
-            loss=transformer.loss_function_for_transformer,
-            metrics=[tf.keras.metrics.SparseCategoricalAccuracy()])
-    else:
-        model_instance.compile(
-            optimizer=optimizer,
-            loss=tf.keras.losses.SparseCategoricalCrossentropy(),
-            metrics=[tf.keras.metrics.SparseCategoricalAccuracy()])
-    return model_instance
+    metric_funcs, additional_callbacks = [], []
+    for metric in metrics:
+        if metric == "bleu":
+            # Special case
+            #  To be called only on end of epoch because it's too slow
+            additional_callbacks += [BleuIntervalEvaluation(dataloader=dataloader)]
+        else:
+            metric_funcs += [mapping_metrics[metric]]
+
+    optimizer = mapping_optimizer[optimizer]
+
+    model.compile(
+        optimizer=optimizer,
+        loss=mapping_loss[loss],
+        metrics=metric_funcs
+    )
+    return model, additional_callbacks
 
 
 def get_module_name(module_dictionary):

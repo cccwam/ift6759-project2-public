@@ -1,10 +1,8 @@
-import logging
-
 import tensorflow as tf
 
 from libs.helpers import get_online_model, load_dict, get_online_data_loader
 
-logger = logging.getLogger(__name__)
+logger = tf.get_logger()
 
 
 def load_pretrained_layers(config: dict, my_model: tf.keras.Model):
@@ -13,6 +11,7 @@ def load_pretrained_layers(config: dict, my_model: tf.keras.Model):
         for pretrained_layer in pretrained_layers:
             logger.info(
                 f"Load pretrained layer {pretrained_layer['layer_name']} into {pretrained_layer['target_layer_name']}")
+            # TODO specific logic for Transformers
             try:
                 pretrained_model: tf.keras.Model \
                     = tf.keras.models.load_model(pretrained_layer["model_path"])

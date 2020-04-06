@@ -116,12 +116,3 @@ python trainer.py \
 # For evaluation, do not forget to change the best_config in evaluator.py
 ``` 
 
-## Special requirements
-
-Our project is using HuggingFaces tokenizers and transformers libraries.
-To install them, please run
-
-
-```
-pip install --force tokenizers==0.6.0 and transformers==2.5.1
-```

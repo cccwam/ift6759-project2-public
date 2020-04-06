@@ -27,6 +27,8 @@ def generate_predictions(input_file_path: str, pred_file_path: str):
     best_config_file = 'configs/user/transformer_mass_v1_translation_with_pretraining_for_eval.local.json'
     print(f"Using best config file: {best_config_file}")
     best_config = helpers.load_dict(best_config_file)
+    # ToDo make sure others don't use this, obsolete?
+    # del best_config["model"]["hyper_params"]["pretrained_layers"]
     helpers.validate_user_config(best_config)
 
     # TODO: Edit our AbstractDataloader to support a raw_english_test_set_file_path. Currently it only supports

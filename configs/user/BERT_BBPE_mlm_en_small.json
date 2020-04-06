@@ -1,0 +1,65 @@
+{
+  "model": {
+    "definition": {
+      "module": "libs.models.bert_mlm_v1",
+      "name": "builder_mlm"
+    },
+    "hyper_params": {
+      "name": "BERT-Small",
+      "num_hidden_layers": 4,
+      "num_attention_heads": 8,
+      "hidden_size": 512
+    },
+    "source": ""
+  },
+  "data_loader": {
+    "definition": {
+      "module": "libs.data_loaders.dataloader_monolingual_subword_level",
+      "name": "MonolingualMaskLMDataloaderSubword"
+    },
+    "hyper_params": {
+      "preprocessed_data_path": {
+        "folder": "/project/cq-training-1/project2/teams/team03/data/word_level_24032020",
+        "monolingual_corpus_filename": "unaligned_en_tokenized.pickle",
+        "language": "BOTH",
+        "corpora_filenames": [
+          "unaligned_en_tokenized.pickle",
+          "unaligned_fr_tokenized.pickle",
+          "train_lang1_en_tokenized.pickle",
+          "train_lang2_fr_tokenized.pickle"
+        ],
+        "tokens_type": 0
+      },
+      "pretrained_model_dir_path": "/project/cq-training-1/project2/teams/team03/models/pretokenizers",
+      "tokenizer_algorithm": "ByteLevelBPETokenizer",
+      "tmp_path": "/tmp",
+      "dropout": 0.1,
+      "vocab_size": 8000,
+      "seq_length": 1024,
+      "samples_for_test": 0,
+      "samples_for_valid": 5000,
+      "samples_for_train": 500
+    }
+  },
+  "trainer": {
+    "hyper_params": {
+      "loss": "mlm_loss",
+      "metrics": [
+        "perplexity_mlm"
+      ],
+      "optimizer": "adam",
+      "lr_rate": [
+        3e-4
+      ],
+      "epochs": [
+        5
+      ],
+      "batch_size": [
+        8
+      ],
+      "patience": [
+        2
+      ]
+    }
+  }
+}
