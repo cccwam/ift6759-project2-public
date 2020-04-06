@@ -181,7 +181,7 @@ def compile_model(model,
     mapping_optimizer = {
         "adam": tf.keras.optimizers.Adam(learning_rate=learning_rate),
         "rmsprop": tf.keras.optimizers.RMSprop(learning_rate=learning_rate),
-        "adam-transformer" : tf.keras.optimizers.Adam(
+        "adam-transformer": tf.keras.optimizers.Adam(
             transformer.CustomSchedule(d_model), beta_1=0.9, beta_2=0.98,
             epsilon=1e-9)
     }
