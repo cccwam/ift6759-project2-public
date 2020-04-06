@@ -88,12 +88,7 @@ def train_models(
     hp_learning_rate = hp.HParam('learning_rate', hp.Discrete(trainer_hyper_params["lr_rate"]))
     hp_patience = hp.HParam('patience', hp.Discrete(trainer_hyper_params["patience"]))
 
-    # ToDo Better way to differentiate different data loading logic
-    # ToDo Obsolete
-    if 'mode' in config['data_loader']['hyper_params']:
-        data_loader.build(batch_size=hp_batch_size.domain.values[0], mode=config['data_loader']['hyper_params']['mode'])
-    else:
-        data_loader.build(batch_size=hp_batch_size.domain.values[0])
+    data_loader.build(batch_size=hp_batch_size.domain.values[0])
     training_dataset, valid_dataset = data_loader.training_dataset, data_loader.valid_dataset
 
     # Main loop to iterate over all possible hyper parameters
@@ -208,19 +203,9 @@ def train_model(
     fit_kwargs = {}
     if mirrored_strategy is not None and mirrored_strategy.num_replicas_in_sync > 1:
         with mirrored_strategy.scope():
-            # ToDo Obsolete with TransformerV2?
-            if hasattr(model, 'lr'):
-                compiled_model = model
-                fit_kwargs['ckpt_manager'] = compiled_model.load_checkpoint()
-            else:
-                compiled_model = helpers.compile_model(model, learning_rate=learning_rate, config=config)
-    else:
-        # ToDo Obsolete with TransformerV2?
-        if hasattr(model, 'lr'):
-            compiled_model = model
-            fit_kwargs['ckpt_manager'] = compiled_model.load_checkpoint()
-        else:
             compiled_model = helpers.compile_model(model, learning_rate=learning_rate, config=config)
+    else:
+        compiled_model = helpers.compile_model(model, learning_rate=learning_rate, config=config)
 
     if tensorboard_log_dir is not None:
         # Workaround for https://github.com/tensorflow/tensorboard/issues/2412

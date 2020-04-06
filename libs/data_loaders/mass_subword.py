@@ -208,8 +208,7 @@ class MassSubwordDataLoader:
         self.validation_steps = None
         self.raw_english_test_set_file_path = raw_english_test_set_file_path
 
-    # ToDo mode obsolete
-    def build(self, batch_size, mode='translate'):
+    def build(self, batch_size):
         """Build data loader for translation task
 
         :param batch_size: int
@@ -344,8 +343,7 @@ class MassSubwordDataLoaderPretraining:
         self.validation_steps = None
         self.raw_english_test_set_file_path = raw_english_test_set_file_path
 
-    # ToDo mode obsolete
-    def build(self, batch_size, mode='translate'):
+    def build(self, batch_size):
         """Build data loader for MASS pretraining task
 
         :param batch_size: int
@@ -367,8 +365,8 @@ class MassSubwordDataLoaderPretraining:
         print(self.vocab_size_source)
 
         # ToDo use the whole dataset
-        sentences_both_train = datasets['sentences_all_train'].shuffle(buffer_size=500000).take(100000)
-        sentences_both_validation = datasets['sentences_all_validation'].shuffle(buffer_size=500000).take(100000)
+        sentences_both_train = datasets['sentences_all_train'].shuffle(buffer_size=500000).take(50000)
+        sentences_both_validation = datasets['sentences_all_validation'].shuffle(buffer_size=500000).take(20000)
         # sentences_both_train = datasets['sentences_all_train'].shuffle(buffer_size=500000)
         # sentences_both_validation = datasets['sentences_all_validation'].shuffle(buffer_size=500000)
 

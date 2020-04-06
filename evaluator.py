@@ -27,9 +27,6 @@ def generate_predictions(input_file_path: str, pred_file_path: str):
     best_config_file = 'configs/user/transformer_mass_v1_translation_with_pretraining_for_eval.local.json'
     print(f"Using best config file: {best_config_file}")
     best_config = helpers.load_dict(best_config_file)
-    # ToDo obsolete make sure others don't use this
-    if 'pretrained_layers' in best_config["model"]["hyper_params"]:
-        del best_config["model"]["hyper_params"]["pretrained_layers"]
     helpers.validate_user_config(best_config)
 
     # TODO: Edit our AbstractDataloader to support a raw_english_test_set_file_path. Currently it only supports
@@ -47,29 +44,7 @@ def generate_predictions(input_file_path: str, pred_file_path: str):
 
     all_predictions = []
     # ToDo better logic for using alternate data loader
-    # ToDo This first one may be obsolete if MASS works
-    if best_config["data_loader"]["definition"]["name"] == 'SubwordDataLoader':
-        for i, eng_sent in enumerate(test_dataset):
-            # ToDo better verbosity
-            print(i)
-            start_token = [data_loader.tokenizer_en.vocab_size]
-            end_token = [data_loader.tokenizer_en.vocab_size + 1]
-            inp_sentence = start_token + \
-                           data_loader.tokenizer_en.encode(eng_sent.numpy()) + \
-                           end_token
-            encoder_input = tf.expand_dims(inp_sentence, 0)
-
-            # as the target is english, the first word to the transformer should be the
-            # english start token.
-            decoder_input = [data_loader.tokenizer_fr.vocab_size]
-            transformer_output = tf.expand_dims(decoder_input, 0)
-            end_token = data_loader.tokenizer_fr.vocab_size + 1
-            result, attention_weights = model.evaluate(
-                encoder_input, transformer_output, end_token)
-            predicted_sentence = data_loader.tokenizer_fr.decode(
-                [j for j in result if j < data_loader.tokenizer_fr.vocab_size])
-            all_predictions.append(predicted_sentence)
-    elif best_config["data_loader"]["definition"]["name"] == 'MassSubwordDataLoader':
+    if best_config["data_loader"]["definition"]["name"] == 'MassSubwordDataLoader':
         all_predictions = transformer.inference(
             data_loader.tokenizer, model, test_dataset)
     else:

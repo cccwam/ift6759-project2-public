@@ -13,10 +13,6 @@ import typing
 import tensorflow as tf
 import numpy as np
 
-# ToDo Remove this when obsolete
-# from libs.helpers import get_online_data_loader
-# from libs.models.helpers import load_pretrained_layers
-
 
 def scaled_dot_product_attention(q, k, v, mask):
     """Calculate the attention weights.
@@ -358,169 +354,6 @@ class Decoder(tf.keras.layers.Layer):
         return x, attention_weights
 
 
-# ToDo obsolete?
-class Transformer(tf.keras.Model):
-    def __init__(self, num_layers, d_model, num_heads, dff, vocab_size_source,
-                 vocab_size_target, pe_input, pe_target, dropout_rate=0.1,
-                 model_name='Transformer'):
-        super(Transformer, self).__init__()
-
-        self.encoder = Encoder(num_layers, d_model, num_heads, dff,
-                               vocab_size_source, pe_input, dropout_rate)
-
-        self.decoder = Decoder(num_layers, d_model, num_heads, dff,
-                               vocab_size_target, pe_target, dropout_rate)
-
-        self.final_layer = tf.keras.layers.Dense(vocab_size_target)
-
-        self.lr = CustomSchedule(d_model)
-        self.optimizer = tf.keras.optimizers.Adam(
-            self.lr, beta_1=0.9, beta_2=0.98, epsilon=1e-9)
-        self.train_loss = tf.keras.metrics.Mean(name='train_loss')
-        self.train_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(
-            name='train_accuracy')
-        self.validation_loss = tf.keras.metrics.Mean(name='validation_loss')
-        self.validation_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(
-            name='validation_accuracy')
-        self.model_name = model_name
-
-    def call(self, enc_inp, dec_inp, training, enc_padding_mask, look_ahead_mask,
-             dec_padding_mask):
-        enc_output = self.encoder(enc_inp, training, enc_padding_mask)
-        # (batch_size, inp_seq_len, d_model)
-
-        # dec_output.shape == (batch_size, tar_seq_len, d_model)
-        dec_output, attention_weights = self.decoder(
-            dec_inp, enc_output, training, look_ahead_mask, dec_padding_mask)
-
-        final_output = self.final_layer(
-            dec_output)  # (batch_size, tar_seq_len, vocab_size_target)
-
-        return final_output, attention_weights
-
-    def load_checkpoint(self):
-        checkpoint_path = os.path.join(
-            os.environ['HOME'], f"ift6759_p2_checkpoints/{self.model_name}")
-        ckpt = tf.train.Checkpoint(transformer=self,
-                                   optimizer=self.optimizer)
-        ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_path,
-                                                  max_to_keep=3)
-        # if a checkpoint exists, restore the latest checkpoint.
-        if ckpt_manager.latest_checkpoint:
-            ckpt.restore(ckpt_manager.latest_checkpoint)
-            print('Latest checkpoint restored!!')
-
-        return ckpt_manager
-
-    def fit(self, x=None, epochs=1, callbacks=None,
-            validation_data=None, validation_steps=None, **kwargs):
-        ckpt_manager = kwargs['ckpt_manager']
-
-        @tf.function(experimental_relax_shapes=True)
-        def train_step(inp, tar):
-            tar_inp = tar[:, :-1]
-            tar_real = tar[:, 1:]
-
-            enc_padding_mask, combined_mask, dec_padding_mask = create_masks(inp, tar_inp)
-
-            with tf.GradientTape() as tape:
-                predictions, _ = self(inp, tar_inp, True, enc_padding_mask,
-                                      combined_mask, dec_padding_mask)
-                loss = loss_function_for_transformer(tar_real, predictions)
-
-            gradients = tape.gradient(loss, self.trainable_variables)
-            self.optimizer.apply_gradients(
-                zip(gradients, self.trainable_variables))
-
-            self.train_loss(loss)
-            self.train_accuracy(tar_real, predictions)
-
-        @tf.function(experimental_relax_shapes=True)
-        def validation_step(inp, tar):
-            tar_inp = tar[:, :-1]
-            tar_real = tar[:, 1:]
-
-            enc_padding_mask, combined_mask, dec_padding_mask = create_masks(
-                inp, tar_inp)
-
-            predictions, _ = self.call(inp, tar_inp, True, enc_padding_mask,
-                                       combined_mask, dec_padding_mask)
-            loss = loss_function_for_transformer(tar_real, predictions)
-
-            self.validation_loss(loss)
-            self.validation_accuracy(tar_real, predictions)
-
-        for epoch in range(epochs):
-            start = time.time()
-
-            self.train_loss.reset_states()
-            self.train_accuracy.reset_states()
-
-            for (batch, (inp0, tar0)) in enumerate(x):
-                train_step(inp0, tar0)
-
-                if batch % 50 == 0:
-                    print(
-                        'Epoch {} Batch {} Loss {:.4f} Accuracy {:.4f}'.format(
-                            epoch + 1, batch, self.train_loss.result(),
-                            self.train_accuracy.result()))
-
-            if (epoch + 1) % 5 == 0:
-                ckpt_save_path = ckpt_manager.save()
-                print(
-                    'Saving checkpoint for epoch {} at {}'.format(
-                        epoch + 1, ckpt_save_path))
-
-            print(
-                'Epoch {} Loss {:.4f} Accuracy {:.4f}'.format(
-                    epoch + 1, self.train_loss.result(),
-                    self.train_accuracy.result()))
-
-            if (epoch + 1) % validation_steps == 0:
-                self.validation_loss.reset_states()
-                self.validation_accuracy.reset_states()
-
-                for (batch, (inp0, tar0)) in enumerate(validation_data):
-                    validation_step(inp0, tar0)
-
-                print(
-                    'Epoch {} Validation Loss {:.4f} Validation Accuracy {:.4f}'.format(
-                        epoch + 1, self.validation_loss.result(),
-                        self.validation_accuracy.result()))
-
-            print(
-                'Time taken for 1 epoch: {} secs\n'.format(time.time() - start))
-
-    def evaluate(self, encoder_input, transformer_output, end_token):
-        # This limit in i should be MAX_LENGTH, but no longer using it so...
-        for slen in range(100):
-            enc_padding_mask, combined_mask, dec_padding_mask = \
-                create_masks(encoder_input, transformer_output)
-
-            # predictions.shape == (batch_size, seq_len, vocab_size)
-            predictions, attention_weights = self(encoder_input,
-                                                  transformer_output,
-                                                  False,
-                                                  enc_padding_mask,
-                                                  combined_mask,
-                                                  dec_padding_mask)
-
-            # select the last word from the seq_len dimension
-            predictions = predictions[:, -1:, :]  # (batch_size, 1, vocab_size)
-
-            predicted_id = tf.cast(tf.argmax(predictions, axis=-1), tf.int32)
-
-            # return the result if the predicted_id is equal to the end token
-            if predicted_id == end_token:
-                return tf.squeeze(transformer_output, axis=0), attention_weights
-
-            # concatentate the predicted_id to the output which is given to the
-            # decoder as its input.
-            transformer_output = tf.concat([transformer_output, predicted_id], axis=-1)
-
-        return tf.squeeze(transformer_output, axis=0), attention_weights
-
-
 def create_padding_mask(seq):
     seq = tf.cast(tf.math.equal(seq, 0), tf.float32)
 
@@ -552,62 +385,20 @@ def create_masks(inp, tar):
     return enc_padding_mask, combined_mask, dec_padding_mask
 
 
-# ToDo obsolete?
-def builder(config: typing.Dict[typing.AnyStr, typing.Any]):
-    # noinspection PyShadowingNames,DuplicatedCode
-    model_hparams = config["model"]["hyper_params"]
-    dl_hparams = config["data_loader"]["hyper_params"]
-
-    num_layers = model_hparams["num_layers"]
-    d_model = model_hparams["d_model"]
-    num_heads = model_hparams["num_heads"]
-    dff = model_hparams["dff"]
-    dropout_rate = model_hparams["dropout_rate"]
-    vocab_size_source = dl_hparams["vocab_size_source"]
-    vocab_size_target = dl_hparams["vocab_size_target"]
-
-    transformer_tl = Transformer(
-        num_layers, d_model, num_heads, dff, vocab_size_source,
-        vocab_size_target, pe_input=vocab_size_source,
-        pe_target=vocab_size_target, dropout_rate=dropout_rate,
-        model_name=model_hparams["name"])
-
-    # if "pretrained_layers" in config["model"]["hyper_params"]:
-    #     print("Entering pretraining procedure")
-    #     print("Retrieving data loader")
-    #     task_data_loader = get_online_data_loader(config)
-    #     task_data_loader.build(
-    #         batch_size=64, mode=config['data_loader']['hyper_params']['mode'])
-    #     training_dataset, _ = \
-    #         task_data_loader.training_dataset, task_data_loader.valid_dataset
-    #     print("Initial fit on 1 batch to build main task model")
-    #     transformer_tl.fit(
-    #         training_dataset.take(1), validation_steps=2, ckpt_manager=None)
-    #     print("Loading pretrained layers")
-    #     load_pretrained_layers(config, transformer_tl)
-    #     print("Completed loading weights from pretrained model")
-
-    return transformer_tl
-
-
-def loss_function_for_transformer(real, pred):
-    """Loss function for transformer model.
-
-    :param real: target
-    :param pred: prediction
-    :return: loss
-
-    """
-
-    loss_object = tf.keras.losses.SparseCategoricalCrossentropy(
-        from_logits=True, reduction='none')
-    mask = tf.math.logical_not(tf.math.equal(real, 0))
-    loss_ = loss_object(real, pred)
+def loss_function_for_transformer(y_true, y_pred):
+    mask = tf.math.logical_not(tf.math.equal(y_true, 0))  # Batch size * Seq Length
+    loss_ = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True, reduction='none')(y_true, y_pred)
 
     mask = tf.cast(mask, dtype=loss_.dtype)
     loss_ *= mask
 
-    return tf.reduce_mean(loss_)
+    # Prevent averaging over non masked tokens
+    numerator = tf.reduce_sum(loss_, axis=1)
+    denominator = tf.reduce_sum(mask, axis=1)
+
+    loss = numerator / denominator
+
+    return tf.reduce_mean(loss)  # Average over samples
 
 
 class CustomSchedule(tf.keras.optimizers.schedules.LearningRateSchedule):
