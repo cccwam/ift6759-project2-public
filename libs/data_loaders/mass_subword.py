@@ -365,8 +365,8 @@ class MassSubwordDataLoaderPretraining:
         print(self.vocab_size_source)
 
         # ToDo use the whole dataset
-        sentences_both_train = datasets['sentences_all_train'].shuffle(buffer_size=500000).take(50000)
-        sentences_both_validation = datasets['sentences_all_validation'].shuffle(buffer_size=500000).take(20000)
+        sentences_both_train = datasets['sentences_all_train'].shuffle(buffer_size=500000).take(200000)
+        sentences_both_validation = datasets['sentences_all_validation'].shuffle(buffer_size=500000).take(50000)
         # sentences_both_train = datasets['sentences_all_train'].shuffle(buffer_size=500000)
         # sentences_both_validation = datasets['sentences_all_validation'].shuffle(buffer_size=500000)
 

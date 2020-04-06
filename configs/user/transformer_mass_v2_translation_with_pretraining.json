@@ -41,7 +41,7 @@
       "epochs": [
         40
       ],
-      "optimizer": "adam",
+      "optimizer": "adam-transformer",
       "metrics": [
         "sparse_accuracy"
       ],
