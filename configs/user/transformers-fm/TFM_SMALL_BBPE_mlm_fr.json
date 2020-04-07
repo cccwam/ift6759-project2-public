@@ -23,7 +23,7 @@
     "hyper_params": {
       "preprocessed_data": {
         "folder": "/project/cq-training-1/project2/teams/team03/data/word_level_24032020",
-        "monolingual_corpus_filename": "unaligned_en_tokenized.pickle",
+        "monolingual_corpus_filename": "unaligned_fr_tokenized.pickle",
         "language": "BOTH",
         "corpora_filenames": [
           [

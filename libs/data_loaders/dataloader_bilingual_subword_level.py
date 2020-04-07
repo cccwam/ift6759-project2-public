@@ -103,9 +103,12 @@ class BilingualTranslationSubword(AbstractBilingualDataloaderSubword):
             source = np.zeros([self._seq_length_source], dtype=int)
             source[:len(source_numericalized[i].ids)] = source_numericalized[i].ids
 
-            target = np.zeros([self._seq_length_target], dtype=int)
-            target[0:len(target_numericalized[i].ids)] = target_numericalized[i].ids
+            target_in = np.zeros([self._seq_length_target], dtype=int)
+            target_in[0:len(target_numericalized[i].ids)] = target_numericalized[i].ids
 
-            enc_padding_mask, combined_mask, dec_padding_mask = self._create_masks(source, target)
+            target_out = np.zeros([self._seq_length_target], dtype=int)
+            target_out[0:len(target_numericalized[i].ids)-1] = target_numericalized[i].ids[1:]
 
-            yield ((source, target, enc_padding_mask, combined_mask, dec_padding_mask), target)
+            enc_padding_mask, combined_mask, dec_padding_mask = self._create_masks(source, target_in)
+
+            yield ((source, target_in, enc_padding_mask, combined_mask, dec_padding_mask), target_out)
