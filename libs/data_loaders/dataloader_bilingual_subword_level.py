@@ -256,6 +256,40 @@ class BilingualTranslationEncoderOnlyDataloaderSubword(AbstractBilingualDataload
         return self._decode(tokens=tokens[self._seq_length_source:], tokenizer=self._tokenizer_target)
 
 
+class BilingualTranslationEncoderDecoderDataloaderSubword(AbstractBilingualDataloaderSubword):
+    """
+    TODO
+        Dataset for bilingual corpora at subword level generating input sentence, target sentence
+        and masking the input for sentence 2.
+
+    """
+
+    def __init__(self, config: dict, raw_english_test_set_file_path: str):
+        AbstractBilingualDataloaderSubword.__init__(self, config=config,
+                                                    raw_english_test_set_file_path=raw_english_test_set_file_path)
+        self._output_types = ((tf.int32, tf.int32, tf.int32),
+                              tf.int32)
+        self._output_shapes = ((tf.TensorShape([None]), tf.TensorShape([None]), tf.TensorShape([None])),
+                               tf.TensorShape([None]))
+        self._padded_shapes = ((self._seq_length_source, self._seq_length_source, self._seq_length_source),
+                               self._seq_length_target)
+
+    def _my_generator(self, source_numericalized: List[Encoding], target_numericalized: List[Encoding]):
+        for i in range(len(source_numericalized)):
+            source = np.zeros([self._seq_length_source], dtype=int)
+            source[:len(source_numericalized[i].ids)] = source_numericalized[i].ids
+
+            target = np.zeros([self._seq_length_target], dtype=int)
+            target[0:len(target_numericalized[i].ids)] = target_numericalized[i].ids
+
+            attention_masks = np.zeros([self._seq_length_source], dtype=int)
+            attention_masks[:len(source_numericalized[i].ids)] = 1
+
+            tokens_type_ids = tf.zeros([self._seq_length_source], dtype=tf.int32)
+
+            yield ((source, attention_masks, tokens_type_ids), target)
+
+
 class BilingualTransformersDataloaderSubword(AbstractBilingualDataloaderSubword,
                                              AbstractBilingualTransformersDataloader):
     """
