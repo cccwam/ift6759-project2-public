@@ -1,6 +1,7 @@
 import typing
 
 import tensorflow as tf
+from transformers import BertConfig, TFBertForMaskedLM
 
 logger = tf.get_logger()
 

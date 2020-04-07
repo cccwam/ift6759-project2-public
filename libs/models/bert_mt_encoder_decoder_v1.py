@@ -50,81 +50,24 @@ def builder(
                                        is_decoder=True,
                                        hidden_size=hidden_size)
 
-    class CustomTFBert(TFBertPreTrainedModel):
-        def __init__(self, config, *inputs, **kwargs):
-            super().__init__(config, *inputs, **kwargs)
 
-#            self.embeddings = TFBertEmbeddings(config, name="embeddings")
-#            self.encoder = TFBertEncoder(config, name="encoder")
-#            self.decoder = TFBertEncoder(config, name="encoder")
-#            self.pooler = TFBertPooler(config, name="pooler")
-
-            self.bert_encoder = TFBertMainLayer(configuration_encoder, name="encoder_bert")
-            self.bert_decoder = TFBertMainLayer(configuration_decoder, name="decoder_bert")
-            self.mlm = TFBertMLMHead(configuration_decoder, self.bert_decoder.embeddings, name="mlm___cls")
-
-        def get_output_embeddings(self):
-            return self.bert_encoder.embeddings
-
-        @add_start_docstrings_to_callable(BERT_INPUTS_DOCSTRING)
-        def call(self, inputs, **kwargs):
-            r"""
-        Return:
-            :obj:`tuple(torch.FloatTensor)` comprising various elements depending on the configuration (:class:`~transformers.BertConfig`) and inputs:
-            prediction_scores (:obj:`Numpy array` or :obj:`tf.Tensor` of shape :obj:`(batch_size, sequence_length, config.vocab_size)`):
-                Prediction scores of the language modeling head (scores for each vocabulary token before SoftMax).
-            hidden_states (:obj:`tuple(tf.Tensor)`, `optional`, returned when :obj:`config.output_hidden_states=True`):
-                tuple of :obj:`tf.Tensor` (one for the output of the embeddings + one for the output of each layer)
-                of shape :obj:`(batch_size, sequence_length, hidden_size)`.
-
-                Hidden-states of the model at the output of each layer plus the initial embedding outputs.
-            attentions (:obj:`tuple(tf.Tensor)`, `optional`, returned when ``config.output_attentions=True``):
-                tuple of :obj:`tf.Tensor` (one for each layer) of shape
-                :obj:`(batch_size, num_heads, sequence_length, sequence_length)`:
-
-                Attentions weights after the attention softmax, used to compute the weighted average in the self-attention heads.
-
-        Examples::
-
-            import tensorflow as tf
-            from transformers import BertTokenizer, TFBertForMaskedLM
-
-            tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-            model = TFBertForMaskedLM.from_pretrained('bert-base-uncased')
-            input_ids = tf.constant(tokenizer.encode("Hello, my dog is cute", add_special_tokens=True))[None, :]  # Batch size 1
-            outputs = model(input_ids)
-            prediction_scores = outputs[0]
-
-            """
-            outputs = self.bert_encoder(inputs, **kwargs) # TODO here
-
-            sequence_output = outputs[0]
-            self.bert_decoder(inputs=None, inputs_embeds=sequence_output)
-            prediction_scores = self.mlm(sequence_output, training=kwargs.get("training", False))
-
-            outputs = (prediction_scores,) + outputs[2:]  # Add hidden states and attention if they are here
-
-            return outputs  # prediction_scores, (hidden_states), (attentions)
     # Idea for using Bert as part of larger model
     # https://github.com/huggingface/transformers/issues/1350
     if "pretrained_model_huggingface" in model_hparams:
         pretrained_model_huggingface_path: str = model_hparams["pretrained_model_huggingface"]
         logger.info(
             f"Load existing model from {pretrained_model_huggingface_path}")  # TODO for decoder, force is_decoder=true
-        bert_model_encoder = TFBertForMaskedLM.from_pretrained(pretrained_model_huggingface_path)
-        raise NotImplementedError()
-        #        bert_model_decoder:TFBertForMaskedLM = TFBertForMaskedLM(configuration_decoder, is_decoder=True)
+        bert_model_encoder = TFBertModel.from_pretrained(pretrained_model_huggingface_path) # Better perf
+#        bert_model_decoder = TFBertModel.from_pretrained(pretrained_model_huggingface_path) Similar perf
+        bert_model_decoder = TFBertModel(configuration_decoder, name="decoder")
+#        bert_model_decoder.trainable = False # Does not help
+        bert_mlm = TFBertMLMHead(configuration_decoder, bert_model_decoder.bert.embeddings, name="mlm")
     else:
         logger.info(f"No existing models")
         # Initializing models from the configuration
-#        bert_model_encoder = CustomTFBert(configuration_decoder, name="encoder_decoder")
-        bert_model_encoder = TFBertMainLayer(configuration_encoder, name="encoder")
-        bert_model_encoder.embeddings = TFBertEmbeddings(configuration_encoder, name="encoder_embeddings")
-        bert_model_encoder.encoder = TFBertEncoder(configuration_encoder, name="encoder_encoder")
-        bert_model_encoder.pooler = TFBertPooler(configuration_encoder, name="encoder_pooler")
-
-        bert_model_decoder = TFBertMainLayer(configuration_decoder, name="decoder")
-        bert_mlm = TFBertMLMHead(configuration_decoder, bert_model_decoder.embeddings, name="mlm___cls")
+        bert_model_encoder = TFBertModel(configuration_encoder, name="encoder")
+        bert_model_decoder = TFBertModel(configuration_decoder, name="decoder")
+        bert_mlm = TFBertMLMHead(configuration_decoder, bert_model_decoder.bert.embeddings, name="mlm")
 
     token_inputs = tf.keras.layers.Input(shape=(seq_length_source,), dtype=tf.int32,
                                          name="BERT_token_inputs")
@@ -132,11 +75,14 @@ def builder(
                                             name="BERT_attention_masks")
     token_type_ids = tf.keras.layers.Input(shape=(seq_length_source,), dtype=tf.int32,
                                            name="BERT_token_token_type_ids")
-#    prediction_scores, _ = bert_model_encoder([token_inputs, attention_masks, token_type_ids])
+
     outputs = bert_model_encoder([token_inputs, attention_masks, token_type_ids])
     last_hidden_states = outputs[0]
+
+    dummy_token_type_ids = tf.ones((seq_length_target,), dtype=tf.int32)
     outputs = bert_model_decoder(None, inputs_embeds=last_hidden_states,
-                                 token_type_ids=token_type_ids)
+                                 token_type_ids=dummy_token_type_ids # Dummy input to prevent
+                                 )
     last_hidden_states = outputs[0]
 
     prediction_scores = bert_mlm(last_hidden_states)
