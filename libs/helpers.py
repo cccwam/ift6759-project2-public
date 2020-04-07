@@ -153,8 +153,8 @@ def compile_model(model,
                   dataloader: AbstractDataloader,
                   loss: str,
                   optimizer: str,
-                  metrics: List[str] = None,
-                  config=None):
+                  config: dict,
+                  metrics: List[str] = None):
     """
         Helper function to compile a new model at each variation of the experiment
     :param learning_rate:
@@ -206,6 +206,7 @@ def compile_model(model,
         loss=mapping_loss[loss],
         metrics=metric_funcs
     )
+
     return model, additional_callbacks
 
 

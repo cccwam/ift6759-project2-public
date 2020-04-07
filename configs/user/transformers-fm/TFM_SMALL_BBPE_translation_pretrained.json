@@ -11,7 +11,14 @@
       "num_attention_heads": 8,
       "hidden_size": 512,
       "intermediate_size": 3072,
-      "dropout_rate": 0.1
+      "dropout_rate": 0.1,
+      "pretrained_layers": [
+        {
+      "model_path": "/tmp/tensorboard/transformers_mlm_encoder_v1.builder_dataloader_monolingual_subword_level.MonolingualMaskLMDataloaderSubword-2020-04-07T19:07:31.624204/0/transformers_mlm_encoder_v1.builder_dataloader_monolingual_subword_level.MonolingualMaskLMDataloaderSubword.04-2.93.tf/",
+          "layer_name": "encoder",
+          "target_layer_name": "encoder"
+        }
+      ]
     },
     "source": "online"
   },

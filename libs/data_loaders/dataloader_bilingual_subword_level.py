@@ -68,7 +68,7 @@ class AbstractBilingualDataloaderSubword(AbstractBilingualDataloader, AbstractHu
 
 
 
-class BilingualTranslationEncoderDecoderDataloaderSubword(AbstractBilingualDataloaderSubword):
+class BilingualTranslationSubword(AbstractBilingualDataloaderSubword):
     """
     TODO
         Dataset for bilingual corpora at subword level generating input sentence, target sentence
@@ -101,35 +101,8 @@ class BilingualTranslationEncoderDecoderDataloaderSubword(AbstractBilingualDatal
             target = np.zeros([self._seq_length_target], dtype=int)
             target[0:len(target_numericalized[i].ids)] = target_numericalized[i].ids
 
-            enc_padding_mask, combined_mask, dec_padding_mask = self.create_masks(source, target)
+            enc_padding_mask, combined_mask, dec_padding_mask = self._create_masks(source, target)
 
             yield ((source, target, enc_padding_mask, combined_mask, dec_padding_mask), target)
 
-    # Same as Blaise except that no batch size in dimension
-    def create_padding_mask(self, seq):
-        seq = tf.cast(tf.math.equal(seq, 0), tf.float32)
 
-        # add extra dimensions to add the padding
-        # to the attention logits.
-        return seq[tf.newaxis, tf.newaxis, :]  # (1, 1, seq_len)
-
-    def create_look_ahead_mask(self, seq_length):
-        mask = 1 - tf.linalg.band_part(tf.ones((seq_length, seq_length)), -1, 0)
-        return mask  # (seq_len, seq_len)
-
-    def create_masks(self, inp, tar):
-        # Encoder padding mask
-        enc_padding_mask = self.create_padding_mask(inp)
-
-        # Used in the 2nd attention block in the decoder.
-        # This padding mask is used to mask the encoder outputs.
-        dec_padding_mask = self.create_padding_mask(inp)
-
-        # Used in the 1st attention block in the decoder.
-        # It is used to pad and mask future tokens in the input received by
-        # the decoder.
-        look_ahead_mask = self.create_look_ahead_mask(self._seq_length_target)
-        dec_target_padding_mask = self.create_padding_mask(tar)
-        combined_mask = tf.maximum(dec_target_padding_mask, look_ahead_mask)
-
-        return enc_padding_mask, combined_mask, dec_padding_mask

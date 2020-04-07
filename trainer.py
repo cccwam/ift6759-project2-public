@@ -11,7 +11,6 @@ import tensorflow as tf
 from tensorboard.plugins.hparams import api as hp
 
 from libs import helpers
-from libs.callbacks import CustomCheckpoint
 from libs.data_loaders.abstract_dataloader import AbstractDataloader
 
 logger = tf.get_logger()
@@ -67,7 +66,16 @@ def train_models(
     data_loader_name = helpers.get_module_name(data_loader_dict)
 
     hp_model = hp.HParam('model_class', hp.Discrete([model_name]))
-    hp_model_hparams = [hp.HParam(k, hp.Discrete([v])) for k, v in model_dict_hparams.items()]
+    hp_model_hparams = [hp.HParam(k, hp.Discrete([v])) for k, v in model_dict_hparams.items()
+                        if k not in ["pretrained_layers"]]
+    if "pretrained_layers" in model_dict_hparams:
+        pretrained_layers = []
+        for pretrained_layer in model_dict_hparams["pretrained_layers"]:
+            pretrained_layer_id = f"{pretrained_layer['model_path']}"
+            pretrained_layer_id = pretrained_layer_id + "-" + f"{pretrained_layer['layer_name']}"
+            pretrained_layer_id = pretrained_layer_id + "-" + f"{pretrained_layer['target_layer_name']}"
+            pretrained_layers += [pretrained_layer_id]
+        hp_model_hparams += [hp.HParam("pretrained_layers", hp.Discrete(["-".join(pretrained_layers)]))]
     hp_model_hparams = {hparam: hparam.domain.values[0] for hparam in hp_model_hparams}
 
     hp_dataloader = hp.HParam('dataloader_class', hp.Discrete([data_loader_name]))
@@ -206,7 +214,7 @@ def train_model(
 
         # Workaround for https://github.com/tensorflow/tensorboard/issues/2412
         callbacks = [tf.keras.callbacks.TensorBoard(log_dir=tensorboard_log_dir, profile_batch=0),
-                     CustomCheckpoint(filepath=checkpoints_path, save_weights_only=False,
+                     tf.keras.callbacks.ModelCheckpoint(filepath=checkpoints_path, save_weights_only=False,
                                       save_best_only=True, monitor='val_loss'),
                      hp.KerasCallback(writer=str(tensorboard_log_dir), hparams=hparams)]
     else:

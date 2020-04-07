@@ -1,6 +1,8 @@
+import gc
 import tensorflow as tf
 
 from libs.helpers import get_online_model, load_dict, get_online_data_loader
+from libs.optimizers import CustomSchedule
 
 logger = tf.get_logger()
 
@@ -11,26 +13,9 @@ def load_pretrained_layers(config: dict, my_model: tf.keras.Model):
         for pretrained_layer in pretrained_layers:
             logger.info(
                 f"Load pretrained layer {pretrained_layer['layer_name']} into {pretrained_layer['target_layer_name']}")
-            # TODO specific logic for Transformers
-            try:
-                pretrained_model: tf.keras.Model \
-                    = tf.keras.models.load_model(pretrained_layer["model_path"])
-            except (OSError, ValueError):
-                pretrained_config = load_dict(pretrained_layer["model_config_path"])
-                print("Retrieving data loader for pretraining task")
-                pretrained_data_loader = get_online_data_loader(pretrained_config)
-                pretrained_data_loader.build(
-                    batch_size=64,
-                    mode=pretrained_config['data_loader']['hyper_params']['mode'])
-                training_dataset, _ = \
-                    pretrained_data_loader.training_dataset, pretrained_data_loader.valid_dataset
-                pretrained_model = get_online_model(pretrained_config)
-                print("Initial fit on 1 batch to build pretraining model")
-                pretrained_model.fit(
-                    training_dataset.take(1), validation_steps=2,
-                    ckpt_manager=None)
-                print("Loading weights")
-                pretrained_model.load_weights(pretrained_layer["model_path"])
+            # https://github.com/tensorflow/tensorflow/issues/32348
+            pretrained_model: tf.keras.Model \
+                = tf.keras.models.load_model(pretrained_layer["model_path"], compile=False)
 
             for l in pretrained_layer['layer_name'].split("/"):
                 # pretrained_model.summary(print_fn=logger.debug)
@@ -38,3 +23,6 @@ def load_pretrained_layers(config: dict, my_model: tf.keras.Model):
 
             weights = pretrained_model.get_weights()
             my_model.get_layer(pretrained_layer['target_layer_name']).set_weights(weights)
+
+            del pretrained_model
+            gc.collect()

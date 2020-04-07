@@ -70,7 +70,7 @@ class MultiHeadAttention(tf.keras.layers.Layer):
         config = super().get_config().copy()
         config.update({
             'd_model': self.d_model,
-            'num_layers': self.num_layers,
+            'num_heads': self.num_heads,
         })
         return config
 
