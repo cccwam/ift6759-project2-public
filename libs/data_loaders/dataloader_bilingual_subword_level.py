@@ -25,11 +25,11 @@ class AbstractBilingualDataloaderSubword(AbstractBilingualDataloader, AbstractHu
         AbstractHuggingFacesTokenizer.__init__(self, config=config,
                                                raw_english_test_set_file_path=raw_english_test_set_file_path)
 
-        self._languages: List[str] = self._preprocessed_data_path["languages"]
+        self._languages: List[str] = self._preprocessed_data["languages"]
         assert self._languages is not None, "Missing languages in config"
         assert len(self._languages) == 2, "You should have only two languages"
 
-        corpora_filenames: List[List[str]] = self._preprocessed_data_path["corpora_filenames"]
+        corpora_filenames: List[List[str]] = self._preprocessed_data["corpora_filenames"]
         assert corpora_filenames is not None, "Missing corpora_filenames in config"
         assert len(corpora_filenames) == 2, "You should have only two languages"
 

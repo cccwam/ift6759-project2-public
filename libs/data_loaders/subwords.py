@@ -55,7 +55,7 @@ def create_tf_encoder_bilingual(tokenizer1, tokenizer2):
 
     def tf_py_encode(lang1, lang2):
         result_lang1, result_lang2 = tf.py_function(
-            encode, [lang1, lang2], [tf.int64, tf.int64])
+            encode, [lang1, lang2], [tf.int32, tf.int32])
         result_lang1.set_shape([None])
         result_lang2.set_shape([None])
 
@@ -88,7 +88,7 @@ class SubwordDataLoader:
 
     def build(self, batch_size, mode='translate'):
         dl_hparams = self.config["data_loader"]["hyper_params"]
-        path_data = dl_hparams["preprocessed_data_path"]["folder"]
+        path_data = dl_hparams["preprocessed_data"]["folder"]
         vocabulary_name_en = dl_hparams["vocabulary_name_en"]
         vocabulary_name_fr = dl_hparams["vocabulary_name_fr"]
 
