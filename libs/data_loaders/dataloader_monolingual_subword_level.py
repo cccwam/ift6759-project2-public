@@ -26,13 +26,13 @@ class AbstractMonolingualDataloaderSubword(AbstractMonolingualDataloader, Abstra
         AbstractHuggingFacesTokenizer.__init__(self, config=config,
                                                raw_english_test_set_file_path=raw_english_test_set_file_path)
 
-        self._language: str = self._preprocessed_data_path["language"]
+        self._language: str = self._preprocessed_data["language"]
         assert self._language is not None, "Missing language in config"
 
-        monolingual_corpus_filename: str = self._preprocessed_data_path["monolingual_corpus_filename"]
+        monolingual_corpus_filename: str = self._preprocessed_data["monolingual_corpus_filename"]
         assert monolingual_corpus_filename is not None, "Missing monolingual_corpus_filename in config"
 
-        corpora_filenames: List[str] = self._preprocessed_data_path["corpora_filenames"]
+        corpora_filenames: List[str] = self._preprocessed_data["corpora_filenames"]
         assert corpora_filenames is not None, "Missing corpora_filenames in config"
 
         res = self._load_tokenizer(language=self._language,
@@ -95,7 +95,7 @@ class MonolingualMaskLMDataloaderSubword(AbstractMonolingualDataloaderSubword):
         AbstractMonolingualDataloaderSubword.__init__(self, config=config,
                                                       raw_english_test_set_file_path=raw_english_test_set_file_path)
 
-        self._tokens_type: int = self._preprocessed_data_path["tokens_type"]
+        self._tokens_type: int = self._preprocessed_data["tokens_type"]
         assert self._tokens_type is not None, "Missing _tokens_type in config"
 
         self._output_types = ((tf.int32, tf.int32, tf.int32),

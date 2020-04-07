@@ -31,7 +31,7 @@ class AbstractHuggingFacesTokenizer(AbstractDataloader, ABC):
 
         self._special_tokens = [self._pad, self._mask, self._bos, self._eos, self._unk]
 
-        self._folder: Path = Path(self._preprocessed_data_path["folder"])
+        self._folder: Path = Path(self._preprocessed_data["folder"])
         assert self._folder.exists()
 
         self._pretrained_model_dir_path: str = self._dl_hparams["pretrained_model_dir_path"]

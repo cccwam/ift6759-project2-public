@@ -67,7 +67,7 @@
           "type": "object",
           "description": "The hyper-parameters to use for this data loader",
           "properties": {
-            "preprocessed_data_path": {
+            "preprocessed_data": {
               "type": "object"
             },
             "samples_for_test": {
@@ -81,7 +81,7 @@
             }
           },
           "required": [
-            "preprocessed_data_path",
+            "preprocessed_data",
             "samples_for_test",
             "samples_for_valid",
             "samples_for_train"
