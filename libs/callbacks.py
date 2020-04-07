@@ -68,3 +68,6 @@ class CustomCheckpoint(tf.keras.callbacks.ModelCheckpoint):
             folder: Path = Path(filepath).parent / "huggingface"
             folder.mkdir(parents=True, exist_ok=True)
             model_hgf.save_pretrained(str(folder))
+
+
+

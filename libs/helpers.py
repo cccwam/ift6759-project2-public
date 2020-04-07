@@ -12,6 +12,7 @@ from libs.data_loaders import AbstractDataloader
 from libs.losses import mlm_loss
 from libs.metrics import perplexity, BleuIntervalEvaluation, perplexity_mlm
 from libs.models import transformer
+from libs.optimizers import CustomSchedule
 
 logger = tf.get_logger()
 
@@ -177,12 +178,15 @@ def compile_model(model,
         "mlm_loss": mlm_loss
     }
 
-    d_model = config['model']['hyper_params']['d_model']
+    if "d_model" in config['model']['hyper_params']:
+        d_model = config['model']['hyper_params']['d_model']
+    if "hidden_size" in config['model']['hyper_params']:
+        d_model = config['model']['hyper_params']['hidden_size']
     mapping_optimizer = {
         "adam": tf.keras.optimizers.Adam(learning_rate=learning_rate),
         "rmsprop": tf.keras.optimizers.RMSprop(learning_rate=learning_rate),
         "adam-transformer": tf.keras.optimizers.Adam(
-            transformer.CustomSchedule(d_model), beta_1=0.9, beta_2=0.98,
+            CustomSchedule(d_model), beta_1=0.9, beta_2=0.98,
             epsilon=1e-9)
     }
 

@@ -258,7 +258,7 @@ class BilingualTranslationEncoderOnlyDataloaderSubword(AbstractBilingualDataload
 
 class BilingualTranslationEncoderDecoderDataloaderSubword(AbstractBilingualDataloaderSubword):
     """
-    TODO
+    TODO to remove
         Dataset for bilingual corpora at subword level generating input sentence, target sentence
         and masking the input for sentence 2.
 
@@ -290,20 +290,70 @@ class BilingualTranslationEncoderDecoderDataloaderSubword(AbstractBilingualDatal
             yield ((source, attention_masks, tokens_type_ids), target)
 
 
-class BilingualTransformersDataloaderSubword(AbstractBilingualDataloaderSubword,
-                                             AbstractBilingualTransformersDataloader):
+class BilingualTranslationEncoderDecoderDataloaderSubword(AbstractBilingualDataloaderSubword):
     """
-        Dataset for bilingual corpora at subword level generating only input sentence and target sentence
+    TODO
+        Dataset for bilingual corpora at subword level generating input sentence, target sentence
+        and masking the input for sentence 2.
 
     """
 
     def __init__(self, config: dict, raw_english_test_set_file_path: str):
         AbstractBilingualDataloaderSubword.__init__(self, config=config,
                                                     raw_english_test_set_file_path=raw_english_test_set_file_path)
-        AbstractBilingualTransformersDataloader.__init__(self, config=config)
+        self._output_types = ((tf.int32, tf.int32, tf.float32, tf.float32, tf.float32),
+                              tf.int32)
+        self._output_shapes = ((tf.TensorShape([None]),
+                                tf.TensorShape([None]),
+                                tf.TensorShape([1, 1, self._seq_length_source]),
+                                tf.TensorShape([1, self._seq_length_target, self._seq_length_target]),
+                                tf.TensorShape([1, 1, self._seq_length_target])),
+                               tf.TensorShape([None]))
+        self._padded_shapes = ((self._seq_length_source, self._seq_length_source,
+                                (1, 1, self._seq_length_source),
+                                (1, self._seq_length_target, self._seq_length_target),
+                                (1, 1, self._seq_length_target)),
+                               self._seq_length_target)
 
     def _my_generator(self, source_numericalized: List[Encoding], target_numericalized: List[Encoding]):
         for i in range(len(source_numericalized)):
-            source = source_numericalized[i].ids
-            target = target_numericalized[i].ids
-            yield source, target
+            source = np.zeros([self._seq_length_source], dtype=int)
+            source[:len(source_numericalized[i].ids)] = source_numericalized[i].ids
+
+            target = np.zeros([self._seq_length_target], dtype=int)
+            target[0:len(target_numericalized[i].ids)] = target_numericalized[i].ids
+
+            enc_padding_mask, combined_mask, dec_padding_mask = self.create_masks(source, target)
+
+            yield ((source, target, enc_padding_mask, combined_mask, dec_padding_mask), target)
+
+    # TODO same as Blaise except that no batch size in dimension
+    def create_padding_mask(self, seq):
+        seq = tf.cast(tf.math.equal(seq, 0), tf.float32)
+
+        # add extra dimensions to add the padding
+        # to the attention logits.
+        return seq[tf.newaxis, tf.newaxis, :]  # (1, 1, seq_len)
+
+
+    def create_look_ahead_mask(self, seq_length):
+        mask = 1 - tf.linalg.band_part(tf.ones((seq_length, seq_length)), -1, 0)
+        return mask  # (seq_len, seq_len)
+
+
+    def create_masks(self, inp, tar):
+        # Encoder padding mask
+        enc_padding_mask = self.create_padding_mask(inp)
+
+        # Used in the 2nd attention block in the decoder.
+        # This padding mask is used to mask the encoder outputs.
+        dec_padding_mask = self.create_padding_mask(inp)
+
+        # Used in the 1st attention block in the decoder.
+        # It is used to pad and mask future tokens in the input received by
+        # the decoder.
+        look_ahead_mask = self.create_look_ahead_mask(self._seq_length_target)
+        dec_target_padding_mask = self.create_padding_mask(tar)
+        combined_mask = tf.maximum(dec_target_padding_mask, look_ahead_mask)
+
+        return enc_padding_mask, combined_mask, dec_padding_mask
