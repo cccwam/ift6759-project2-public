@@ -18,14 +18,12 @@ Team members:
 * tools/
   * Helper scripts to facilitate development.
 * requirements.txt
-  * All the requirements necessary to run the code.
+  * Repository requirements. Run `pip install -r requirements.txt` to install.
 
 ## Guide to our configuration files
 
 In this project, we utilise a user configuration file schema can be found at configs/user/schema.json. All in all, it
 contains the following configurable properties:
-
-**TODO: REVIEW**
 
 * model
     * definition:
@@ -44,17 +42,20 @@ contains the following configurable properties:
         * module: The Python module that contains the definition for the data_loader that should be used
         * name: The Python name that is the data_loader definition
     * hyper_params: The hyper parameters for the data_loader
-    * should_preprocess_data: Whether or not to pre-process the data before training/validating/testing.
-    * preprocessed_data_source:
-        * training: Location of the training data.
-        * validation: Location of the validation data.
-        * test: Location of the testing data.
+        * preprocessed_data: Properties of pre-processed data to use during training
+        * samples_for_train: Number of pre-processed samples for training
+        * samples_for_valid: Number of pre-processed samples for validation
+        * samples_for_test: Number of pre-processed samples for testing
 * trainer 
     * hyper_params: We have defined that the following trainer hyper parameters are required by our trainer:
+        * loss: The name of the loss function to use
+        * optimizer: The name of the optimizer to use
         * lr_rate: The learning rate
+        * metrics: Which metrics to monitor during training
         * batch_size: The batch size
         * epochs: The number of epochs
         * patience: How patient we should be before we perform early stopping during training
+            
 
 ## Sbatch job example
 

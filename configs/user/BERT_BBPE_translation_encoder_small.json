@@ -18,7 +18,7 @@
       "name": "BilingualTranslationEncoderOnlyDataloaderSubword"
     },
     "hyper_params": {
-      "preprocessed_data_path": {
+      "preprocessed_data": {
         "folder": "/project/cq-training-1/project2/teams/team03/data/word_level_24032020",
         "bilingual_corpus_filenames": [
           "train_lang1_en_tokenized.pickle",

@@ -88,7 +88,7 @@ class SubwordDataLoader:
 
     def build(self, batch_size, mode='translate'):
         dl_hparams = self.config["data_loader"]["hyper_params"]
-        path_data = dl_hparams["preprocessed_data_path"]["folder"]
+        path_data = dl_hparams["preprocessed_data"]["folder"]
         vocabulary_name_en = dl_hparams["vocabulary_name_en"]
         vocabulary_name_fr = dl_hparams["vocabulary_name_fr"]
 
