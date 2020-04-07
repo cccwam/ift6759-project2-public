@@ -64,8 +64,13 @@ class AbstractBilingualDataloaderSubword(AbstractBilingualDataloader, AbstractHu
                                                    dropout=self._dropout)
 
     def decode(self, tokens: List[int]):
-        return self._decode(tokens=tokens, tokenizer=self._tokenizer_target)
+        tokens_until_eos = []
+        for token in tokens:
+            if token == 3:  # EOS
+                break
+            tokens_until_eos += [token]
 
+        return self._decode(tokens=tokens_until_eos, tokenizer=self._tokenizer_target)
 
 
 class BilingualTranslationSubword(AbstractBilingualDataloaderSubword):
@@ -104,5 +109,3 @@ class BilingualTranslationSubword(AbstractBilingualDataloaderSubword):
             enc_padding_mask, combined_mask, dec_padding_mask = self._create_masks(source, target)
 
             yield ((source, target, enc_padding_mask, combined_mask, dec_padding_mask), target)
-
-
