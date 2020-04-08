@@ -8,7 +8,7 @@ from libs import helpers
 
 def validate_configs(configs_folder):
     schema = helpers.load_dict(os.path.join(configs_folder, 'schema.json'))
-    for file_name in Path(configs_folder).glob('**.json'):
+    for file_name in Path(configs_folder).glob('**./*json'):
         if file_name == 'schema.json':
             continue
         config_file_path = os.path.join(configs_folder, file_name)
