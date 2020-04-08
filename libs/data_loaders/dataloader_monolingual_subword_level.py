@@ -82,13 +82,11 @@ class MonolingualCausalLMDataloaderSubword(AbstractMonolingualDataloaderSubword,
 
 
 class MonolingualMaskLMDataloaderSubword(AbstractMonolingualDataloaderSubword):
-    """ TODO
+    """
         Dataset for monolingual corpora at subword level
-            - Inputs: One sentence in one language masked according to masked language model (with attention mask,
-            and tokens_type_id )
+            - Inputs: One sentence in one language with mask for pad tokens and with some masked or replacement as per
+            marsked language model task
             - Targets:  Predicts the masked tokens
-
-
     """
 
     def __init__(self, config: dict, raw_english_test_set_file_path: str):

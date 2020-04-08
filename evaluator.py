@@ -27,7 +27,7 @@ def generate_predictions(input_file_path: str, pred_file_path: str):
     best_config_file = 'configs/user/transformer_mass_v1_translation_with_pretraining_for_eval.local.json'
     print(f"Using best config file: {best_config_file}")
     best_config = helpers.load_dict(best_config_file)
-    # ToDo make sure others don't use this, obsolete?
+    # ToDo make sure others don't use this, obsolete? still used for transformers_mt_encoder_decoder_v1.py
     # del best_config["model"]["hyper_params"]["pretrained_layers"]
     helpers.validate_user_config(best_config)
 

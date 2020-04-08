@@ -75,9 +75,7 @@ class AbstractBilingualDataloaderSubword(AbstractBilingualDataloader, AbstractHu
 
 class BilingualTranslationSubword(AbstractBilingualDataloaderSubword):
     """
-    TODO
-        Dataset for bilingual corpora at subword level generating input sentence, target sentence
-        and masking the input for sentence 2.
+        Dataset for bilingual corpora at subword level generating input sentence, target sentence and masking.
 
     """
 

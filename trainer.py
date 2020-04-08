@@ -133,20 +133,12 @@ def train_models(
 
                     if mirrored_strategy is not None and mirrored_strategy.num_replicas_in_sync > 1:
                         with mirrored_strategy.scope():
-                            # ToDo sometimes we need to reload?
                             model = helpers.get_model(config)
-                            # model = helpers.get_online_model(config)
                     else:
-                        # ToDo sometimes we need to reload?
                         model = helpers.get_model(config)
-                        # model = helpers.get_online_model(config)
 
                     if tensorboard_tracking_folder is not None:
                         tensorboard_log_dir = str(tensorboard_experiment_id / str(variation_num))
-                        # Fileformat must be hdf5, otherwise bug
-                        # https://github.com/tensorflow/tensorflow/issues/34127
-                        # TODO check if tf is working
-                        # https://stackoverflow.com/questions/59656096/trouble-saving-tf-keras-model-with-bert-huggingface-classifier
                         checkpoints_path = str(tensorboard_log_dir) + "/" + (tensorboard_experiment_name +
                                                                              ".{epoch:02d}-{val_loss:.2f}.tf")
                         logger.info(f"Start variation id: " + str(tensorboard_log_dir))
