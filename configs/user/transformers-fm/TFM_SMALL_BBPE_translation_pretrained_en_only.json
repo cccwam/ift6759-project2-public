@@ -72,15 +72,15 @@
         "sparse_accuracy",
         "bleu"
       ],
-      "optimizer": "adam-transformer",
+      "optimizer": "adam",
       "lr_rate": [
-        3e-2
+        1e-4
       ],
       "epochs": [
         30
       ],
       "batch_size": [
-        16
+        32
       ],
       "patience": [
         2
