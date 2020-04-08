@@ -180,7 +180,7 @@ def train_model(
         metrics: List[str],
         patience: int,
         checkpoints_path: str,
-        config:dict,
+        config: dict,
 ):
     """
     The training loop for a single model

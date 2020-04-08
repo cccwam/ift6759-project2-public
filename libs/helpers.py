@@ -187,12 +187,12 @@ def compile_model(model,
         else:
             if optimizer == "adam-transformer":
                 raise Exception("adam-transformer requires d_model or hidden size in config")
-            d_model = 1 # Never executed but prevents a warning in PyCharm
+            d_model = 1  # Never executed but prevents a warning in PyCharm
     mapping_optimizer = {
         "adam": tf.keras.optimizers.Adam(learning_rate=learning_rate),
         "rmsprop": tf.keras.optimizers.RMSprop(learning_rate=learning_rate),
         "adam-transformer": tf.keras.optimizers.Adam(
-            CustomSchedule(d_model), beta_1=0.9, beta_2=0.98,
+            CustomSchedule(d_model), beta_1=0.9, beta_2=0.98,  # TODO test with diff learning rate
             epsilon=1e-9)
     }
 

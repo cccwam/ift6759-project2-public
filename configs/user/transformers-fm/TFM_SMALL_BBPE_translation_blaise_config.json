@@ -6,23 +6,11 @@
     },
     "hyper_params": {
       "name": "Transformers-Small",
-      "num_hidden_layers": 4,
-      "num_attention_heads": 8,
-      "hidden_size": 512,
-      "intermediate_size": 3072,
-      "dropout_rate": 0.1,
-      "pretrained_layers": [
-        {
-          "model_path": "/project/cq-training-1/project2/teams/team03/tensorboard/guest120/TFM_SMALL_BBPE_mlm_en.json/transformers_mlm_encoder_v1.builder_dataloader_monolingual_subword_level.MonolingualMaskLMDataloaderSubword-2020-04-07T21:07:52.816692/0/transformers_mlm_encoder_v1.builder_dataloader_monolingual_subword_level.MonolingualMaskLMDataloaderSubword.01-1.61.tf",
-          "layer_name": "encoder",
-          "target_layer_name": "encoder"
-        },
-        {
-          "model_path": "/project/cq-training-1/project2/teams/team03/tensorboard/guest120/TFM_SMALL_BBPE_mlm_fr/transformers_mlm_encoder_v1.builder_dataloader_monolingual_subword_level.MonolingualMaskLMDataloaderSubword-2020-04-08T09:11:20.608907/0/transformers_mlm_encoder_v1.builder_dataloader_monolingual_subword_level.MonolingualMaskLMDataloaderSubword.01-1.85.tf/",
-          "layer_name": "encoder",
-          "target_layer_name": "decoder"
-        }
-      ]
+      "num_hidden_layers": 3,
+      "num_attention_heads": 4,
+      "hidden_size": 256,
+      "intermediate_size": 512,
+      "dropout_rate": 0.2
     },
     "source": "online"
   },
@@ -67,7 +55,7 @@
       "seq_length_target": 512,
       "samples_for_test": 500,
       "samples_for_valid": 500,
-      "samples_for_train": -1
+      "samples_for_train": 500
     }
   },
   "trainer": {
@@ -85,7 +73,7 @@
         30
       ],
       "batch_size": [
-        16
+        64
       ],
       "patience": [
         2

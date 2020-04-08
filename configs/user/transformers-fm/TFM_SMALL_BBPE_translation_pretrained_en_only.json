@@ -16,11 +16,6 @@
           "model_path": "/project/cq-training-1/project2/teams/team03/tensorboard/guest120/TFM_SMALL_BBPE_mlm_en.json/transformers_mlm_encoder_v1.builder_dataloader_monolingual_subword_level.MonolingualMaskLMDataloaderSubword-2020-04-07T21:07:52.816692/0/transformers_mlm_encoder_v1.builder_dataloader_monolingual_subword_level.MonolingualMaskLMDataloaderSubword.01-1.61.tf",
           "layer_name": "encoder",
           "target_layer_name": "encoder"
-        },
-        {
-          "model_path": "/project/cq-training-1/project2/teams/team03/tensorboard/guest120/TFM_SMALL_BBPE_mlm_fr/transformers_mlm_encoder_v1.builder_dataloader_monolingual_subword_level.MonolingualMaskLMDataloaderSubword-2020-04-08T09:11:20.608907/0/transformers_mlm_encoder_v1.builder_dataloader_monolingual_subword_level.MonolingualMaskLMDataloaderSubword.01-1.85.tf/",
-          "layer_name": "encoder",
-          "target_layer_name": "decoder"
         }
       ]
     },

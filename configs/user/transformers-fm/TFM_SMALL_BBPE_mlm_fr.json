@@ -58,7 +58,7 @@
       ],
       "optimizer": "adam-transformer",
       "lr_rate": [
-        3e-3
+        -1
       ],
       "epochs": [
         5

@@ -53,12 +53,12 @@ def builder(
     dec_padding_mask = tf.keras.layers.Input(
         shape=(1, 1, None), dtype=tf.float32, name="dec_padding_mask")
 
-    enc_output = encoder(enc_inp, True, enc_padding_mask)  # (batch_size, seq_length, hidden_size)
+    enc_output = encoder(inputs=enc_inp, mask=enc_padding_mask)  # (batch_size, seq_length, hidden_size)
 
     dec_output, attention_weights = decoder(
-        dec_inp, enc_output, True, combined_mask, dec_padding_mask)
+        inputs=dec_inp, enc_output=enc_output, look_ahead_mask=combined_mask, padding_mask=dec_padding_mask)
 
-    outputs = final_layer(dec_output)  # (batch_size, seq_length, vocab_size)
+    outputs = final_layer(inputs=dec_output)  # (batch_size, seq_length, vocab_size)
 
     model = tf.keras.Model([enc_inp, dec_inp, enc_padding_mask, combined_mask, dec_padding_mask],
                            outputs, name=name)
