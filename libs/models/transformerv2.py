@@ -49,7 +49,7 @@ def builder(config: typing.Dict[typing.AnyStr, typing.Any]):
 
     # dec_output.shape == (batch_size, tar_seq_len, d_model)
     dec_output, attention_weights = decoder(
-        inputs=dec_inp, enc_output=enc_output, look_ahead_mask=combined_mask, padding_mask=dec_padding_mask)
+        inputs=dec_inp, enc_output=enc_output, look_ahead_mask=combined_mask, padding_mask=padding_mask)
 
     outputs = final_layer(
         inputs=dec_output)  # (batch_size, tar_seq_len, vocab_size_target)
