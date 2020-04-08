@@ -1,5 +1,4 @@
 {
-
   "model": {
     "definition": {
       "module": "libs.models.transformers_mlm_encoder_v1",

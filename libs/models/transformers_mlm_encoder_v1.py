@@ -1,10 +1,6 @@
 import typing
 
 import tensorflow as tf
-from transformers import BertConfig, TFBertForMaskedLM, TFBertModel, TFBertMainLayer, TFXLMRobertaForMaskedLM, \
-    TFPreTrainedModel, TFBertPreTrainedModel, TFBertEmbeddings, TFT5ForConditionalGeneration, T5Config
-from transformers.file_utils import add_start_docstrings_to_callable
-from transformers.modeling_tf_bert import TFBertEncoder, TFBertMLMHead, BERT_INPUTS_DOCSTRING, TFBertPooler
 
 from libs.models import transformer
 
@@ -37,7 +33,6 @@ def builder(
         num_hidden_layers, hidden_size, num_attention_heads, intermediate_size, vocab_size,
         seq_length, dropout_rate=dropout_rate)
 
-
     final_layer = tf.keras.layers.Dense(vocab_size)
 
     enc_inp = tf.keras.layers.Input(
@@ -45,8 +40,7 @@ def builder(
     enc_padding_mask = tf.keras.layers.Input(
         shape=(1, 1, None), dtype=tf.float32, name="enc_padding_mask")
 
-    enc_output = encoder(enc_inp, True, enc_padding_mask)    # (batch_size, seq_length, hidden_size)
-
+    enc_output = encoder(enc_inp, True, enc_padding_mask)  # (batch_size, seq_length, hidden_size)
 
     outputs = final_layer(enc_output)  # (batch_size, seq_length, vocab_size)
 

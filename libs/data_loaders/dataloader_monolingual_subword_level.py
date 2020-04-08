@@ -6,8 +6,7 @@ import tensorflow as tf
 from tokenizers import (Encoding)
 
 from libs.data_loaders.abstract_dataloader import AbstractMonolingualDataloader, \
-    AbstractMonolingualCausalLMDataloader, \
-    AbstractMonolingualTransformersLMDataloader
+    AbstractMonolingualCausalLMDataloader
 from libs.data_loaders.abstract_dataloader_huggingfaces import AbstractHuggingFacesTokenizer
 
 logger = tf.get_logger()
@@ -113,4 +112,3 @@ class MonolingualMaskLMDataloaderSubword(AbstractMonolingualDataloaderSubword):
     def _hook_dataset_post_precessing(self, ds: tf.data.Dataset):
         return self._apply_mask_for_mlm(ds=ds,
                                         vocab_size=self._vocab_size)
-

@@ -221,14 +221,16 @@ class AbstractHuggingFacesTokenizer(AbstractDataloader, ABC):
         return ds.map(map_func=apply_mask)
 
     # Same as Blaise except that no batch size in dimension
-    def _create_padding_mask(self, seq):
+    @staticmethod
+    def _create_padding_mask(seq):
         seq = tf.cast(tf.math.equal(seq, 0), tf.float32)
 
         # add extra dimensions to add the padding
         # to the attention logits.
         return seq[tf.newaxis, tf.newaxis, :]  # (1, 1, seq_len)
 
-    def _create_look_ahead_mask(self, seq_length):
+    @staticmethod
+    def _create_look_ahead_mask(seq_length):
         mask = 1 - tf.linalg.band_part(tf.ones((seq_length, seq_length)), -1, 0)
         return mask  # (seq_len, seq_len)
 

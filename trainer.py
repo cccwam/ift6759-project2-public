@@ -180,7 +180,7 @@ def train_model(
         metrics: List[str],
         patience: int,
         checkpoints_path: str,
-        config,
+        config:dict,
 ):
     """
     The training loop for a single model
@@ -196,6 +196,7 @@ def train_model(
     :param patience: The early stopping patience hyper parameter
     :param checkpoints_path: Path of where to store TensorFlow checkpoints
     :param metrics: list of metrics
+    :param config: configuration dictionary
     """
 
     if tensorboard_log_dir is not None:
@@ -207,7 +208,7 @@ def train_model(
         # Workaround for https://github.com/tensorflow/tensorboard/issues/2412
         callbacks = [tf.keras.callbacks.TensorBoard(log_dir=tensorboard_log_dir, profile_batch=0),
                      tf.keras.callbacks.ModelCheckpoint(filepath=checkpoints_path, save_weights_only=False,
-                                      save_best_only=True, monitor='val_loss'),
+                                                        save_best_only=True, monitor='val_loss'),
                      hp.KerasCallback(writer=str(tensorboard_log_dir), hparams=hparams)]
     else:
         callbacks = []

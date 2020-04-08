@@ -163,6 +163,7 @@ def compile_model(model,
     :param optimizer: optimizer function name
     :param model: model to be compiled
     :param metrics: list of metrics
+    :param config: configuration dictionary
     :return: compiled model and additional callbacks (for metrics which are too slow to run on training set)
     """
 
@@ -178,10 +179,15 @@ def compile_model(model,
         "mlm_loss": mlm_loss
     }
 
-    if "d_model" in config['model']['hyper_params']:
+    if "d_model" in config['model']['hyper_params']:  # From Blaise model
         d_model = config['model']['hyper_params']['d_model']
-    if "hidden_size" in config['model']['hyper_params']:
-        d_model = config['model']['hyper_params']['hidden_size']
+    else:
+        if "hidden_size" in config['model']['hyper_params']:  # From François model
+            d_model = config['model']['hyper_params']['hidden_size']
+        else:
+            if optimizer == "adam-transformer":
+                raise Exception("adam-transformer requires d_model or hidden size in config")
+            d_model = 1 # Never executed but prevents a warning in PyCharm
     mapping_optimizer = {
         "adam": tf.keras.optimizers.Adam(learning_rate=learning_rate),
         "rmsprop": tf.keras.optimizers.RMSprop(learning_rate=learning_rate),

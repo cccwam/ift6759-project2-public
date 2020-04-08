@@ -1,6 +1,6 @@
+import copy
 import os
 import random
-import copy
 
 import tensorflow as tf
 

@@ -82,6 +82,7 @@ class MultiHeadAttention(tf.keras.layers.Layer):
         x = tf.reshape(x, (batch_size, -1, self.num_heads, self.depth))
         return tf.transpose(x, perm=[0, 2, 1, 3])
 
+    # noinspection PyMethodOverriding
     def call(self, v, k, q, mask):
         batch_size = tf.shape(q)[0]
 
@@ -151,6 +152,7 @@ class EncoderLayer(tf.keras.layers.Layer):
         })
         return config
 
+    # noinspection PyMethodOverriding
     def call(self, x, training, mask):
         attn_output, _ = self.mha(x, x, x, mask)
         # atten_output has shape (batch_size, input_seq_len, d_model)
@@ -198,6 +200,7 @@ class DecoderLayer(tf.keras.layers.Layer):
         })
         return config
 
+    # noinspection PyMethodOverriding
     def call(self, x, enc_output, training, look_ahead_mask, padding_mask):
         # enc_output.shape == (batch_size, input_seq_len, d_model)
 
@@ -277,6 +280,7 @@ class Encoder(tf.keras.layers.Layer):
         })
         return config
 
+    # noinspection PyMethodOverriding
     def call(self, x, training, mask):
         seq_len = tf.shape(x)[1]
 
@@ -330,6 +334,7 @@ class Decoder(tf.keras.layers.Layer):
         })
         return config
 
+    # noinspection PyMethodOverriding
     def call(self, x, enc_output, training, look_ahead_mask, padding_mask):
         seq_len = tf.shape(x)[1]
         attention_weights = {}
@@ -381,9 +386,6 @@ def create_masks(inp, tar):
     combined_mask = tf.maximum(dec_target_padding_mask, look_ahead_mask)
 
     return enc_padding_mask, combined_mask, dec_padding_mask
-
-
-
 
 
 def load_transformer(config):
@@ -453,6 +455,7 @@ def inference(tokenizer, model, test_dataset):
             # decoder as its input.
             dec_inp = tf.concat([dec_inp, predicted_id], axis=-1)
 
+        # TODO fix here the name i because PyCharm is raising a warning (already from above for loop)
         for i in range(dec_inp.shape[0]):
             sent_ids = []
             for j in dec_inp[i]:

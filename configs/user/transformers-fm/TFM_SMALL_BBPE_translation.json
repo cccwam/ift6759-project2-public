@@ -1,5 +1,4 @@
 {
-
   "model": {
     "definition": {
       "module": "libs.models.transformers_mt_encoder_decoder_v1",

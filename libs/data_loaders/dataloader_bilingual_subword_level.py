@@ -5,8 +5,7 @@ import numpy as np
 import tensorflow as tf
 from tokenizers import (Encoding)
 
-from libs.data_loaders.abstract_dataloader import AbstractBilingualDataloader, AbstractBilingualSeq2SeqDataloader, \
-    AbstractBilingualTransformersDataloader
+from libs.data_loaders.abstract_dataloader import AbstractBilingualDataloader
 from libs.data_loaders.abstract_dataloader_huggingfaces import AbstractHuggingFacesTokenizer
 
 logger = tf.get_logger()
@@ -105,7 +104,7 @@ class BilingualTranslationSubword(AbstractBilingualDataloaderSubword):
             target_in[0:len(target_numericalized[i].ids)] = target_numericalized[i].ids
 
             target_out = np.zeros([self._seq_length_target], dtype=int)
-            target_out[0:len(target_numericalized[i].ids)-1] = target_numericalized[i].ids[1:]
+            target_out[0:len(target_numericalized[i].ids) - 1] = target_numericalized[i].ids[1:]
 
             enc_padding_mask, combined_mask, dec_padding_mask = self._create_masks(source, target_in)
 
