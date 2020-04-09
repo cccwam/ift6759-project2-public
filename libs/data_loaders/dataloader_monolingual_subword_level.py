@@ -6,8 +6,7 @@ import tensorflow as tf
 from tokenizers import (Encoding)
 
 from libs.data_loaders.abstract_dataloader import AbstractMonolingualDataloader, \
-    AbstractMonolingualCausalLMDataloader, \
-    AbstractMonolingualTransformersLMDataloader
+    AbstractMonolingualCausalLMDataloader
 from libs.data_loaders.abstract_dataloader_huggingfaces import AbstractHuggingFacesTokenizer
 
 logger = tf.get_logger()
@@ -26,13 +25,13 @@ class AbstractMonolingualDataloaderSubword(AbstractMonolingualDataloader, Abstra
         AbstractHuggingFacesTokenizer.__init__(self, config=config,
                                                raw_english_test_set_file_path=raw_english_test_set_file_path)
 
-        self._language: str = self._preprocessed_data_path["language"]
+        self._language: str = self._preprocessed_data["language"]
         assert self._language is not None, "Missing language in config"
 
-        monolingual_corpus_filename: str = self._preprocessed_data_path["monolingual_corpus_filename"]
+        monolingual_corpus_filename: str = self._preprocessed_data["monolingual_corpus_filename"]
         assert monolingual_corpus_filename is not None, "Missing monolingual_corpus_filename in config"
 
-        corpora_filenames: List[str] = self._preprocessed_data_path["corpora_filenames"]
+        corpora_filenames: List[str] = self._preprocessed_data["corpora_filenames"]
         assert corpora_filenames is not None, "Missing corpora_filenames in config"
 
         res = self._load_tokenizer(language=self._language,
@@ -84,25 +83,20 @@ class MonolingualCausalLMDataloaderSubword(AbstractMonolingualDataloaderSubword,
 class MonolingualMaskLMDataloaderSubword(AbstractMonolingualDataloaderSubword):
     """
         Dataset for monolingual corpora at subword level
-            - Inputs: One sentence in one language masked according to masked language model (with attention mask,
-            and tokens_type_id )
+            - Inputs: One sentence in one language with mask for pad tokens and with some masked or replacement as per
+            marsked language model task
             - Targets:  Predicts the masked tokens
-
-
     """
 
     def __init__(self, config: dict, raw_english_test_set_file_path: str):
         AbstractMonolingualDataloaderSubword.__init__(self, config=config,
                                                       raw_english_test_set_file_path=raw_english_test_set_file_path)
 
-        self._tokens_type: int = self._preprocessed_data_path["tokens_type"]
-        assert self._tokens_type is not None, "Missing _tokens_type in config"
-
-        self._output_types = ((tf.int32, tf.int32, tf.int32),
+        self._output_types = ((tf.int32, tf.float32),
                               tf.int32)
-        self._output_shapes = ((tf.TensorShape([None]), tf.TensorShape([None]), tf.TensorShape([None])),
+        self._output_shapes = ((tf.TensorShape([None]), tf.TensorShape([1, 1, self._seq_length])),
                                tf.TensorShape([None]))
-        self._padded_shapes = ((self._seq_length, self._seq_length, self._seq_length),
+        self._padded_shapes = ((self._seq_length, (1, 1, self._seq_length)),
                                self._seq_length)
 
     def _my_generator(self, source_numericalized: List[Encoding]):
@@ -111,33 +105,10 @@ class MonolingualMaskLMDataloaderSubword(AbstractMonolingualDataloaderSubword):
             inputs = np.zeros([self._seq_length], dtype=int)
             inputs[:len(source_numericalized[i].ids)] = source_numericalized[i].ids
 
-            attention_masks = np.zeros([self._seq_length], dtype=int)
-            attention_masks[:len(source_numericalized[i].ids)] = 1
+            enc_padding_mask = self._create_padding_mask(inputs)
 
-            tokens_type_ids = tf.fill([self._seq_length], value=self._tokens_type)
-            tokens_type_ids = tf.cast(tokens_type_ids, dtype=tf.int32)
-
-            output = inputs
-
-            yield ((inputs, attention_masks, tokens_type_ids), output)
+            yield ((inputs, enc_padding_mask), inputs)
 
     def _hook_dataset_post_precessing(self, ds: tf.data.Dataset):
         return self._apply_mask_for_mlm(ds=ds,
                                         vocab_size=self._vocab_size)
-
-
-class MonolingualTransformersLMDataloaderSubword(AbstractMonolingualDataloaderSubword,
-                                                 AbstractMonolingualTransformersLMDataloader):
-    """
-        Dataset for monolingual corpora at subword level generating only input sentence
-
-    """
-
-    def __init__(self, config: dict, raw_english_test_set_file_path: str):
-        AbstractMonolingualDataloaderSubword.__init__(self, config=config,
-                                                      raw_english_test_set_file_path=raw_english_test_set_file_path)
-        AbstractMonolingualTransformersLMDataloader.__init__(self, config=config)
-
-    def _my_generator(self, source_numericalized: List[Encoding]):
-        for i in range(len(source_numericalized)):
-            yield source_numericalized[i].ids

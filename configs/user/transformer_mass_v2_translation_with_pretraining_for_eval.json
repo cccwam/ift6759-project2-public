@@ -20,7 +20,7 @@
       "name": "MassSubwordDataLoader"
     },
     "hyper_params": {
-      "preprocessed_data_path": {
+      "preprocessed_data": {
         "folder": "/project/cq-training-1/project2/teams/team03/data/split_01"
       },
       "vocabulary_name": "/project/cq-training-1/project2/teams/team03/data/subword_tutorial_vocab/mass_subword_vocabulary",

@@ -31,7 +31,7 @@ class AbstractHuggingFacesTokenizer(AbstractDataloader, ABC):
 
         self._special_tokens = [self._pad, self._mask, self._bos, self._eos, self._unk]
 
-        self._folder: Path = Path(self._preprocessed_data_path["folder"])
+        self._folder: Path = Path(self._preprocessed_data["folder"])
         assert self._folder.exists()
 
         self._pretrained_model_dir_path: str = self._dl_hparams["pretrained_model_dir_path"]
@@ -165,15 +165,13 @@ class AbstractHuggingFacesTokenizer(AbstractDataloader, ABC):
 
     def _apply_mask_for_mlm(self,
                             ds: tf.data.Dataset,
-                            vocab_size: int,
-                            with_multi_inputs=True):
+                            vocab_size: int):
         """
             Apply mask for masked language model
 
         Args:
             ds: dataset
             vocab_size: vocab size
-            with_multi_inputs:
 
         Returns:
 
@@ -215,17 +213,40 @@ class AbstractHuggingFacesTokenizer(AbstractDataloader, ABC):
             return inputs_masked, output_masked
 
         def apply_mask(x, y):
-            inputs, attention_masks, tokens_type_ids = x
+            inputs, enc_padding_mask = x
             inputs_masked, y = tf.py_function(_apply_mask_eager, [inputs, y], [tf.int32, tf.int32])
 
-            return (inputs_masked, attention_masks, tokens_type_ids), y
+            return (inputs_masked, enc_padding_mask), y
 
-        def apply_mask_single_input(x, y):
-            inputs_masked, y = tf.py_function(_apply_mask_eager, [x, y], [tf.int32, tf.int32])
+        return ds.map(map_func=apply_mask)
 
-            return inputs_masked, y
+    # Same as Blaise except that no batch size in dimension
+    @staticmethod
+    def _create_padding_mask(seq):
+        seq = tf.cast(tf.math.equal(seq, 0), tf.float32)
 
-        if with_multi_inputs:
-            return ds.map(map_func=apply_mask)
-        else:
-            return ds.map(map_func=apply_mask_single_input)
+        # add extra dimensions to add the padding
+        # to the attention logits.
+        return seq[tf.newaxis, tf.newaxis, :]  # (1, 1, seq_len)
+
+    @staticmethod
+    def _create_look_ahead_mask(seq_length):
+        mask = 1 - tf.linalg.band_part(tf.ones((seq_length, seq_length)), -1, 0)
+        return mask  # (seq_len, seq_len)
+
+    def _create_masks(self, inp, tar):
+        # Encoder padding mask
+        enc_padding_mask = self._create_padding_mask(inp)
+
+        # Used in the 2nd attention block in the decoder.
+        # This padding mask is used to mask the encoder outputs.
+        dec_padding_mask = self._create_padding_mask(inp)
+
+        # Used in the 1st attention block in the decoder.
+        # It is used to pad and mask future tokens in the input received by
+        # the decoder.
+        look_ahead_mask = self._create_look_ahead_mask(self._seq_length_target)
+        dec_target_padding_mask = self._create_padding_mask(tar)
+        combined_mask = tf.maximum(dec_target_padding_mask, look_ahead_mask)
+
+        return enc_padding_mask, combined_mask, dec_padding_mask

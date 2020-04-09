@@ -11,7 +11,6 @@ import tensorflow as tf
 from tensorboard.plugins.hparams import api as hp
 
 from libs import helpers
-from libs.callbacks import CustomCheckpoint
 from libs.data_loaders.abstract_dataloader import AbstractDataloader
 
 logger = tf.get_logger()
@@ -67,7 +66,16 @@ def train_models(
     data_loader_name = helpers.get_module_name(data_loader_dict)
 
     hp_model = hp.HParam('model_class', hp.Discrete([model_name]))
-    hp_model_hparams = [hp.HParam(k, hp.Discrete([v])) for k, v in model_dict_hparams.items()]
+    hp_model_hparams = [hp.HParam(k, hp.Discrete([v])) for k, v in model_dict_hparams.items()
+                        if k not in ["pretrained_layers"]]
+    if "pretrained_layers" in model_dict_hparams:
+        pretrained_layers = []
+        for pretrained_layer in model_dict_hparams["pretrained_layers"]:
+            pretrained_layer_id = f"{pretrained_layer['model_path']}"
+            pretrained_layer_id = pretrained_layer_id + "-" + f"{pretrained_layer['layer_name']}"
+            pretrained_layer_id = pretrained_layer_id + "-" + f"{pretrained_layer['target_layer_name']}"
+            pretrained_layers += [pretrained_layer_id]
+        hp_model_hparams += [hp.HParam("pretrained_layers", hp.Discrete(["-".join(pretrained_layers)]))]
     hp_model_hparams = {hparam: hparam.domain.values[0] for hparam in hp_model_hparams}
 
     hp_dataloader = hp.HParam('dataloader_class', hp.Discrete([data_loader_name]))
@@ -125,20 +133,12 @@ def train_models(
 
                     if mirrored_strategy is not None and mirrored_strategy.num_replicas_in_sync > 1:
                         with mirrored_strategy.scope():
-                            # ToDo sometimes we need to reload?
-                            model = helpers.get_model(config)
-                            # model = helpers.get_online_model(config)
+                            model = helpers.prepare_model(config)
                     else:
-                        # ToDo sometimes we need to reload?
-                        model = helpers.get_model(config)
-                        # model = helpers.get_online_model(config)
+                        model = helpers.prepare_model(config)
 
                     if tensorboard_tracking_folder is not None:
                         tensorboard_log_dir = str(tensorboard_experiment_id / str(variation_num))
-                        # Fileformat must be hdf5, otherwise bug
-                        # https://github.com/tensorflow/tensorflow/issues/34127
-                        # TODO check if tf is working
-                        # https://stackoverflow.com/questions/59656096/trouble-saving-tf-keras-model-with-bert-huggingface-classifier
                         checkpoints_path = str(tensorboard_log_dir) + "/" + (tensorboard_experiment_name +
                                                                              ".{epoch:02d}-{val_loss:.2f}.tf")
                         logger.info(f"Start variation id: " + str(tensorboard_log_dir))
@@ -180,7 +180,7 @@ def train_model(
         metrics: List[str],
         patience: int,
         checkpoints_path: str,
-        config,
+        config: dict,
 ):
     """
     The training loop for a single model
@@ -196,6 +196,7 @@ def train_model(
     :param patience: The early stopping patience hyper parameter
     :param checkpoints_path: Path of where to store TensorFlow checkpoints
     :param metrics: list of metrics
+    :param config: configuration dictionary
     """
 
     if tensorboard_log_dir is not None:
@@ -206,8 +207,8 @@ def train_model(
 
         # Workaround for https://github.com/tensorflow/tensorboard/issues/2412
         callbacks = [tf.keras.callbacks.TensorBoard(log_dir=tensorboard_log_dir, profile_batch=0),
-                     CustomCheckpoint(filepath=checkpoints_path, save_weights_only=False,
-                                      save_best_only=True, monitor='val_loss'),
+                     tf.keras.callbacks.ModelCheckpoint(filepath=checkpoints_path, save_weights_only=False,
+                                                        save_best_only=True, monitor='val_loss'),
                      hp.KerasCallback(writer=str(tensorboard_log_dir), hparams=hparams)]
     else:
         callbacks = []

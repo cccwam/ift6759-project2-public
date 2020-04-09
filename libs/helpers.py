@@ -12,6 +12,7 @@ from libs.data_loaders import AbstractDataloader
 from libs.losses import mlm_loss
 from libs.metrics import perplexity, BleuIntervalEvaluation, perplexity_mlm
 from libs.models import transformer
+from libs.optimizers import CustomSchedule
 
 logger = tf.get_logger()
 
@@ -69,34 +70,7 @@ def get_online_model(config):
     )
 
 
-def get_model(
-        config
-):
-    """
-    Get model
-
-    Returns the model as defined in the config. The config should follow configs/user/schema.json
-
-    Args:
-        config: The configuration dictionary. It must follow configs/user/schema.json
-
-    Returns:
-        A ``tf.keras.Model`` object that can be used to generate French sentences given English sentence tensors.
-    """
-    mirrored_strategy = get_mirrored_strategy()
-
-    if mirrored_strategy is not None and mirrored_strategy.num_replicas_in_sync > 1:
-        with mirrored_strategy.scope():
-            model = prepare_model(config)
-    else:
-        model = prepare_model(config)
-
-    return model
-
-
-def prepare_model(
-        config
-):
+def prepare_model(config):
     """
     Prepare model
 
@@ -152,8 +126,8 @@ def compile_model(model,
                   dataloader: AbstractDataloader,
                   loss: str,
                   optimizer: str,
-                  metrics: List[str] = None,
-                  config=None):
+                  config: dict,
+                  metrics: List[str] = None):
     """
         Helper function to compile a new model at each variation of the experiment
     :param learning_rate:
@@ -162,6 +136,7 @@ def compile_model(model,
     :param optimizer: optimizer function name
     :param model: model to be compiled
     :param metrics: list of metrics
+    :param config: configuration dictionary
     :return: compiled model and additional callbacks (for metrics which are too slow to run on training set)
     """
 
@@ -177,12 +152,20 @@ def compile_model(model,
         "mlm_loss": mlm_loss
     }
 
-    d_model = config['model']['hyper_params']['d_model']
+    if "d_model" in config['model']['hyper_params']:  # From Blaise model
+        d_model = config['model']['hyper_params']['d_model']
+    else:
+        if "hidden_size" in config['model']['hyper_params']:  # From François model
+            d_model = config['model']['hyper_params']['hidden_size']
+        else:
+            if optimizer == "adam-transformer":
+                raise Exception("adam-transformer requires d_model or hidden size in config")
+            d_model = 1  # Never executed but prevents a warning in PyCharm
     mapping_optimizer = {
         "adam": tf.keras.optimizers.Adam(learning_rate=learning_rate),
         "rmsprop": tf.keras.optimizers.RMSprop(learning_rate=learning_rate),
         "adam-transformer": tf.keras.optimizers.Adam(
-            transformer.CustomSchedule(d_model), beta_1=0.9, beta_2=0.98,
+            CustomSchedule(d_model), beta_1=0.9, beta_2=0.98,  # TODO test with diff learning rate
             epsilon=1e-9)
     }
 
@@ -202,6 +185,7 @@ def compile_model(model,
         loss=mapping_loss[loss],
         metrics=metric_funcs
     )
+
     return model, additional_callbacks
 
 

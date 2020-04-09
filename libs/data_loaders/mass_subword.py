@@ -1,6 +1,6 @@
+import copy
 import os
 import random
-import copy
 
 import tensorflow as tf
 
@@ -80,7 +80,7 @@ def create_text_datasets(config):
     """
 
     dl_hparams = config["data_loader"]["hyper_params"]
-    path_data = dl_hparams["preprocessed_data_path"]["folder"]
+    path_data = dl_hparams["preprocessed_data"]["folder"]
 
     path_trad_en_train = os.path.join(path_data, 'original',
                                       'train.lang1.train')
