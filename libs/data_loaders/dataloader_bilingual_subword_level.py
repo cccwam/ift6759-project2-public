@@ -1,4 +1,5 @@
 from abc import ABC
+from pathlib import Path
 from typing import List
 
 import numpy as np
@@ -95,6 +96,11 @@ class BilingualTranslationSubword(AbstractBilingualDataloaderSubword):
                                 (1, 1, self._seq_length_target)),
                                self._seq_length_target)
 
+        self._output_test_types = (tf.int32, tf.float32)
+        self._output_test_shapes = (tf.TensorShape([None]),
+                                    tf.TensorShape([1, 1, self._seq_length_source]))
+        self._padded_test_shapes = (self._seq_length_source, (1, 1, self._seq_length_source))
+
     def _my_generator(self, source_numericalized: List[Encoding], target_numericalized: List[Encoding]):
         for i in range(len(source_numericalized)):
             source = np.zeros([self._seq_length_source], dtype=int)
@@ -109,3 +115,31 @@ class BilingualTranslationSubword(AbstractBilingualDataloaderSubword):
             enc_padding_mask, combined_mask, dec_padding_mask = self._create_masks(source, target_in)
 
             yield ((source, target_in, enc_padding_mask, combined_mask, dec_padding_mask), target_out)
+
+    def _my_test_generator(self, test_input_file: Path):
+
+        with test_input_file.open() as file:
+            lines = [self._bos + line + self._eos for line in file.readlines()]
+        source_numericalized: List[Encoding] = self._tokenizer_source.encode_batch(sequences=lines)
+
+        for i in range(len(source_numericalized)):
+            source = np.zeros([self._seq_length_source], dtype=int)
+            source[:len(source_numericalized[i].ids)] = source_numericalized[i].ids
+
+            enc_padding_mask = self._create_padding_mask(source)
+            yield (source, enc_padding_mask)
+
+    def build(self,
+              batch_size):
+        """
+            This fundction is overkill but it prevents impacting the logic from libs.models.transformerv2
+        Args:
+            batch_size:
+
+        Returns:
+
+        """
+        if self._raw_english_test_set_file_path is None:
+            AbstractBilingualDataloaderSubword.build(self, batch_size=batch_size)
+        else:
+            self.build_test_dataset(batch_size=batch_size)

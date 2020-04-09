@@ -10,9 +10,9 @@
       "num_attention_heads": 8,
       "hidden_size": 512,
       "intermediate_size": 3072,
-      "dropout_rate": 0.5
+      "dropout_rate": 0.1
     },
-    "source": "online"
+    "source": "/project/cq-training-1/project2/teams/team03/tensorboard/guest120/TFM_SMALL_BBPE_translation_pretrained_en_only/transformers_mt_encoder_decoder_v1.builder_dataloader_bilingual_subword_level.BilingualTranslationSubword-2020-04-09T00:47:35.082694/0/transformers_mt_encoder_decoder_v1.builder_dataloader_bilingual_subword_level.BilingualTranslationSubword.07-4.40.tf"
   },
   "data_loader": {
     "definition": {
@@ -65,18 +65,18 @@
         "sparse_accuracy",
         "bleu"
       ],
-      "optimizer": "adam-transformer",
+      "optimizer": "adam",
       "lr_rate": [
-        -1
+        1e-4
       ],
       "epochs": [
-        50
+        30
       ],
       "batch_size": [
         16
       ],
       "patience": [
-        2
+        3
       ]
     }
   }

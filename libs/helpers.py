@@ -12,6 +12,7 @@ from libs.data_loaders import AbstractDataloader
 from libs.losses import mlm_loss
 from libs.metrics import perplexity, BleuIntervalEvaluation, perplexity_mlm
 from libs.models import transformer
+from libs.models.transformer import Encoder, Decoder
 from libs.optimizers import CustomSchedule
 
 logger = tf.get_logger()
@@ -97,8 +98,12 @@ def prepare_model(config):
     print(f"Loading model: {model_source}")
     if config["model"]["definition"]["module"] == 'libs.models.transformerv2':
         model = transformer.load_transformer(config)
-    else:
-        model = tf.keras.models.load_model(model_source)
+    else:  # TODO both are doing the same. To do some refactoring
+        model = tf.keras.models.load_model(model_source,
+                                           custom_objects={'Encoder': Encoder,
+                                                           'Decoder': Decoder,
+                                                           'CustomSchedule': CustomSchedule,
+                                                           'mlm_loss': mlm_loss}, compile=False)
     return model
 
 

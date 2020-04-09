@@ -73,7 +73,6 @@ def my_tokenizer(data_path,
         f.close()
 
     # Inspired by TA's function
-    # TODO move to helper ? It must be used for the evaluator
     # noinspection PyUnboundLocalVariable
     def my_tokenize(input_dataframe, tokenizer, keep_case, keep_punctuation, split_sentence=False):
         for i, row in tqdm.tqdm(input_dataframe.text.iteritems(), total=input_dataframe.shape[0]):

@@ -1,5 +1,6 @@
 from abc import abstractmethod, ABC
 from functools import partial
+from pathlib import Path
 from typing import Optional
 
 import tensorflow as tf
@@ -9,7 +10,7 @@ logger = tf.get_logger()
 
 class AbstractDataloader:
 
-    # TODO: Implement the usage of raw_english_test_set_file_path. See TODO in evaluator.py's generate_predictions()
+
     def __init__(self, config: dict, raw_english_test_set_file_path: str):
         """
         AbstractDataloader
@@ -29,13 +30,15 @@ class AbstractDataloader:
         self.valid_dataset: Optional[tf.data.Dataset] = None
         self.training_dataset: Optional[tf.data.Dataset] = None
 
+        self._raw_english_test_set_file_path: str = raw_english_test_set_file_path
+
     def build(self,
               batch_size):
-        my_gen = self._get_generator()
-
         assert self._output_types is not None, "Missing output_types"
         assert self._output_shapes is not None, "Missing _output_shapes"
         assert self._padded_shapes is not None, "Missing _padded_shapes"
+
+        my_gen = self._get_generator()
 
         ds = tf.data.Dataset.from_generator(my_gen,
                                             output_types=self._output_types,
@@ -65,12 +68,32 @@ class AbstractDataloader:
         raise NotImplementedError()
 
     @abstractmethod
+    def _get_test_generator(self):
+        raise NotImplementedError()
+
+    @abstractmethod
     def get_hparams(self):
         raise NotImplementedError()
 
     @abstractmethod
     def decode(self, tokens):
         raise NotImplementedError
+
+    def build_test_dataset(self, batch_size: int):
+        assert self._raw_english_test_set_file_path is not None, "Missing raw_english_test_set_file_path"
+        test_input_filepath = Path(self._raw_english_test_set_file_path)
+        assert test_input_filepath.exists(), "The test input file doesn't exist"
+
+        assert self._output_test_types is not None, "Missing _output_test_types"
+        assert self._output_test_shapes is not None, "Missing _output_test_shapes"
+        assert self._padded_test_shapes is not None, "Missing _padded_test_shapes"
+
+        ds = tf.data.Dataset.from_generator(self._get_test_generator(),
+                                            output_types=self._output_test_types,
+                                            output_shapes=self._output_test_shapes)
+        ds = ds.padded_batch(batch_size=batch_size,
+                             padded_shapes=self._padded_test_shapes)
+        self.test_dataset = ds
 
     def _build_all_dataset(self, ds: tf.data.Dataset, ds_without_modification: tf.data.Dataset, batch_size: int):
         ds_without_modification = ds_without_modification.skip(int(self._samples_for_test / batch_size))
@@ -170,6 +193,14 @@ class AbstractBilingualDataloader(AbstractDataloader, ABC):
         return partial(self._my_generator,
                        self._en_numericalized,
                        self._fr_numericalized)
+
+    @abstractmethod
+    def _my_test_generator(self, test_input_file: Path):
+        raise NotImplementedError
+
+    def _get_test_generator(self):
+        return partial(self._my_test_generator,
+                       Path(self._raw_english_test_set_file_path))
 
 
 class AbstractBilingualSeq2SeqDataloader:
