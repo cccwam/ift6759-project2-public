@@ -5,9 +5,9 @@
       "name": "builder"
     },
     "hyper_params": {
-      "name": "TRANSFORMER_MASS_HELGI_V2_RESULT",
-      "num_layers": 6,
-      "d_model": 1024,
+      "name": "TRANSFORMER_MASS_HELGI_V3_RESULT",
+      "num_layers": 5,
+      "d_model": 512,
       "num_heads": 8,
       "dff": 1024,
       "dropout_rate": 0.2
