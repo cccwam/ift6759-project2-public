@@ -70,9 +70,7 @@ def get_online_model(config):
     )
 
 
-def prepare_model(
-        config
-):
+def prepare_model(config):
     """
     Prepare model
 
