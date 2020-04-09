@@ -9,7 +9,7 @@ from libs import helpers
 def validate_configs(configs_folder):
     schema = helpers.load_dict(os.path.join(configs_folder, 'schema.json'))
     for file_name in Path(configs_folder).glob('**/*.json'):
-        if str(file_name) == 'schema.json':
+        if str(file_name.name) == 'schema.json':
             continue
         try:
             jsonschema.validate(
