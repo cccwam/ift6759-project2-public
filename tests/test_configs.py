@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 import jsonschema
 
@@ -7,17 +8,16 @@ from libs import helpers
 
 def validate_configs(configs_folder):
     schema = helpers.load_dict(os.path.join(configs_folder, 'schema.json'))
-    for file_name in os.listdir(configs_folder):
-        if file_name == 'schema.json':
+    for file_name in Path(configs_folder).glob('**/*.json'):
+        if str(file_name.name) == 'schema.json':
             continue
-        config_file_path = os.path.join(configs_folder, file_name)
         try:
             jsonschema.validate(
                 schema=schema,
-                instance=helpers.load_dict(config_file_path)
+                instance=helpers.load_dict(str(file_name))
             )
         except jsonschema.exceptions.ValidationError as e:
-            print(f"ValidationError for the file {config_file_path}")
+            print(f"ValidationError for the file {str(file_name)}")
             raise e
 
 

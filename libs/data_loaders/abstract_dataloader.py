@@ -24,8 +24,6 @@ class AbstractDataloader:
         self._samples_for_valid: int = self._dl_hparams["samples_for_valid"]
         self._samples_for_train: int = self._dl_hparams["samples_for_train"]
 
-        # TODO add # samples to  in Tensorboard
-
         # To be initialized in build method (because called for each experiment during hparams search)
         self.test_dataset: Optional[tf.data.Dataset] = None
         self.valid_dataset: Optional[tf.data.Dataset] = None

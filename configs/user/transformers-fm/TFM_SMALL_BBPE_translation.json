@@ -1,21 +1,23 @@
 {
   "model": {
     "definition": {
-      "module": "libs.models.bert_mt_v1",
+      "module": "libs.models.transformers_mt_encoder_decoder_v1",
       "name": "builder"
     },
     "hyper_params": {
-      "name": "BERT-Small",
+      "name": "Transformers-Small",
       "num_hidden_layers": 4,
       "num_attention_heads": 8,
-      "hidden_size": 512
+      "hidden_size": 512,
+      "intermediate_size": 3072,
+      "dropout_rate": 0.1
     },
-    "source": ""
+    "source": "online"
   },
   "data_loader": {
     "definition": {
       "module": "libs.data_loaders.dataloader_bilingual_subword_level",
-      "name": "BilingualTranslationLMDataloaderSubword"
+      "name": "BilingualTranslationSubword"
     },
     "hyper_params": {
       "preprocessed_data": {
@@ -53,7 +55,7 @@
       "seq_length_target": 512,
       "samples_for_test": 500,
       "samples_for_valid": 500,
-      "samples_for_train": 500
+      "samples_for_train": -1
     }
   },
   "trainer": {
@@ -61,17 +63,17 @@
       "loss": "mlm_loss",
       "metrics": [
         "sparse_accuracy",
-        "perplexity_mlm"
+        "bleu"
       ],
-      "optimizer": "adam",
+      "optimizer": "adam-transformer",
       "lr_rate": [
-        1e-4
+        3e-2
       ],
       "epochs": [
         30
       ],
       "batch_size": [
-        8
+        16
       ],
       "patience": [
         2

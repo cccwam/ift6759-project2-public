@@ -44,15 +44,15 @@ def builder(config: typing.Dict[typing.AnyStr, typing.Any]):
     combined_mask = tf.keras.layers.Input(
         shape=(1, None, None), dtype=tf.float32, name="i4")
 
-    enc_output = encoder(enc_inp, True, padding_mask)
+    enc_output = encoder(inputs=enc_inp, mask=padding_mask)
     # (batch_size, inp_seq_len, d_model)
 
     # dec_output.shape == (batch_size, tar_seq_len, d_model)
     dec_output, attention_weights = decoder(
-        dec_inp, enc_output, True, combined_mask, padding_mask)
+        inputs=dec_inp, enc_output=enc_output, look_ahead_mask=combined_mask, padding_mask=padding_mask)
 
     outputs = final_layer(
-        dec_output)  # (batch_size, tar_seq_len, vocab_size_target)
+        inputs=dec_output)  # (batch_size, tar_seq_len, vocab_size_target)
 
     model = tf.keras.Model([enc_inp, dec_inp, padding_mask, combined_mask],
                            outputs, name=model_hparams["name"])

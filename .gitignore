@@ -209,3 +209,4 @@ dmypy.json
 .pyre/
 
 /tools/bert/
+/tools/transformers-fm/
