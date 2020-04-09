@@ -9,15 +9,15 @@ from libs import helpers
 def validate_configs(configs_folder):
     schema = helpers.load_dict(os.path.join(configs_folder, 'schema.json'))
     for file_name in Path(configs_folder).glob('**/*.json'):
-        if file_name == 'schema.json':
+        if str(file_name) == 'schema.json':
             continue
         try:
             jsonschema.validate(
                 schema=schema,
-                instance=helpers.load_dict(file_name)
+                instance=helpers.load_dict(str(file_name))
             )
         except jsonschema.exceptions.ValidationError as e:
-            print(f"ValidationError for the file {config_file_path}")
+            print(f"ValidationError for the file {str(file_name)}")
             raise e
 
 
