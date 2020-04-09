@@ -5,7 +5,7 @@
       "name": "builder"
     },
     "hyper_params": {
-      "name": "TRANSFORMER_MASS_HELGI_V1_TRANSLATION",
+      "name": "TRANSFORMER_MASS_HELGI_V2_TRANSLATION",
       "num_layers": 6,
       "d_model": 1024,
       "num_heads": 8,

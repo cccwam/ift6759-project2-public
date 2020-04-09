@@ -5,7 +5,7 @@
       "name": "builder"
     },
     "hyper_params": {
-      "name": "TRANSFORMER_MASS_HELGI_V1_PRETRAINING",
+      "name": "TRANSFORMER_MASS_HELGI_V2_PRETRAINING",
       "num_layers": 6,
       "d_model": 1024,
       "num_heads": 8,
@@ -39,7 +39,7 @@
         1e-5
       ],
       "epochs": [
-        2
+        4
       ],
       "optimizer": "adam",
       "metrics": [
