@@ -4,7 +4,7 @@ import tensorflow as tf
 class CustomSchedule(tf.keras.optimizers.schedules.LearningRateSchedule):
     """Custom learning rate schedule for transformer."""
 
-    def __init__(self, d_model, warmup_steps=4000):
+    def __init__(self, d_model, warmup_steps=4000, **kwargs):
         super(CustomSchedule, self).__init__()
 
         self.d_model = d_model

@@ -256,7 +256,7 @@ def positional_encoding(position, d_model):
 
 class Encoder(tf.keras.layers.Layer):
     def __init__(self, num_layers, d_model, num_heads, dff, vocab_size_source,
-                 maximum_position_encoding, dropout_rate=0.1):
+                 maximum_position_encoding, dropout_rate=0.1, **kwargs):
         super(Encoder, self).__init__()
 
         self.num_layers = num_layers
@@ -307,7 +307,7 @@ class Encoder(tf.keras.layers.Layer):
 
 class Decoder(tf.keras.layers.Layer):
     def __init__(self, num_layers, d_model, num_heads, dff, vocab_size_target,
-                 maximum_position_encoding, dropout_rate=0.1):
+                 maximum_position_encoding, dropout_rate=0.1, **kwargs):
         super(Decoder, self).__init__()
 
         self.num_layers = num_layers
@@ -444,7 +444,7 @@ def inference(tokenizer, model, test_dataset):
             dec_output, attention_weights = decoder(
                 inputs=dec_inp, enc_output=enc_output, look_ahead_mask=combined_mask,
                 padding_mask=padding_mask, training=False)
-            final_output = final_layer(inpts=dec_output)
+            final_output = final_layer(inputs=dec_output)
             # final_output.shape == (batch_size, seq_len, vocab_size)
 
             # select the last word from the seq_len dimension
