@@ -10,7 +10,7 @@
       "d_model": 256,
       "num_heads": 8,
       "dff": 1024,
-      "dropout_rate": 0.05
+      "dropout_rate": 0.1
     },
     "source": "online"
   },

@@ -24,7 +24,7 @@ def generate_predictions(input_file_path: str, pred_file_path: str):
     from libs.models import transformer
 
     # best_config = 'configs/user/lm_lstm_fr_v1.json'
-    best_config_file = 'configs/user/transformer_mass_v1_translation_with_pretraining_for_eval.local.json'
+    best_config_file = 'configs/user/transformer_mass_v1_translation_with_pretraining_resume.json'
     print(f"Using best config file: {best_config_file}")
     best_config = helpers.load_dict(best_config_file)
     # ToDo make sure others don't use this, obsolete?
@@ -103,8 +103,12 @@ def main():
         compute_bleu(args.input_file_path, args.target_file_path, args.print_all_scores)
     else:
         _, pred_file_path = tempfile.mkstemp()
-        generate_predictions(args.input_file_path, pred_file_path)
-        compute_bleu(pred_file_path, args.target_file_path, args.print_all_scores)
+        # ToDo Switch back to original version
+        # generate_predictions(args.input_file_path, pred_file_path)
+        generate_predictions(args.input_file_path, 'local_pred.txt')
+        # compute_bleu(pred_file_path, args.target_file_path, args.print_all_scores)
+        compute_bleu('local_pred.txt', args.target_file_path, args.print_all_scores)
+        print(pred_file_path)
 
 
 if __name__ == '__main__':

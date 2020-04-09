@@ -70,7 +70,7 @@ class MultiHeadAttention(tf.keras.layers.Layer):
         config = super().get_config().copy()
         config.update({
             'd_model': self.d_model,
-            'num_layers': self.num_layers,
+            'num_heads': self.num_heads,
         })
         return config
 
@@ -452,7 +452,7 @@ def inference(tokenizer, model, test_dataset):
         enc_inp, dec_inp, padding_mask, combined_mask = test_inp
         enc_output = encoder(enc_inp, False, padding_mask)
         # ToDo allow different max length?
-        for slen in range(100):
+        for slen in range(60):
             dec_output, attention_weights = decoder(
                 dec_inp, enc_output, False, combined_mask,
                 padding_mask)
