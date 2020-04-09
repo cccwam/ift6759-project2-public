@@ -1,0 +1,56 @@
+{
+  "model": {
+    "definition": {
+      "module": "libs.models.transformerv2",
+      "name": "builder"
+    },
+    "hyper_params": {
+      "name": "TRANSFORMER_MASS_HELGI_V1_RESULT",
+      "num_layers": 6,
+      "d_model": 1024,
+      "num_heads": 8,
+      "dff": 1024,
+      "dropout_rate": 0.2
+    },
+    "source": "/project/cq-training-1/project2/teams/team03/models/libs.models.transformerv2.MASS_V2_TRANSLATION.hdf5"
+  },
+  "data_loader": {
+    "definition": {
+      "module": "libs.data_loaders.mass_subword",
+      "name": "MassSubwordDataLoader"
+    },
+    "hyper_params": {
+      "preprocessed_data": {
+        "folder": "/project/cq-training-1/project2/teams/team03/data/split_01"
+      },
+      "vocabulary_name": "/project/cq-training-1/project2/teams/team03/data/subword_tutorial_vocab/mass_subword_vocabulary",
+      "mode": "translation",
+      "samples_for_test": 0,
+      "samples_for_valid": 0,
+      "samples_for_train": 0,
+      "vocab_size_source": 8273,
+      "vocab_size_target": 8273
+    }
+  },
+  "trainer": {
+    "hyper_params": {
+      "loss": "mlm_loss",
+      "lr_rate": [
+        1e-5
+      ],
+      "epochs": [
+        4
+      ],
+      "optimizer": "adam",
+      "metrics": [
+        "sparse_accuracy"
+      ],
+      "batch_size": [
+        64
+      ],
+      "patience": [
+        10
+      ]
+    }
+  }
+}
