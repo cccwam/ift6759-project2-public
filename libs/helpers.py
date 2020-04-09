@@ -70,30 +70,6 @@ def get_online_model(config):
     )
 
 
-def get_model(
-        config
-):
-    """
-    Get model
-
-    Returns the model as defined in the config. The config should follow configs/user/schema.json
-
-    Args:
-        config: The configuration dictionary. It must follow configs/user/schema.json
-
-    Returns:
-        A ``tf.keras.Model`` object that can be used to generate French sentences given English sentence tensors.
-    """
-    mirrored_strategy = get_mirrored_strategy()
-
-    if mirrored_strategy is not None and mirrored_strategy.num_replicas_in_sync > 1:
-        with mirrored_strategy.scope():
-            model = prepare_model(config)
-    else:
-        model = prepare_model(config)
-
-    return model
-
 
 def prepare_model(
         config

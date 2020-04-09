@@ -37,7 +37,7 @@ def generate_predictions(input_file_path: str, pred_file_path: str):
     if best_config["model"]["definition"]["module"] == 'libs.models.transformerv2':
         model = transformer.load_transformer(best_config)
     else:
-        model: tf.keras.Model = helpers.get_model(best_config)
+        model: tf.keras.Model = helpers.prepare_model(best_config)
 
     # ToDo increase batch size for inference?
     batch_size = 128
