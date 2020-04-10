@@ -17,9 +17,9 @@ class BleuIntervalEvaluation(tf.keras.callbacks.Callback):
         # noinspection PyProtectedMember
         self._nsamples = min(nsamples, self._dataloader._samples_for_valid)
 
-        if hasattr(self._dataloader.valid_dataset_for_callbacks, "_batch_size"):
+        if hasattr(self._dataloader.valid_dataset, "_batch_size"):
             # noinspection PyProtectedMember
-            self._batch_size = self._dataloader.valid_dataset_for_callbacks._batch_size
+            self._batch_size = self._dataloader.valid_dataset._batch_size
         else:
             self._batch_size = 1
 
@@ -27,7 +27,7 @@ class BleuIntervalEvaluation(tf.keras.callbacks.Callback):
         if epoch % self._interval == 0:
             score = []
             n_step = (self._nsamples // self._batch_size)
-            for x, y_true in self._dataloader.valid_dataset_for_callbacks.take(n_step):
+            for x, y_true in self._dataloader.valid_dataset.take(n_step):
                 y_pred = self.model.predict(x, verbose=0)
                 score += [self.bleu_graph_mode(y_true, y_pred)]
             score = np.mean(score)

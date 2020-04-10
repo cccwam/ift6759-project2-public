@@ -1,5 +1,4 @@
 from abc import abstractmethod, ABC
-from functools import partial
 from pathlib import Path
 from typing import Optional
 
@@ -9,7 +8,6 @@ logger = tf.get_logger()
 
 
 class AbstractDataloader:
-
 
     def __init__(self, config: dict, raw_english_test_set_file_path: str):
         """
@@ -29,6 +27,7 @@ class AbstractDataloader:
         self.test_dataset: Optional[tf.data.Dataset] = None
         self.valid_dataset: Optional[tf.data.Dataset] = None
         self.training_dataset: Optional[tf.data.Dataset] = None
+        self._validation_steps: Optional[int] = None
 
         self._raw_english_test_set_file_path: str = raw_english_test_set_file_path
 
@@ -38,33 +37,48 @@ class AbstractDataloader:
         assert self._output_shapes is not None, "Missing _output_shapes"
         assert self._padded_shapes is not None, "Missing _padded_shapes"
 
-        my_gen = self._get_generator()
+        ds_train = tf.data.Dataset.from_generator(self._get_train_generator(),
+                                                  output_types=self._output_types,
+                                                  output_shapes=self._output_shapes)
 
-        ds = tf.data.Dataset.from_generator(my_gen,
-                                            output_types=self._output_types,
-                                            output_shapes=self._output_shapes)
+        ds_train = self._hook_dataset_post_precessing(ds=ds_train, is_training=True)
+        ds_train = ds_train.padded_batch(batch_size=batch_size,
+                                         padded_shapes=self._padded_shapes,
+                                         drop_remainder=True)
+        ds_train = ds_train.prefetch(tf.data.experimental.AUTOTUNE)
+        ds_train = ds_train.skip(int(self._samples_for_test / batch_size))  # Skip samples for test
+        ds_train = ds_train.skip(int(self._samples_for_valid / batch_size))  # Skip samples for valid
+        self.training_dataset = ds_train.skip(int(self._samples_for_valid / batch_size))
 
-        ds = self._hook_dataset_post_precessing(ds=ds)
-        ds = ds.padded_batch(batch_size=batch_size,
-                             padded_shapes=self._padded_shapes,
-                             drop_remainder=True)
-        ds = ds.prefetch(tf.data.experimental.AUTOTUNE)
+        ds_valid_test = tf.data.Dataset.from_generator(self._get_valid_generator(),
+                                                       output_types=self._output_types,
+                                                       output_shapes=self._output_shapes)
+        ds_valid_test = self._hook_dataset_post_precessing(ds=ds_valid_test, is_training=False)
+        ds_valid_test = ds_valid_test.padded_batch(batch_size=batch_size,
+                                                   padded_shapes=self._padded_shapes,
+                                                   drop_remainder=True)
+        ds_valid_test = ds_valid_test.prefetch(tf.data.experimental.AUTOTUNE)
 
-        ds_without_modification = tf.data.Dataset.from_generator(my_gen,
-                                                                 output_types=self._output_types,
-                                                                 output_shapes=self._output_shapes)
-        ds_without_modification = ds_without_modification.padded_batch(batch_size=batch_size,
-                                                                       padded_shapes=self._padded_shapes,
-                                                                       drop_remainder=True)
-        ds_without_modification = ds_without_modification.prefetch(tf.data.experimental.AUTOTUNE)
+        self.test_dataset = ds_valid_test.take(int(self._samples_for_test / batch_size))
+        ds_valid_test = ds_valid_test.skip(int(self._samples_for_test / batch_size))
+        self.valid_dataset = ds_valid_test.take(int(self._samples_for_valid / batch_size))
 
-        self._build_all_dataset(ds, ds_without_modification, batch_size)
+        if self._samples_for_train > 0:
+            # Allow training with less samples and keeping the same validation size
+            # Useful to train models more quickly
+            self.training_dataset = self.training_dataset.take(int(self._samples_for_train / batch_size))
 
-    def _hook_dataset_post_precessing(self, ds):
+        self._validation_steps = int(self._samples_for_valid / batch_size)
+
+    def _hook_dataset_post_precessing(self, ds: tf.data.Dataset, is_training: bool):
         return ds
 
     @abstractmethod
-    def _get_generator(self):
+    def _get_train_generator(self):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def _get_valid_generator(self):
         raise NotImplementedError()
 
     @abstractmethod
@@ -95,29 +109,6 @@ class AbstractDataloader:
                              padded_shapes=self._padded_test_shapes)
         self.test_dataset = ds
 
-    def _build_all_dataset(self, ds: tf.data.Dataset, ds_without_modification: tf.data.Dataset, batch_size: int):
-        ds_without_modification = ds_without_modification.skip(int(self._samples_for_test / batch_size))
-        self.valid_dataset_for_callbacks = ds_without_modification.take(int(self._samples_for_valid / batch_size))
-
-        self.test_dataset = ds.take(int(self._samples_for_test / batch_size))
-        ds = ds.skip(int(self._samples_for_test / batch_size))
-        self.valid_dataset = ds.take(int(self._samples_for_valid / batch_size))
-        self.training_dataset = ds.skip(int(self._samples_for_valid / batch_size))
-
-        self._validation_steps = int(self._samples_for_valid / batch_size)
-
-        if self._samples_for_train > 0:
-            # Allow training with less samples and keeping the same validation size
-            # Useful to train models more quickly
-            self.training_dataset = self.training_dataset.take(int(self._samples_for_train / batch_size))
-
-    # TF bug https://github.com/tensorflow/tensorflow/issues/28782
-    # DO NOT USE CACHE BECAUSE OF RANDOM MASKING FOR MLM taks
-    #
-    #        self.test_dataset = self.test_dataset.cache()
-    #        self.training_dataset = self.training_dataset.cache()
-    #        self.valid_dataset = self.valid_dataset.cache()
-
     @property
     def validation_steps(self):
         assert self._validation_steps is not None, "You must call build before"
@@ -137,33 +128,6 @@ class AbstractMonolingualDataloader(AbstractDataloader, ABC):
 
         self._output_types = None
 
-    @abstractmethod
-    def _my_generator(self, source_numericalized):
-        raise NotImplementedError
-
-    def _get_generator(self):
-        return partial(self._my_generator,
-                       source_numericalized=self._source_numericalized)
-
-
-class AbstractMonolingualCausalLMDataloader:
-
-    # noinspection PyUnusedLocal
-    def __init__(self, config: dict):
-        self._output_types = (tf.int32, tf.int32)
-        self._output_shapes = (tf.TensorShape([None]),
-                               tf.TensorShape([None]))
-        self._padded_shapes = (self._seq_length, self._seq_length)
-
-
-class AbstractMonolingualTransformersLMDataloader:
-
-    # noinspection PyUnusedLocal
-    def __init__(self, config: dict):
-        self._output_types = (tf.int32,)
-        self._output_shapes = (tf.TensorShape([None]),)
-        self._padded_shapes = (self._seq_length,)
-
 
 class AbstractBilingualDataloader(AbstractDataloader, ABC):
 
@@ -182,42 +146,5 @@ class AbstractBilingualDataloader(AbstractDataloader, ABC):
         self._seq_length_target: int = self._dl_hparams["seq_length_target"]
         assert self._seq_length_target is not None, "seq_length_target missing"
 
-        self._en_numericalized = None
-        self._fr_numericalized = None
-
-    @abstractmethod
-    def _my_generator(self, source_numericalized, target_numericalized):
-        raise NotImplementedError
-
-    def _get_generator(self):
-        return partial(self._my_generator,
-                       self._en_numericalized,
-                       self._fr_numericalized)
-
-    @abstractmethod
-    def _my_test_generator(self, test_input_file: Path):
-        raise NotImplementedError
-
-    def _get_test_generator(self):
-        return partial(self._my_test_generator,
-                       Path(self._raw_english_test_set_file_path))
-
-
-class AbstractBilingualSeq2SeqDataloader:
-
-    # noinspection PyUnusedLocal
-    def __init__(self, config: dict):
-        self._output_types = ((tf.float32, tf.float32), tf.float32)
-        self._output_shapes = ((tf.TensorShape([None]), tf.TensorShape([None])),
-                               tf.TensorShape([None]))
-        self._padded_shapes = ((self._seq_length_source, self._seq_length_target),
-                               self._seq_length_target)
-
-
-class AbstractBilingualTransformersDataloader:
-
-    # noinspection PyUnusedLocal
-    def __init__(self, config: dict):
-        self._output_types = (tf.float32, tf.float32)
-        self._output_shapes = (tf.TensorShape([None]), tf.TensorShape([None]))
-        self._padded_shapes = (self._seq_length_source, self._seq_length_target)
+    def get_seq_length(self):
+        return self._seq_length_target

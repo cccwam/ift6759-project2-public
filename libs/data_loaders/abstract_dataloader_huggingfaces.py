@@ -104,7 +104,8 @@ class AbstractHuggingFacesTokenizer(AbstractDataloader, ABC):
                         dropout: float,
                         pretrained_model_dir_path: str,
                         corpora_filenames: List[str],
-                        corpus_filename: str):
+                        corpus_filename: str,
+                        is_training: bool):
         tokenizer_filename_prefix = self._get_tokenizer_filename_prefix(language=language,
                                                                         tokenizer_algorithm=tokenizer_algorithm,
                                                                         vocab_size=vocab_size,
@@ -118,7 +119,7 @@ class AbstractHuggingFacesTokenizer(AbstractDataloader, ABC):
             tokenizer: BaseTokenizer = import_from(
                 "tokenizers",
                 tokenizer_algorithm
-            )(dropout=dropout,
+            )(dropout=dropout if is_training else None,
               vocab_file=str(Path(pretrained_model_dir_path) / (tokenizer_filename_prefix + "-vocab.json")),
               merges_file=str(Path(pretrained_model_dir_path) / (tokenizer_filename_prefix + "-merges.txt")))
 
@@ -131,7 +132,7 @@ class AbstractHuggingFacesTokenizer(AbstractDataloader, ABC):
             tokenizer: BaseTokenizer = import_from(
                 "tokenizers",
                 tokenizer_algorithm
-            )(dropout=dropout)
+            )(dropout=dropout if is_training else None)
 
             tokenizer.add_special_tokens(self._special_tokens)
 
@@ -148,9 +149,14 @@ class AbstractHuggingFacesTokenizer(AbstractDataloader, ABC):
             corpus = pickle.load(handle)
             corpus = [self._add_bos_eos(s) for s in corpus]
 
+        logger.debug(f"{str(self.__class__.__name__)} Samples: {len(corpus)}")
+
+        if is_training:
+            # Tokenizers will be online for training to keep stochastic property
+            return tokenizer, corpus
+
         corpus_numericalized = tokenizer.encode_batch(corpus)
 
-        logger.debug(f"{str(self.__class__.__name__)} Samples: {len(corpus_numericalized)}")
         return tokenizer, corpus_numericalized
 
     @staticmethod

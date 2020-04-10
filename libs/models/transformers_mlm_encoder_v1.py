@@ -40,9 +40,9 @@ def builder(
     enc_padding_mask = tf.keras.layers.Input(
         shape=(1, 1, None), dtype=tf.float32, name="enc_padding_mask")
 
-    enc_output = encoder(enc_inp, True, enc_padding_mask)  # (batch_size, seq_length, hidden_size)
+    enc_output = encoder(inputs=enc_inp, mask=enc_padding_mask)  # (batch_size, seq_length, hidden_size)
 
-    outputs = final_layer(enc_output)  # (batch_size, seq_length, vocab_size)
+    outputs = final_layer(inputs=enc_output)  # (batch_size, seq_length, vocab_size)
 
     model = tf.keras.Model([enc_inp, enc_padding_mask],
                            outputs, name=name)

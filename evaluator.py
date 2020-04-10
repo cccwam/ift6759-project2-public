@@ -64,6 +64,7 @@ def generate_predictions(input_file_path: str, pred_file_path: str):
         all_predictions = transformer.inference(
             data_loader.tokenizer, model, test_dataset)
     else:
+        # TODO to test
         if isinstance(data_loader, BilingualTranslationSubword):
             encoder: Encoder = model.get_layer("encoder")
             decoder: Decoder = model.get_layer("decoder")
@@ -74,10 +75,10 @@ def generate_predictions(input_file_path: str, pred_file_path: str):
                 mini_batch_size = inputs.shape[0]
                 enc_output: tf.Tensor = encoder.__call__(inputs=inputs, mask=mask, training=False)
 
-                dec_inp = np.zeros((mini_batch_size, data_loader._seq_length_target + 1), dtype=int32)
+                dec_inp = np.zeros((mini_batch_size, data_loader.get_seq_length() + 1), dtype=int32)
                 dec_inp[:, 0] = 2  # BOS token
 
-                for timestep in tqdm.tqdm(range(data_loader._seq_length_target)):
+                for timestep in tqdm.tqdm(range(data_loader.get_seq_length())):
                     # TODO refactoring: adapt and use data loader function instead of this
                     _, combined_mask, dec_padding_mask = transformer.create_masks(
                         inp=inputs,
