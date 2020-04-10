@@ -119,7 +119,7 @@ class AbstractHuggingFacesTokenizer(AbstractDataloader, ABC):
             tokenizer: BaseTokenizer = import_from(
                 "tokenizers",
                 tokenizer_algorithm
-            )(dropout=dropout if is_training else None,
+            )(dropout=dropout if is_training and dropout != 0 else None,
               vocab_file=str(Path(pretrained_model_dir_path) / (tokenizer_filename_prefix + "-vocab.json")),
               merges_file=str(Path(pretrained_model_dir_path) / (tokenizer_filename_prefix + "-merges.txt")))
 
@@ -132,7 +132,7 @@ class AbstractHuggingFacesTokenizer(AbstractDataloader, ABC):
             tokenizer: BaseTokenizer = import_from(
                 "tokenizers",
                 tokenizer_algorithm
-            )(dropout=dropout if is_training else None)
+            )(dropout=dropout if is_training and dropout != 0 else None)
 
             tokenizer.add_special_tokens(self._special_tokens)
 
@@ -155,9 +155,8 @@ class AbstractHuggingFacesTokenizer(AbstractDataloader, ABC):
             # Tokenizers will be online for training to keep stochastic property
             return tokenizer, corpus
 
-        corpus_numericalized = tokenizer.encode_batch(corpus)
-
-        return tokenizer, corpus_numericalized
+        # For inference, the tokenizer will be deterministic so we can load everything
+        return tokenizer, tokenizer.encode_batch(corpus)
 
     @staticmethod
     def _get_tokenizer_filename_prefix(language: str,
