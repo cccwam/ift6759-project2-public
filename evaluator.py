@@ -24,7 +24,7 @@ def generate_predictions(input_file_path: str, pred_file_path: str):
     from libs.models import transformer
 
     # best_config = 'configs/user/lm_lstm_fr_v1.json'
-    best_config_file = 'configs/user/transformer_mass_v2_translation_with_pretraining_resume.json'
+    best_config_file = 'configs/user/transformer_mass_v1_translation_with_pretraining_resume.json'
     print(f"Using best config file: {best_config_file}")
     best_config = helpers.load_dict(best_config_file)
     # ToDo make sure others don't use this, obsolete? still used for transformers_mt_encoder_decoder_v1.py

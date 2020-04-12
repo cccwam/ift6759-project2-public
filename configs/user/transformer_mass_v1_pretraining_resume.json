@@ -12,7 +12,7 @@
       "dff": 512,
       "dropout_rate": 0.2
     },
-    "source": "/project/cq-training-1/project2/teams/team03/models/libs.models.transformerv2.MASS_V1_TRANSLATION_ROTATION.hdf5"
+    "source": "/project/cq-training-1/project2/teams/team03/models/libs.models.transformerv2.MASS_V1_TRANSLATION_ROTATION_TAKE2.hdf5"
   },
   "data_loader": {
     "definition": {
