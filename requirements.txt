@@ -9,6 +9,7 @@ fire
 
 tensorflow_gpu==2.0.0 # Keep fixed
 tensorflow-probability==0.8.0 # For TF2.0.0
+tensorflow-datasets
 pandas
 jsonschema
 tqdm

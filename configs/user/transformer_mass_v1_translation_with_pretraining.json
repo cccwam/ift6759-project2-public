@@ -10,7 +10,7 @@
       "d_model": 128,
       "num_heads": 4,
       "dff": 512,
-      "dropout_rate": 0.95
+      "dropout_rate": 0.2
     },
     "source": "/project/cq-training-1/project2/teams/team03/models/libs.models.transformerv2.MASS_V1_PRETRAINING.hdf5"
   },

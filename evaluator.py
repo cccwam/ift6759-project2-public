@@ -24,11 +24,9 @@ def generate_predictions(input_file_path: str, pred_file_path: str):
     from libs.models import transformer
 
     # best_config = 'configs/user/lm_lstm_fr_v1.json'
-    best_config_file = 'configs/user/transformer_mass_v1_translation_with_pretraining_resume.json'
+    best_config_file = '/project/cq-training-1/project2/teams/team03/models/transformer_mass_v1_translation_with_pretraining_resume.json'
     print(f"Using best config file: {best_config_file}")
     best_config = helpers.load_dict(best_config_file)
-    # ToDo make sure others don't use this, obsolete? still used for transformers_mt_encoder_decoder_v1.py
-    # del best_config["model"]["hyper_params"]["pretrained_layers"]
     helpers.validate_user_config(best_config)
 
     # TODO: Edit our AbstractDataloader to support a raw_english_test_set_file_path. Currently it only supports
@@ -45,7 +43,6 @@ def generate_predictions(input_file_path: str, pred_file_path: str):
     test_dataset = data_loader.test_dataset
 
     all_predictions = []
-    # ToDo better logic for using alternate data loader
     if best_config["data_loader"]["definition"]["name"] == 'MassSubwordDataLoader':
         all_predictions = transformer.inference(
             data_loader.tokenizer, model, test_dataset)
@@ -103,12 +100,8 @@ def main():
         compute_bleu(args.input_file_path, args.target_file_path, args.print_all_scores)
     else:
         _, pred_file_path = tempfile.mkstemp()
-        # ToDo Switch back to original version
-        # generate_predictions(args.input_file_path, pred_file_path)
-        generate_predictions(args.input_file_path, 'local_pred.txt')
-        # compute_bleu(pred_file_path, args.target_file_path, args.print_all_scores)
-        compute_bleu('local_pred.txt', args.target_file_path, args.print_all_scores)
-        print(pred_file_path)
+        generate_predictions(args.input_file_path, pred_file_path)
+        compute_bleu(pred_file_path, args.target_file_path, args.print_all_scores)
 
 
 if __name__ == '__main__':
