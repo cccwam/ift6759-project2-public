@@ -10,6 +10,7 @@ from typing import List
 
 import numpy as np
 import tensorflow as tf
+import random
 
 from libs import losses
 from libs.optimizers import CustomSchedule
@@ -413,7 +414,7 @@ def load_transformer(config):
                         'mlm_loss': losses.mlm_loss})
 
 
-def inference(tokenizer, model, test_dataset):
+def inferenceOriginal(tokenizer, model, test_dataset):
     """Inference step for transformer.
 
     :param tokenizer: tokenizer used for sentence reconstruction
@@ -450,10 +451,12 @@ def inference(tokenizer, model, test_dataset):
             # select the last word from the seq_len dimension
             predictions = final_output[:, -1:, :]
             # (batch_size, 1, vocab_size)
-
-            predicted_id = tf.cast(tf.argmax(predictions, axis=-1),
-                                   tf.int32)  # (batch_size, 1)
-
+            
+           
+            predicted_id = tf.cast(tf.argmax(predictions, axis=-1), tf.int32)  # (batch_size, 1)
+            
+            #print(tf.shape(predicted_id))
+            
             # ToDo reimplement this stop criteria in batch?
             # return the result if the predicted_id is equal to the end token
             # if predicted_id == end_token:
@@ -463,6 +466,8 @@ def inference(tokenizer, model, test_dataset):
             # concatentate the predicted_id to the output which is given to the
             # decoder as its input.
             dec_inp = tf.concat([dec_inp, predicted_id], axis=-1)
+            
+
 
         for timestep in range(dec_inp.shape[0]):
             sent_ids = []
@@ -472,7 +477,99 @@ def inference(tokenizer, model, test_dataset):
                 if j == end_token:
                     break
                 sent_ids.append(j)
-            predicted_sentence = tokenizer.decode(sent_ids)
+
+                predicted_sentence = tokenizer.decode(sent_ids)
             all_predictions.append(predicted_sentence)
 
     return all_predictions
+
+
+def inference(tokenizer, model, test_dataset):
+    """Inference step for transformer.
+
+    :param tokenizer: tokenizer used for sentence reconstruction
+    :param model: tf.keras.Model, the model to use
+    :param test_dataset: tokenized test sentences to translate
+    :return: list of sentences, the translated sentences
+
+    """
+
+    begin_token = tokenizer.vocab_size
+    end_token = tokenizer.vocab_size + 1
+
+    # ToDo actually fetch by name
+    encoder = model.layers[3]
+    # encoder = [layer for layer in model.layers if layer.name=='Encoder'][0]
+    decoder = model.layers[5]
+    # decoder = [layer for layer in model.layers if layer.name == 'Decoder'][0]
+    final_layer = model.layers[6]
+    # final_layer = [layer for layer in model.layers if layer.name == '???'][0]
+    all_predictions = []
+
+    for i, test_inp in enumerate(test_dataset):
+        # ToDo better verbosity
+        print(i)
+        
+        # Get sentence using greedy search
+        dec_inp_greedy, score_greedy = beamSearch(encoder, decoder, final_layer, test_inp, 1)
+        
+        # Currently greedy is best solution
+        best_score = score_greedy
+        dec_inp = dec_inp_greedy
+       
+        # Randomly search for a better sentence by creating 10 sentences and keeping the one having the highest score
+        for i in range(10):
+            
+            # Get new sequence of ids
+            dec_inp_random, score_random = beamSearch(encoder, decoder, final_layer, test_inp, 3)
+            
+            # Check if better than greedy
+            if score_random > best_score:
+                dec_inp = dec_inp_random
+                best_score = score_random
+                print("Taking a random!")
+        
+        # Convert ids to words
+        for timestep in range(dec_inp.shape[0]):
+            sent_ids = []
+            for j in dec_inp[timestep]:
+                if j == begin_token:
+                    continue
+                if j == end_token:
+                    break
+                sent_ids.append(j)
+
+                predicted_sentence = tokenizer.decode(sent_ids)
+            all_predictions.append(predicted_sentence)
+
+    return all_predictions
+
+def beamSearch(encoder, decoder, final_layer, test_inp, k):
+    
+    score = 0
+    enc_inp, dec_inp, padding_mask, combined_mask = test_inp
+    enc_output = encoder(inputs=enc_inp, mask=padding_mask, training=False)
+    
+    for slen in range(100):
+        dec_output, attention_weights = decoder(inputs=dec_inp, enc_output=enc_output, look_ahead_mask=combined_mask, padding_mask=padding_mask, training=False)
+
+        final_output = final_layer(inputs=dec_output)
+
+        # select the last word from the seq_len dimension
+        predictions = final_output[:, -1:, :]
+
+        # Get on the k best id between 1 (id with highest probability) and k
+        randomIndex = random.randint(1, k)
+
+        # Sort and select one of the k best id
+        bestId = tf.argsort(predictions)
+        predicted_id = bestId[:, :, -randomIndex]
+        
+        # Add the scores
+        for myId in predicted_id:
+            score += myId
+        
+        dec_inp = tf.concat([dec_inp, predicted_id], axis=-1) 
+    
+    
+    return dec_inp, score
