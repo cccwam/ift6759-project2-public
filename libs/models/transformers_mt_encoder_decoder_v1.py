@@ -25,6 +25,7 @@ def builder(
     seq_length_target = dl_hparams["seq_length_target"]
 
     # For the config see https://github.com/google-research/bert
+    # noinspection DuplicatedCode
     name = model_hparams["name"]
     num_hidden_layers = model_hparams["num_hidden_layers"]
     num_attention_heads = model_hparams["num_attention_heads"]

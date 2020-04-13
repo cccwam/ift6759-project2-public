@@ -1,29 +1,35 @@
 {
   "model": {
     "definition": {
-      "module": "libs.models.transformers_mlm_encoder_v1",
+      "module": "libs.models.transformers_mt_encoder_decoder_v1",
       "name": "builder"
     },
     "hyper_params": {
-      "name": "Transformers-Small",
-      "num_hidden_layers": 4,
-      "num_attention_heads": 8,
-      "hidden_size": 512,
-      "intermediate_size": 3072,
-      "dropout_rate": 0.1
+      "name": "Transformers-Tiny",
+      "num_hidden_layers": 3,
+      "num_attention_heads": 4,
+      "hidden_size": 128,
+      "intermediate_size": 512,
+      "dropout_rate": 0.2
     },
     "source": "online"
   },
   "data_loader": {
     "definition": {
-      "module": "libs.data_loaders.dataloader_monolingual_subword_level",
-      "name": "MonolingualMaskLMDataloaderSubword"
+      "module": "libs.data_loaders.dataloader_bilingual_huggingface",
+      "name": "BilingualTranslationHFSubword"
     },
     "hyper_params": {
       "preprocessed_data": {
         "folder": "/project/cq-training-1/project2/teams/team03/data/word_level_24032020",
-        "monolingual_corpus_filename": "unaligned_en_tokenized.pickle",
-        "language": "BOTH",
+        "bilingual_corpus_filenames": [
+          "train_lang1_en_tokenized.pickle",
+          "train_lang2_fr_tokenized.pickle"
+        ],
+        "languages": [
+          "BOTH",
+          "BOTH"
+        ],
         "corpora_filenames": [
           [
             "unaligned_en_tokenized.pickle",
@@ -42,32 +48,35 @@
       "pretrained_model_dir_path": "/project/cq-training-1/project2/teams/team03/models/pretokenizers",
       "tokenizer_algorithm": "ByteLevelBPETokenizer",
       "tmp_path": "/tmp",
-      "dropout": 0.1,
-      "vocab_size": 8000,
-      "seq_length": 512,
+      "dropout": 0,
+      "vocab_size_source": 8000,
+      "seq_length_source": 512,
+      "vocab_size_target": 8000,
+      "seq_length_target": 512,
       "samples_for_test": 500,
       "samples_for_valid": 500,
-      "samples_for_train": -1
+      "samples_for_train": 10000
     }
   },
   "trainer": {
     "hyper_params": {
       "loss": "mlm_loss",
       "metrics": [
-        "perplexity_mlm"
+        "sparse_accuracy",
+        "bleu"
       ],
       "optimizer": "adam-transformer",
       "lr_rate": [
         -1
       ],
       "epochs": [
-        5
+        50
       ],
       "batch_size": [
-        16
+        32
       ],
       "patience": [
-        2
+        -1
       ]
     }
   }

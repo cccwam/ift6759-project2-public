@@ -5,26 +5,19 @@
       "name": "builder"
     },
     "hyper_params": {
-      "name": "Transformers-Small",
-      "num_hidden_layers": 4,
-      "num_attention_heads": 8,
-      "hidden_size": 512,
-      "intermediate_size": 3072,
-      "dropout_rate": 0.1,
-      "pretrained_layers": [
-        {
-          "model_path": "/project/cq-training-1/project2/teams/team03/tensorboard/guest120/TFM_SMALL_BBPE_mlm_en.json/transformers_mlm_encoder_v1.builder_dataloader_monolingual_subword_level.MonolingualMaskLMDataloaderSubword-2020-04-07T21:07:52.816692/0/transformers_mlm_encoder_v1.builder_dataloader_monolingual_subword_level.MonolingualMaskLMDataloaderSubword.01-1.61.tf",
-          "layer_name": "encoder",
-          "target_layer_name": "encoder"
-        }
-      ]
+      "name": "Transformers-Tiny",
+      "num_hidden_layers": 3,
+      "num_attention_heads": 4,
+      "hidden_size": 128,
+      "intermediate_size": 512,
+      "dropout_rate": 0.2
     },
-    "source": "online"
+    "source": "/project/cq-training-1/project2/teams/team03/tensorboard/wam/compare_tokenizer_12042020/transformers_mt_encoder_decoder_v1.builder_dataloader_bilingual_tensorflow.BilingualTranslationTFSubword-2020-04-13T06:52:51.633742/0/transformers_mt_encoder_decoder_v1.builder_dataloader_bilingual_tensorflow.BilingualTranslationTFSubword.49-4.06.tf"
   },
   "data_loader": {
     "definition": {
-      "module": "libs.data_loaders.dataloader_bilingual_subword_level",
-      "name": "BilingualTranslationSubword"
+      "module": "libs.data_loaders.dataloader_bilingual_tensorflow",
+      "name": "BilingualTranslationTFSubword"
     },
     "hyper_params": {
       "preprocessed_data": {
@@ -53,16 +46,15 @@
         ]
       },
       "pretrained_model_dir_path": "/project/cq-training-1/project2/teams/team03/models/pretokenizers",
-      "tokenizer_algorithm": "ByteLevelBPETokenizer",
+      "tokenizer_algorithm": "SubWordTextEncoder",
       "tmp_path": "/tmp",
-      "dropout": 0.1,
       "vocab_size_source": 8000,
       "seq_length_source": 512,
       "vocab_size_target": 8000,
       "seq_length_target": 512,
       "samples_for_test": 500,
       "samples_for_valid": 500,
-      "samples_for_train": -1
+      "samples_for_train": 10000
     }
   },
   "trainer": {
@@ -72,18 +64,18 @@
         "sparse_accuracy",
         "bleu"
       ],
-      "optimizer": "adam",
+      "optimizer": "adam-transformer",
       "lr_rate": [
-        1e-4
+        -1
       ],
       "epochs": [
-        30
+        50
       ],
       "batch_size": [
-        16
+        32
       ],
       "patience": [
-        3
+        -1
       ]
     }
   }

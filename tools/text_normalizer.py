@@ -13,19 +13,22 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
-def my_tokenizer(data_path,
+def my_tokenizer(data_path,  # TODO get BLEU score with new dataset
                  output_path,
                  should_shuffle=True,
-                 shuffle_seed=42):  # TODO set seed
+                 shuffle_seed=42):
     """
         Inspired by the notebook EDA-FM-13032020.ipynb
         This function will normalize monolingual and bilingual corpora.
 
         To execute, run the following cli:   python tools/text_normalizer.py ~/data/ ~/output_data
 
+        Ex:  python tools/text_normalizer.py /project/cq-training-1/project2/data/ /project/cq-training-1/project2/teams/team03/data/preprocessed_13042020
+
     Args:
         data_path: Data path for inputs file (filename as provided by TAs)
         output_path: Output path for the pickle files (containing list of list of tokens)
+                    and text files (same but text format)
         should_shuffle: Boolean to indicate if should shuffle
         shuffle_seed: Seed
 
@@ -78,7 +81,7 @@ def my_tokenizer(data_path,
         for i, row in tqdm.tqdm(input_dataframe.text.iteritems(), total=input_dataframe.shape[0]):
             # Remove NER, dependency parser and POS to speed up
             doc = tokenizer(row, disable=["parser", "entity", "ner"])
-            if split_sentence:
+            if not split_sentence:
                 sentence = []
             for sent in doc.sents:
                 tokens_list = [w for w in sent]
@@ -91,11 +94,11 @@ def my_tokenizer(data_path,
                     tokens_list = [w.lower() for w in tokens_list]
                 if len(tokens_list) == 0:
                     continue
-                if split_sentence:
+                if not split_sentence:
                     sentence += tokens_list
                 else:
                     yield tokens_list
-            if split_sentence:
+            if not split_sentence:
                 yield sentence
 
     # EN
@@ -103,6 +106,9 @@ def my_tokenizer(data_path,
 
     unaligned_en_tokenized = list(my_tokenize(unaligned_en, tokenizer=tokenizer_en,
                                               keep_case=False, keep_punctuation=False))
+
+    unaligned_en = [" ".join(list_tokens) for list_tokens in unaligned_en_tokenized]
+
     # Required also to extend the vocab
     train_lang1_en_tokenized = list(my_tokenize(train_lang1_en, tokenizer=tokenizer_en,
                                                 keep_case=False, keep_punctuation=False))
@@ -112,9 +118,12 @@ def my_tokenizer(data_path,
 
     unaligned_fr_tokenized = list(my_tokenize(unaligned_fr, tokenizer=tokenizer_fr,
                                               keep_case=True, keep_punctuation=True))
+
+    unaligned_fr = [" ".join(list_tokens) for list_tokens in unaligned_fr_tokenized]
+
     # Required also to extend the vocab
     train_lang2_fr_tokenized = list(my_tokenize(train_lang2_fr, tokenizer=tokenizer_fr,
-                                                keep_case=True, keep_punctuation=True, split_sentence=True))
+                                                keep_case=True, keep_punctuation=True))
 
     assert len(train_lang2_fr_tokenized) == len(
         train_lang1_en_tokenized), "The bilingual dataset must match in number of samples"
@@ -123,23 +132,37 @@ def my_tokenizer(data_path,
         logger.info("Shuffle corpora")
         if shuffle_seed:
             np.random.seed(shuffle_seed)
-        train_lang1_en_tokenized, train_lang2_fr_tokenized = shuffle(train_lang1_en_tokenized, train_lang2_fr_tokenized)
-        unaligned_en_tokenized = shuffle(unaligned_en_tokenized)
-        unaligned_fr_tokenized = shuffle(unaligned_fr_tokenized)
+        inputs = train_lang1_en_tokenized, train_lang1_en, train_lang2_fr_tokenized, train_lang2_fr
+        train_lang1_en_tokenized, train_lang1_en, train_lang2_fr_tokenized, train_lang2_fr = shuffle(inputs)
+
+        unaligned_en, unaligned_en_tokenized = shuffle(unaligned_en, unaligned_en_tokenized)
+        unaligned_fr, unaligned_fr_tokenized = shuffle(unaligned_fr, unaligned_fr_tokenized)
 
     logger.info("Save all corpora")
 
     with open(output_path / 'unaligned_en_tokenized.pickle', 'wb') as handle:
         pickle.dump(unaligned_en_tokenized, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
+    with open(output_path / 'unaligned_en_tokenized.txt', 'w') as handle:
+        handle.writelines(unaligned_en)
+
     with open(output_path / 'train_lang1_en_tokenized.pickle', 'wb') as handle:
         pickle.dump(train_lang1_en_tokenized, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+    with open(output_path / 'train_lang1_en.txt', 'w') as handle:
+        handle.writelines(train_lang1_en)
 
     with open(output_path / 'unaligned_fr_tokenized.pickle', 'wb') as handle:
         pickle.dump(unaligned_fr_tokenized, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
+    with open(output_path / 'unaligned_fr_tokenized.txt', 'w') as handle:
+        handle.writelines(unaligned_fr)
+
     with open(output_path / 'train_lang2_fr_tokenized.pickle', 'wb') as handle:
         pickle.dump(train_lang2_fr_tokenized, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+    with open(output_path / 'train_lang2_fr.txt', 'w') as handle:
+        handle.writelines(train_lang2_fr)
 
 
 if __name__ == '__main__':

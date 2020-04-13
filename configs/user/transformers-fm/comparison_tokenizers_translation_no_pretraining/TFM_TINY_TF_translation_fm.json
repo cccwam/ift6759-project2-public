@@ -8,7 +8,7 @@
       "name": "Transformers-Tiny",
       "num_hidden_layers": 3,
       "num_attention_heads": 4,
-      "hidden_size": 256,
+      "hidden_size": 128,
       "intermediate_size": 512,
       "dropout_rate": 0.2
     },
@@ -16,8 +16,8 @@
   },
   "data_loader": {
     "definition": {
-      "module": "libs.data_loaders.dataloader_bilingual_subword_level",
-      "name": "BilingualTranslationSubword"
+      "module": "libs.data_loaders.dataloader_bilingual_tensorflow",
+      "name": "BilingualTranslationTFSubword"
     },
     "hyper_params": {
       "preprocessed_data": {
@@ -46,16 +46,15 @@
         ]
       },
       "pretrained_model_dir_path": "/project/cq-training-1/project2/teams/team03/models/pretokenizers",
-      "tokenizer_algorithm": "CharBPETokenizer",
+      "tokenizer_algorithm": "SubWordTextEncoder",
       "tmp_path": "/tmp",
-      "dropout": 0,
       "vocab_size_source": 8000,
       "seq_length_source": 512,
       "vocab_size_target": 8000,
       "seq_length_target": 512,
       "samples_for_test": 500,
       "samples_for_valid": 500,
-      "samples_for_train": -1
+      "samples_for_train": 10000
     }
   },
   "trainer": {
@@ -73,10 +72,10 @@
         50
       ],
       "batch_size": [
-        64
+        32
       ],
       "patience": [
-        5
+        -1
       ]
     }
   }

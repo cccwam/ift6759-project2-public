@@ -21,6 +21,7 @@ def my_numericalizer(data_path):
     Returns:
 
     """
+    # noinspection DuplicatedCode
     data_path = Path(data_path)
 
     logger.info("Load all tokenized corpora")

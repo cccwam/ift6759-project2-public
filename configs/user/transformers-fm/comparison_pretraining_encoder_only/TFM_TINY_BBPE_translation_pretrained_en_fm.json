@@ -5,19 +5,26 @@
       "name": "builder"
     },
     "hyper_params": {
-      "name": "Transformers-Small",
-      "num_hidden_layers": 4,
-      "num_attention_heads": 8,
-      "hidden_size": 512,
-      "intermediate_size": 3072,
-      "dropout_rate": 0.5
+      "name": "Transformers-Tiny",
+      "num_hidden_layers": 3,
+      "num_attention_heads": 4,
+      "hidden_size": 128,
+      "intermediate_size": 512,
+      "dropout_rate": 0.2,
+      "pretrained_layers": [
+        {
+          "model_path": "/project/cq-training-1/project2/teams/team03/tensorboard/wam/comparison_pretraining_encoder_only/TFM_TINY_BBPE_mlm_en/transformers_mlm_encoder_v1.builder_dataloader_monolingual_huggingface.MonolingualMaskedLanguageModelHF-2020-04-13T19:02:30.720352/0/transformers_mlm_encoder_v1.builder_dataloader_monolingual_huggingface.MonolingualMaskedLanguageModelHF.01-4.14.tf",
+          "layer_name": "encoder",
+          "target_layer_name": "encoder"
+        }
+      ]
     },
     "source": "online"
   },
   "data_loader": {
     "definition": {
-      "module": "libs.data_loaders.dataloader_bilingual_subword_level",
-      "name": "BilingualTranslationSubword"
+      "module": "libs.data_loaders.dataloader_bilingual_huggingface",
+      "name": "BilingualTranslationHFSubword"
     },
     "hyper_params": {
       "preprocessed_data": {
@@ -48,14 +55,14 @@
       "pretrained_model_dir_path": "/project/cq-training-1/project2/teams/team03/models/pretokenizers",
       "tokenizer_algorithm": "ByteLevelBPETokenizer",
       "tmp_path": "/tmp",
-      "dropout": 0.1,
+      "dropout": 0,
       "vocab_size_source": 8000,
       "seq_length_source": 512,
       "vocab_size_target": 8000,
       "seq_length_target": 512,
       "samples_for_test": 500,
       "samples_for_valid": 500,
-      "samples_for_train": -1
+      "samples_for_train": 10000
     }
   },
   "trainer": {
@@ -73,10 +80,10 @@
         50
       ],
       "batch_size": [
-        16
+        32
       ],
       "patience": [
-        2
+        -1
       ]
     }
   }

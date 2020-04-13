@@ -95,7 +95,7 @@ def prepare_model(config):
         else:
             raise FileNotFoundError(f'Error: The file {default_model_path} does not exist.')
 
-    print(f"Loading model: {model_source}")
+    logger.info(f"Loading model: {model_source}")
     if config["model"]["definition"]["module"] == 'libs.models.transformerv2':
         model = transformer.load_transformer(config)
     else:  # TODO both are doing the same. To do some refactoring
@@ -132,7 +132,7 @@ def compile_model(model,
                   loss: str,
                   optimizer: str,
                   config: dict,
-                  metrics: List[str] = None):
+                  metrics: List[str] = None) -> (tf.keras.models.Model, List[tf.keras.callbacks.Callback]):
     """
         Helper function to compile a new model at each variation of the experiment
     :param learning_rate:

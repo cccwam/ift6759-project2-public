@@ -5,6 +5,7 @@ import tensorflow as tf
 logger = tf.get_logger()
 
 
+# TODO add logic to load an transformers encoder to decoder
 def load_pretrained_layers(config: dict, my_model: tf.keras.Model):
     if "pretrained_layers" in config["model"]["hyper_params"]:
         pretrained_layers = config["model"]["hyper_params"]["pretrained_layers"]

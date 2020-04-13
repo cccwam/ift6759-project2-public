@@ -1,11 +1,12 @@
 import argparse
+import logging
 import subprocess
 import tempfile
 
 import tqdm
 from numpy import int32
 
-from libs.data_loaders.dataloader_bilingual_subword_level import BilingualTranslationSubword
+from libs.data_loaders.dataloader_bilingual_tensorflow import BilingualTranslationTFSubword
 from libs.models.transformer import Encoder, Decoder
 
 
@@ -29,10 +30,13 @@ def generate_predictions(input_file_path: str, pred_file_path: str):
     from libs.data_loaders.abstract_dataloader import AbstractDataloader
     from libs.models import transformer
 
+    logger = tf.get_logger()
+    logger.setLevel(logging.DEBUG)
+
     # best_config = 'configs/user/lm_lstm_fr_v1.json'
-    best_config_file = 'configs/user/transformer_mass_v1_translation_with_pretraining_for_eval.local.json'  # TODO
-    # best_config_file = 'configs/user/transformers-fm/TFM_SMALL_BBPE_translation_eval.json'
-    print(f"Using best config file: {best_config_file}")
+    # best_config_file = 'configs/user/transformer_mass_v1_translation_with_pretraining_for_eval.local.json'  # TODO
+    best_config_file = 'configs/user/transformers-fm/TFM_TINY_TF_eval_fm.json'
+    logger.info(f"Using best config file: {best_config_file}")
     best_config = helpers.load_dict(best_config_file)
     # ToDo make sure others don't use this, obsolete? still used for transformers_mt_encoder_decoder_v1.py
     # del best_config["model"]["hyper_params"]["pretrained_layers"]
@@ -53,8 +57,7 @@ def generate_predictions(input_file_path: str, pred_file_path: str):
         else:
             model: tf.keras.Model = helpers.prepare_model(config=best_config)
 
-    # ToDo increase batch size for inference?
-    batch_size = 128
+    batch_size = 32  # 32 is max for 6GB GPU memory
     data_loader.build(batch_size=batch_size)
     test_dataset = data_loader.test_dataset
 
@@ -64,8 +67,8 @@ def generate_predictions(input_file_path: str, pred_file_path: str):
         all_predictions = transformer.inference(
             data_loader.tokenizer, model, test_dataset)
     else:
-        # TODO to test
-        if isinstance(data_loader, BilingualTranslationSubword):
+        # TODO to test again
+        if isinstance(data_loader, BilingualTranslationTFSubword):
             encoder: Encoder = model.get_layer("encoder")
             decoder: Decoder = model.get_layer("decoder")
             final_layer: tf.keras.layers.Dense = model.layers[-1]
@@ -76,11 +79,11 @@ def generate_predictions(input_file_path: str, pred_file_path: str):
                 enc_output: tf.Tensor = encoder.__call__(inputs=inputs, mask=mask, training=False)
 
                 dec_inp = np.zeros((mini_batch_size, data_loader.get_seq_length() + 1), dtype=int32)
-                dec_inp[:, 0] = 2  # BOS token
+                dec_inp[:, 0] = data_loader.bos  # BOS token
+                # TODO not necesarly with HF tokenizer
 
                 for timestep in tqdm.tqdm(range(data_loader.get_seq_length())):
-                    # TODO refactoring: adapt and use data loader function instead of this
-                    _, combined_mask, dec_padding_mask = transformer.create_masks(
+                    _, combined_mask, dec_padding_mask = data_loader.create_masks(
                         inp=inputs,
                         tar=dec_inp[:, :-1]
                     )
@@ -101,7 +104,7 @@ def generate_predictions(input_file_path: str, pred_file_path: str):
                     all_predictions += [data_loader.decode(prediction)]
 
         else:
-            raise NotImplementedError()
+            raise NotImplementedError(f"No method to generate for class {data_loader.__class__.__name__}")
 
     with open(pred_file_path, 'w+') as file_handler:
         for prediction in all_predictions:
