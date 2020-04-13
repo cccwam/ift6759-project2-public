@@ -564,9 +564,12 @@ def randomSearch(encoder, decoder, final_layer, test_inp, k):
         bestId = tf.argsort(predictions)
         predicted_id = bestId[:, :, -randomIndex]
         
+        # Also take their respective scores
+        predicted_score = (tf.sort(predictions))[:, :, -randomIndex]
+        
         # Add the scores
-        for myId in predicted_id:
-            score += myId
+        for myScore in predicted_score:
+            score += myScore
         
         dec_inp = tf.concat([dec_inp, predicted_id], axis=-1) 
     
