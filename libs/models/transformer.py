@@ -404,13 +404,20 @@ def load_transformer(config):
     :return: tf.keras.Model, the restored transformer model from file
 
     """
+    custom_objects = {
+        'Encoder': Encoder,
+        'Decoder': Decoder,
+        'mlm_loss': losses.mlm_loss
+    }
+
+    optimizer = config['trainer']['hyper_params']['optimizer']
+    if optimizer == 'adam-transformer':
+        custom_objects['CustomSchedule'] = CustomSchedule
 
     return tf.keras.models.load_model(
         config['model']['source'],
-        custom_objects={'Encoder': Encoder,
-                        'Decoder': Decoder,
-                        'CustomSchedule': CustomSchedule,
-                        'mlm_loss': losses.mlm_loss})
+        custom_objects=custom_objects
+    )
 
 
 def inference(tokenizer, model, test_dataset):
