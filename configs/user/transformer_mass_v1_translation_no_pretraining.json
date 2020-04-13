@@ -39,7 +39,7 @@
         -1
       ],
       "epochs": [
-        40
+        35
       ],
       "optimizer": "adam-transformer",
       "metrics": [
@@ -49,7 +49,7 @@
         64
       ],
       "patience": [
-        10
+        40
       ]
     }
   }

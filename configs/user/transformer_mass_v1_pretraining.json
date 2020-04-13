@@ -10,7 +10,7 @@
       "d_model": 128,
       "num_heads": 4,
       "dff": 512,
-      "dropout_rate": 0.05
+      "dropout_rate": 0.2
     },
     "source": "online"
   },
@@ -39,7 +39,7 @@
         -1
       ],
       "epochs": [
-        1
+        2
       ],
       "optimizer": "adam-transformer",
       "metrics": [

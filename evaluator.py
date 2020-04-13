@@ -33,13 +33,10 @@ def generate_predictions(input_file_path: str, pred_file_path: str):
     logger = tf.get_logger()
     logger.setLevel(logging.DEBUG)
 
-    # best_config = 'configs/user/lm_lstm_fr_v1.json'
-    # best_config_file = 'configs/user/transformer_mass_v1_translation_with_pretraining_for_eval.local.json'  # TODO
-    best_config_file = 'configs/user/transformers-fm/TFM_TINY_TF_eval_fm.json'
+    best_config_file = '/project/cq-training-1/project2/teams/team03/models/transformer_mass_v1_translation_with_pretraining_resume.json'
+    # best_config_file = 'configs/user/transformers-fm/TFM_TINY_TF_eval_fm.json'
     logger.info(f"Using best config file: {best_config_file}")
     best_config = helpers.load_dict(best_config_file)
-    # ToDo make sure others don't use this, obsolete? still used for transformers_mt_encoder_decoder_v1.py
-    # del best_config["model"]["hyper_params"]["pretrained_layers"]
     helpers.validate_user_config(best_config)
 
     # TODO: Edit our AbstractDataloader to support a raw_english_test_set_file_path. Currently it only supports
@@ -57,12 +54,12 @@ def generate_predictions(input_file_path: str, pred_file_path: str):
         else:
             model: tf.keras.Model = helpers.prepare_model(config=best_config)
 
-    batch_size = 32  # 32 is max for 6GB GPU memory
+#    batch_size = 32  # 32 is max for 6GB GPU memory
+    batch_size = 128  # TODO to check if ok with GPU
     data_loader.build(batch_size=batch_size)
     test_dataset = data_loader.test_dataset
 
     all_predictions = []
-    # ToDo better logic for using alternate data loader
     if best_config["data_loader"]["definition"]["name"] == 'MassSubwordDataLoader':
         all_predictions = transformer.inference(
             data_loader.tokenizer, model, test_dataset)
