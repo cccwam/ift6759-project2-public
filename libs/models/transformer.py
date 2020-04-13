@@ -511,7 +511,7 @@ def inference(tokenizer, model, test_dataset):
         print(i)
         
         # Get sentence using greedy search
-        dec_inp_greedy, score_greedy = randomSearchSearch(encoder, decoder, final_layer, test_inp, 1)
+        dec_inp_greedy, score_greedy = randomSearch(encoder, decoder, final_layer, test_inp, 1)
         
         # Currently greedy is best solution
         best_score = score_greedy
