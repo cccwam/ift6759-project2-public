@@ -165,8 +165,9 @@ def compile_model(model,
         "adam": tf.keras.optimizers.Adam(learning_rate=learning_rate),
         "rmsprop": tf.keras.optimizers.RMSprop(learning_rate=learning_rate),
         "adam-transformer": tf.keras.optimizers.Adam(
-            CustomSchedule(d_model), beta_1=0.9, beta_2=0.98,  # TODO test with diff learning rate
-            epsilon=1e-9)
+            CustomSchedule(d_model), beta_1=0.9, beta_2=0.98,
+            epsilon=1e-9),
+        "mini-batch-gradient-descent": tf.keras.optimizers.SGD(learning_rate=learning_rate)
     }
 
     metric_funcs, additional_callbacks = [], []
