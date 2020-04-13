@@ -94,7 +94,9 @@ python evaluator.py \
 Note: Read the section `Sbatch job example` above for information on how to run an sbatch job to train a model.
 
 ```
-python trainer.py --config configs/user/helgi_2.json --tensorboard_tracking_folder /project/cq-training-1/project2/teams/team03/tensorboard/$USER
+python trainer.py \
+    --config configs/user/sample.json \
+    --tensorboard_tracking_folder /project/cq-training-1/project2/teams/team03/tensorboard/$USER
 ```
 
 * `config`: Path to the JSON config file used to store user model, dataloader and trainer parameters and  that follows configs/user/schema.json.
