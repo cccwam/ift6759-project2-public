@@ -511,7 +511,7 @@ def inference(tokenizer, model, test_dataset):
         print(i)
         
         # Get sentence using greedy search
-        dec_inp_greedy, score_greedy = beamSearch(encoder, decoder, final_layer, test_inp, 1)
+        dec_inp_greedy, score_greedy = randomSearchSearch(encoder, decoder, final_layer, test_inp, 1)
         
         # Currently greedy is best solution
         best_score = score_greedy
@@ -521,13 +521,12 @@ def inference(tokenizer, model, test_dataset):
         for i in range(10):
             
             # Get new sequence of ids
-            dec_inp_random, score_random = beamSearch(encoder, decoder, final_layer, test_inp, 3)
+            dec_inp_random, score_random = randomSearch(encoder, decoder, final_layer, test_inp, 3)
             
             # Check if better than greedy
             if score_random > best_score:
                 dec_inp = dec_inp_random
                 best_score = score_random
-                print("Taking a random!")
         
         # Convert ids to words
         for timestep in range(dec_inp.shape[0]):
@@ -544,7 +543,7 @@ def inference(tokenizer, model, test_dataset):
 
     return all_predictions
 
-def beamSearch(encoder, decoder, final_layer, test_inp, k):
+def randomSearch(encoder, decoder, final_layer, test_inp, k):
     
     score = 0
     enc_inp, dec_inp, padding_mask, combined_mask = test_inp
