@@ -112,11 +112,9 @@ def create_text_datasets(config):
         'sentences_translation_en_test': TextLineDataset(
             [path_trad_en_test]),
         'sentences_all_train': TextLineDataset(
-            [path_trad_en_train, path_unal_en_train,
-             path_trad_fr_train, path_unal_fr_train]),
+            [path_unal_en_train, path_unal_fr_train]),
         'sentences_all_validation': TextLineDataset(
-            [path_trad_en_val, path_unal_en_val,
-             path_trad_fr_val, path_unal_fr_val]),
+            [path_unal_en_val, path_unal_fr_val]),
         'sentences_translation_fr_train': TextLineDataset(
             [path_trad_fr_train]),
         'sentences_translation_fr_validation': TextLineDataset(
@@ -365,10 +363,11 @@ class MassSubwordDataLoaderPretraining:
         print(self.vocab_size_source)
 
         # ToDo use the whole dataset
-        sentences_both_train = datasets['sentences_all_train'].shuffle(buffer_size=500000).take(200000)
-        sentences_both_validation = datasets['sentences_all_validation'].shuffle(buffer_size=500000).take(50000)
-        # sentences_both_train = datasets['sentences_all_train'].shuffle(buffer_size=500000)
-        # sentences_both_validation = datasets['sentences_all_validation'].shuffle(buffer_size=500000)
+        # ToDo random seed (rotation?)
+        sentences_both_train = datasets['sentences_all_train'].shuffle(buffer_size=1000000).take(100000)
+        sentences_both_validation = datasets['sentences_all_validation'].shuffle(buffer_size=1000000).take(10000)
+        # sentences_both_train = datasets['sentences_all_train'].shuffle(buffer_size=1000000)
+        # sentences_both_validation = datasets['sentences_all_validation'].shuffle(buffer_size=1000000)
 
         tf_encode = create_for_transformer_mass_task(self.tokenizer)
 

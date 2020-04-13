@@ -435,12 +435,12 @@ def inference(tokenizer, model, test_dataset):
     # final_layer = [layer for layer in model.layers if layer.name == '???'][0]
     all_predictions = []
     for i, test_inp in enumerate(test_dataset):
-        # ToDo better verbosity
-        print(i)
+        if i % 10 == 0:
+            print(f"Running inference for batch {i + 1}-{i + 10}")
         enc_inp, dec_inp, padding_mask, combined_mask = test_inp
         enc_output = encoder(inputs=enc_inp, mask=padding_mask, training=False)
         # ToDo allow different max length?
-        for slen in range(100):
+        for slen in range(60):
             dec_output, attention_weights = decoder(
                 inputs=dec_inp, enc_output=enc_output, look_ahead_mask=combined_mask,
                 padding_mask=padding_mask, training=False)
