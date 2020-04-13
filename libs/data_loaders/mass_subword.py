@@ -364,8 +364,8 @@ class MassSubwordDataLoaderPretraining:
 
         # ToDo use the whole dataset
         # ToDo random seed (rotation?)
-        sentences_both_train = datasets['sentences_all_train'].shuffle(buffer_size=1000000).take(100001)
-        sentences_both_validation = datasets['sentences_all_validation'].shuffle(buffer_size=1000000).take(10001)
+        sentences_both_train = datasets['sentences_all_train'].shuffle(buffer_size=1000000).take(5000)
+        sentences_both_validation = datasets['sentences_all_validation'].shuffle(buffer_size=1000000).take(500)
         # sentences_both_train = datasets['sentences_all_train'].shuffle(buffer_size=1000000)
         # sentences_both_validation = datasets['sentences_all_validation'].shuffle(buffer_size=1000000)
 
