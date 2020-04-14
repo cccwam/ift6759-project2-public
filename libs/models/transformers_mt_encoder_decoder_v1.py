@@ -41,7 +41,7 @@ def builder(
         num_hidden_layers, hidden_size, num_attention_heads, intermediate_size, vocab_size_target,
         seq_length_target, dropout_rate=dropout_rate)
 
-    final_layer = tf.keras.layers.Dense(vocab_size_target)
+    final_layer = tf.keras.layers.Dense(vocab_size_target, name="final_layer")
 
     enc_inp = tf.keras.layers.Input(
         shape=(None,), dtype=tf.int32, name="enc_inp")

@@ -2,7 +2,9 @@ from abc import ABC
 from functools import partial
 from typing import List
 
+import numpy as np
 import tensorflow as tf
+import tensorflow_probability as tfp
 from tokenizers import (Encoding)
 from tokenizers.implementations import BaseTokenizer
 
@@ -101,7 +103,7 @@ class MonolingualMaskedLanguageModelHF(AbstractMonolinguaHFlDataloaderSubword):
 
     def _hook_dataset_post_precessing(self, ds: tf.data.Dataset, batch_size: int):
         ds = ds.padded_batch(batch_size=batch_size,
-                             padded_shapes=[None])
+                             padded_shapes=([None], [None]))
         ds = ds.prefetch(tf.data.experimental.AUTOTUNE)
 
         def add_padding_mask(source):
@@ -112,6 +114,60 @@ class MonolingualMaskedLanguageModelHF(AbstractMonolinguaHFlDataloaderSubword):
 
         # For masked language model task, all datasets are masked
         return self._apply_mask_for_mlm(ds=ds, vocab_size=self._vocab_size)
+
+    def _apply_mask_for_mlm(self,
+                            ds: tf.data.Dataset,
+                            vocab_size: int):
+        """
+            Apply mask for masked language model
+
+        Args:
+            ds: dataset
+            vocab_size: vocab size
+
+        Returns:
+
+        """
+
+        # Do action only for 15% of tokens (and mask output for others)
+        prob_mask_idx = 0.15
+        # 10% nothing to do, 10% random word, 80% mask
+        # prob_nothing, prob_random_replacement, prob_replace_by_mask \
+        prob_mask_actions = np.array([0.1, 0.1, 0.8])
+        prob_mask_actions = prob_mask_actions * prob_mask_idx
+        prob_mask_actions = np.append(prob_mask_actions, [1 - sum(prob_mask_actions)]).tolist()
+
+        distrib_mask = tfp.distributions.Multinomial(total_count=1,
+                                                     probs=prob_mask_actions)
+
+        @tf.function
+        def apply_mask(x, output):
+            inputs, enc_padding_mask = x
+
+            input_shape = tf.shape(inputs)  # Batch size * Seq Length
+            output_shape = tf.shape(output)  # Batch size * Seq Length
+
+            masks = distrib_mask.sample(input_shape,
+                                        seed=self._seed)  # Batch size *Seq Length * Probability for each class (4)
+            masks = tf.cast(masks, dtype=tf.int32)
+
+            random_tokens = tf.random.uniform(input_shape, minval=len(self._special_tokens), maxval=vocab_size,
+                                              dtype=inputs.dtype, seed=self._seed, name=None)
+
+            # Replace with mask
+            # One is the mask token id for HuggingFace tokenizers
+            inputs_masked = tf.where(tf.math.equal(masks[:, :, 2], 1), inputs, tf.ones(input_shape, dtype=inputs.dtype))
+
+            # Replace with random token
+            inputs_masked = tf.where(tf.math.equal(masks[:, :, 1], 1), inputs_masked, random_tokens)
+
+            output_masked = tf.where(tf.math.equal(masks[:, :, 3], 1),
+                                     tf.zeros(output_shape, dtype=output.dtype),
+                                     output)
+
+            return (inputs_masked, enc_padding_mask), output_masked
+
+        return ds.map(map_func=apply_mask)
 
     @staticmethod
     def _my_generator_from_encodings(source_numericalized: List[Encoding]):

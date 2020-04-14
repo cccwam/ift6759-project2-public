@@ -32,7 +32,7 @@ def load_pretrained_layers(config: dict, my_model: tf.keras.Model):
                         pretrained_encoder.enc_layers[i].layernorm2.get_weights())
                     decoder.dec_layers[i].layernorm3.set_weights(
                         pretrained_encoder.enc_layers[i].layernorm2.get_weights())
-
+            # TODO test with pretrained final layers
             else:
                 for l in pretrained_layer['layer_name'].split("/"):
                     pretrained_model = pretrained_model.get_layer(l)
