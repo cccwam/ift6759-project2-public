@@ -35,7 +35,7 @@ def generate_predictions(input_file_path: str, pred_file_path: str):
     logger.setLevel(logging.DEBUG)
 
     # best_config_file = '/project/cq-training-1/project2/teams/team03/models/transformer_mass_v1_translation_with_pretraining_resume.json'
-    best_config_file = 'configs/user/transformers-fm/TFM_TINY_TF_eval_fm.json'
+    best_config_file = 'configs/user/transformers-fm/TFM_TINY_BBPE_eval_fm.json'
     logger.info(f"Using best config file: {best_config_file}")
     best_config = helpers.load_dict(best_config_file)
     helpers.validate_user_config(best_config)
@@ -56,7 +56,7 @@ def generate_predictions(input_file_path: str, pred_file_path: str):
             model: tf.keras.Model = helpers.prepare_model(config=best_config)
 
     #    batch_size = 32  # 32 is max for 6GB GPU memory
-    batch_size = 128
+    batch_size = 32  # TODO should be 128 on Helios
     data_loader.build(batch_size=batch_size)
     test_dataset = data_loader.test_dataset
 
@@ -65,9 +65,10 @@ def generate_predictions(input_file_path: str, pred_file_path: str):
         all_predictions = transformer.inference(
             data_loader.tokenizer, model, test_dataset)
     else:
-        # TODO to test again for HuggingFace dataloaders
         if isinstance(data_loader, BilingualTranslationTFSubword) or \
                 isinstance(data_loader, BilingualTranslationHFSubword):
+            sample_to_display = 10
+
             encoder: Encoder = model.get_layer("encoder")
             decoder: Decoder = model.get_layer("decoder")
             final_layer: tf.keras.layers.Dense = model.layers[-1]
@@ -109,8 +110,12 @@ def generate_predictions(input_file_path: str, pred_file_path: str):
                     dec_inp=dec_inp,
                     inputs=inputs,
                     mask=mask,
+                    # TODO Decision to be made, 100 seq length doesn't seem to hurt perfs
                     max_seq=100)  # data_loader.get_seq_length())
                 for prediction in predictions.numpy():
+                    if sample_to_display > 0:
+                        logger.info(f"Example of generated translation: {data_loader.decode(prediction)}")
+                        sample_to_display -= 1
                     all_predictions += [data_loader.decode(prediction)]
 
         else:
@@ -134,6 +139,7 @@ def compute_bleu(pred_file_path: str, target_file_path: str, print_all_scores: b
     out = subprocess.run(["sacrebleu", "--input", pred_file_path, target_file_path, '--tokenize',
                           'none', '--sentence-level', '--score-only'],
                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    print(out.stdout)
     lines = out.stdout.split('\n')
     if print_all_scores:
         print('\n'.join(lines[:-1]))

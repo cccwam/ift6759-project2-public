@@ -13,9 +13,14 @@
       "dropout_rate": 0.2,
       "pretrained_layers": [
         {
-          "model_path": "/project/cq-training-1/project2/teams/team03/tensorboard/wam/comparison_pretraining_encoder_only/TFM_TINY_BBPE_mlm_en/transformers_mlm_encoder_v1.builder_dataloader_monolingual_huggingface.MonolingualMaskedLanguageModelHF-2020-04-14T02:12:28.015671/0/transformers_mlm_encoder_v1.builder_dataloader_monolingual_huggingface.MonolingualMaskedLanguageModelHF.01-9.03.tf",
+          "model_path": "/project/cq-training-1/project2/teams/team03/tensorboard/wam/comparison_pretraining_encoder_only/TFM_TINY_BBPE_mlm_en/transformers_mlm_encoder_v1.builder_dataloader_monolingual_huggingface.MonolingualMaskedLanguageModelHF-2020-04-14T04:02:14.938648/0/transformers_mlm_encoder_v1.builder_dataloader_monolingual_huggingface.MonolingualMaskedLanguageModelHF.10-4.12.tf",
           "layer_name": "encoder",
           "target_layer_name": "encoder"
+        },
+        {
+          "model_path": "/project/cq-training-1/project2/teams/team03/tensorboard/wam/comparison_pretraining_encoder_only/TFM_TINY_BBPE_mlm_en/transformers_mlm_encoder_v1.builder_dataloader_monolingual_huggingface.MonolingualMaskedLanguageModelHF-2020-04-14T04:02:14.938648/0/transformers_mlm_encoder_v1.builder_dataloader_monolingual_huggingface.MonolingualMaskedLanguageModelHF.10-4.12.tf",
+          "layer_name": "encoder",
+          "target_layer_name": "decoder"
         }
       ]
     },
@@ -72,9 +77,9 @@
         "sparse_accuracy",
         "bleu"
       ],
-      "optimizer": "adam-transformer",
+      "optimizer": "adam",
       "lr_rate": [
-        -1
+        5e-4
       ],
       "epochs": [
         50

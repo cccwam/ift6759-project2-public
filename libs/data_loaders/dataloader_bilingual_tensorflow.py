@@ -78,7 +78,8 @@ class BilingualTranslationTFSubword(AbstractBilingualTFDataloaderSubword):
                          )
         return self._hook_dataset_post_precessing(my_gen=my_gen, batch_size=batch_size)
 
-    def _hook_dataset_post_precessing(self, my_gen, batch_size: int):
+    @staticmethod
+    def _hook_dataset_post_precessing(my_gen, batch_size: int):
         ds = tf.data.Dataset.from_generator(my_gen,
                                             output_types=(tf.int32, tf.int32, tf.int32),
                                             output_shapes=(tf.TensorShape([None]),
@@ -98,7 +99,8 @@ class BilingualTranslationTFSubword(AbstractBilingualTFDataloaderSubword):
     def _get_valid_dataset(self, batch_size: int) -> tf.data.Dataset:
         return self._get_train_dataset(batch_size=batch_size)
 
-    def _my_test_generator(self, source_numericalized: List[List[int]]):
+    @staticmethod
+    def _my_test_generator(source_numericalized: List[List[int]]):
         for s in source_numericalized:
             yield s
 

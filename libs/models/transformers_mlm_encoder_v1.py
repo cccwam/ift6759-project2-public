@@ -3,6 +3,7 @@ import typing
 import tensorflow as tf
 
 from libs.models import transformer
+from libs.models.helpers import load_pretrained_layers
 
 logger = tf.get_logger()
 
@@ -34,7 +35,7 @@ def builder(
         num_hidden_layers, hidden_size, num_attention_heads, intermediate_size, vocab_size,
         seq_length, dropout_rate=dropout_rate)
 
-    final_layer = tf.keras.layers.Dense(vocab_size)
+    final_layer = tf.keras.layers.Dense(vocab_size, name="final_layer")
 
     enc_inp = tf.keras.layers.Input(
         shape=(None,), dtype=tf.int32, name="enc_inp")
@@ -48,4 +49,5 @@ def builder(
     model = tf.keras.Model([enc_inp, enc_padding_mask],
                            outputs, name=name)
     model.summary(line_length=120)
+    model = load_pretrained_layers(config=config, my_model=model)
     return model

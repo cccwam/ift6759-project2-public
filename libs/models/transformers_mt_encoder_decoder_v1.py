@@ -65,5 +65,5 @@ def builder(
                            outputs, name=name)
 
     model.summary(line_length=120)
-    load_pretrained_layers(config=config, my_model=model)
+    model = load_pretrained_layers(config=config, my_model=model)
     return model

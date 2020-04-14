@@ -5,12 +5,12 @@
       "name": "builder"
     },
     "hyper_params": {
-      "name": "Transformers-Tiny",
-      "num_hidden_layers": 3,
-      "num_attention_heads": 4,
-      "hidden_size": 128,
-      "intermediate_size": 512,
-      "dropout_rate": 0.2
+      "name": "Transformers-Small",
+      "num_hidden_layers": 4,
+      "num_attention_heads": 8,
+      "hidden_size": 512,
+      "intermediate_size": 2048,
+      "dropout_rate": 0.1
     },
     "source": "online"
   },
@@ -50,13 +50,13 @@
       ],
       "optimizer": "adam",
       "lr_rate": [
-        3e-4
+        3e-5
       ],
       "epochs": [
         10
       ],
       "batch_size": [
-        128
+        32
       ],
       "patience": [
         -1

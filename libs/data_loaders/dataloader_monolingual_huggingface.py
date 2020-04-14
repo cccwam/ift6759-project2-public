@@ -113,7 +113,8 @@ class MonolingualMaskedLanguageModelHF(AbstractMonolinguaHFlDataloaderSubword):
         # For masked language model task, all datasets are masked
         return self._apply_mask_for_mlm(ds=ds, vocab_size=self._vocab_size)
 
-    def _my_generator_from_encodings(self, source_numericalized: List[Encoding]):
+    @staticmethod
+    def _my_generator_from_encodings(source_numericalized: List[Encoding]):
         n_samples = len(source_numericalized)
 
         for i in range(n_samples):
