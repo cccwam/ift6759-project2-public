@@ -34,8 +34,8 @@ def generate_predictions(input_file_path: str, pred_file_path: str):
     logger = tf.get_logger()
     logger.setLevel(logging.DEBUG)
 
-    # best_config_file = '/project/cq-training-1/project2/teams/team03/models/transformer_mass_v1_translation_with_pretraining_resume.json'
-    best_config_file = 'configs/user/transformers-fm/TFM_TINY_BBPE_eval_fm.json'
+    best_config_file = '/project/cq-training-1/project2/teams/team03/models/transformer_mass_v1_translation_with_pretraining_resume.json'
+    # best_config_file = 'configs/user/transformers-fm/TFM_TINY_BBPE_eval_fm.json'
     logger.info(f"Using best config file: {best_config_file}")
     best_config = helpers.load_dict(best_config_file)
     helpers.validate_user_config(best_config)
@@ -56,7 +56,7 @@ def generate_predictions(input_file_path: str, pred_file_path: str):
             model: tf.keras.Model = helpers.prepare_model(config=best_config)
 
     #    batch_size = 32  # 32 is max for 6GB GPU memory
-    batch_size = 32  # TODO should be 128 on Helios
+    batch_size = 128 #32  # TODO should be 128 on Helios
     data_loader.build(batch_size=batch_size)
     test_dataset = data_loader.test_dataset
 
