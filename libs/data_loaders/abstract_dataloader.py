@@ -32,6 +32,7 @@ class AbstractDataloader:
         self.training_dataset: Optional[tf.data.Dataset] = None
         self._validation_steps: Optional[int] = None
         self._train_steps: Optional[int] = None
+        self._test_steps: Optional[int] = None
         self._batch_size: Optional[int] = None
 
         # TODO should we have one seed in cli or config ?
@@ -117,6 +118,10 @@ class AbstractDataloader:
     @property
     def train_steps(self) -> Optional[int]:
         return self._train_steps  # This may be null
+
+    @property
+    def test_steps(self) -> Optional[int]:
+        return self._test_steps  # This may be null
 
     @property
     def batch_size(self) -> Optional[int]:
@@ -256,37 +261,6 @@ class AbstractSubwordTokenizer(AbstractDataloader, ABC):
 
         return ds.map(map_func=apply_mask)
 
-    @staticmethod
-    def _create_padding_mask(seq):
-        seq = tf.cast(tf.math.equal(seq, 0), tf.float32)
-
-        # add extra dimensions to add the padding
-        # to the attention logits.
-        return seq[:, tf.newaxis, tf.newaxis, :]  # (batch_size, 1, 1, seq_len)
-
-    @staticmethod
-    def _create_look_ahead_mask(seq_length):
-        mask = 1 - tf.linalg.band_part(tf.ones((seq_length, seq_length)), -1, 0)
-        return mask  # (seq_len, seq_len)
-
-    @tf.function
-    def create_masks(self, inp, tar):
-        # Encoder padding mask
-        enc_padding_mask = self._create_padding_mask(inp)
-
-        # Used in the 2nd attention block in the decoder.
-        # This padding mask is used to mask the encoder outputs.
-        dec_padding_mask = self._create_padding_mask(inp)
-
-        # Used in the 1st attention block in the decoder.
-        # It is used to pad and mask future tokens in the input received by
-        # the decoder.
-        look_ahead_mask = self._create_look_ahead_mask(tf.shape(tar)[1])
-        dec_target_padding_mask = self._create_padding_mask(tar)
-        combined_mask = tf.maximum(dec_target_padding_mask, look_ahead_mask)
-
-        return enc_padding_mask, combined_mask, dec_padding_mask
-
     def _read_file(self, corpus_filepath: Path) -> List[str]:
         if corpus_filepath.suffix == ".pickle":
             with open(str(corpus_filepath), 'rb') as handle:
@@ -300,7 +274,7 @@ class AbstractSubwordTokenizer(AbstractDataloader, ABC):
     @property
     @abstractmethod
     def bos(self) -> List[int]:
-        raise NotImplementedError()  # TODO add for HF
+        raise NotImplementedError()
 
 
 class AbstractBilingualDataloaderSubword(AbstractBilingualDataloader, AbstractSubwordTokenizer, ABC):
@@ -337,3 +311,37 @@ class AbstractBilingualDataloaderSubword(AbstractBilingualDataloader, AbstractSu
                                                    tokenizer_algorithm=self._tokenizer_algorithm,
                                                    vocab_size=self._vocab_size_target,
                                                    dropout=self._dropout)
+
+
+@tf.function(experimental_relax_shapes=True)
+def create_padding_mask_fm(seq):
+    seq = tf.cast(tf.math.equal(seq, 0), tf.float32)
+
+    # add extra dimensions to add the padding
+    # to the attention logits.
+    return seq[:, tf.newaxis, tf.newaxis, :]  # (batch_size, 1, 1, seq_len)
+
+
+@tf.function(experimental_relax_shapes=True)
+def create_look_ahead_mask_fm(seq_length):
+    mask = 1 - tf.linalg.band_part(tf.ones((seq_length, seq_length)), -1, 0)
+    return mask  # (seq_len, seq_len)
+
+
+@tf.function(experimental_relax_shapes=True)
+def create_masks_fm(inp, tar):
+    # Encoder padding mask
+    enc_padding_mask = create_padding_mask_fm(inp)
+
+    # Used in the 2nd attention block in the decoder.
+    # This padding mask is used to mask the encoder outputs.
+    dec_padding_mask = create_padding_mask_fm(inp)
+
+    # Used in the 1st attention block in the decoder.
+    # It is used to pad and mask future tokens in the input received by
+    # the decoder.
+    look_ahead_mask = create_look_ahead_mask_fm(tf.shape(tar)[1])
+    dec_target_padding_mask = create_padding_mask_fm(tar)
+    combined_mask = tf.maximum(dec_target_padding_mask, look_ahead_mask)
+
+    return enc_padding_mask, combined_mask, dec_padding_mask

@@ -7,13 +7,12 @@ import numpy as np
 import pandas as pd
 import spacy
 import tqdm
-from sklearn.utils import shuffle
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
-def my_tokenizer(data_path,  # TODO get BLEU score with new dataset
+def my_tokenizer(data_path,
                  output_path,
                  should_shuffle=True,
                  shuffle_seed=42):
@@ -23,7 +22,8 @@ def my_tokenizer(data_path,  # TODO get BLEU score with new dataset
 
         To execute, run the following cli:   python tools/text_normalizer.py ~/data/ ~/output_data
 
-        Ex:  python tools/text_normalizer.py /project/cq-training-1/project2/data/ /project/cq-training-1/project2/teams/team03/data/preprocessed_13042020
+        Ex:  'python tools/text_normalizer.py /project/cq-training-1/project2/data/
+                /project/cq-training-1/project2/teams/team03/data/preprocessed_13042020'
 
     Args:
         data_path: Data path for inputs file (filename as provided by TAs)
@@ -104,39 +104,59 @@ def my_tokenizer(data_path,  # TODO get BLEU score with new dataset
     # EN
     logger.info("Tokenize English corpora")
 
-    unaligned_en_tokenized = list(my_tokenize(unaligned_en, tokenizer=tokenizer_en,
-                                              keep_case=False, keep_punctuation=False))
+    # unaligned_en = unaligned_en[:2]  # Only for debug
+    # train_lang1_en = train_lang1_en[:2]
+    # unaligned_fr = unaligned_fr[:2]
+    # train_lang2_fr = train_lang2_fr[:2]
 
-    unaligned_en = [" ".join(list_tokens) for list_tokens in unaligned_en_tokenized]
+    unaligned_en_tokenized = np.array(list(my_tokenize(unaligned_en, tokenizer=tokenizer_en,
+                                                       keep_case=False, keep_punctuation=False)))
+
+    unaligned_en = np.array([" ".join(list_tokens) for list_tokens in unaligned_en_tokenized])
 
     # Required also to extend the vocab
-    train_lang1_en_tokenized = list(my_tokenize(train_lang1_en, tokenizer=tokenizer_en,
-                                                keep_case=False, keep_punctuation=False))
+    train_lang1_en_tokenized = np.array(list(my_tokenize(train_lang1_en, tokenizer=tokenizer_en,
+                                                         keep_case=False, keep_punctuation=False)))
 
     # FR
     logger.info("Tokenize French corpora")
 
-    unaligned_fr_tokenized = list(my_tokenize(unaligned_fr, tokenizer=tokenizer_fr,
-                                              keep_case=True, keep_punctuation=True))
+    unaligned_fr_tokenized = np.array(list(my_tokenize(unaligned_fr, tokenizer=tokenizer_fr,
+                                                       keep_case=True, keep_punctuation=True)))
 
-    unaligned_fr = [" ".join(list_tokens) for list_tokens in unaligned_fr_tokenized]
+    unaligned_fr = np.array([" ".join(list_tokens) for list_tokens in unaligned_fr_tokenized])
 
     # Required also to extend the vocab
-    train_lang2_fr_tokenized = list(my_tokenize(train_lang2_fr, tokenizer=tokenizer_fr,
-                                                keep_case=True, keep_punctuation=True))
+    train_lang2_fr_tokenized = np.array(np.array(list(my_tokenize(train_lang2_fr, tokenizer=tokenizer_fr,
+                                                                  keep_case=True, keep_punctuation=True))))
 
     assert len(train_lang2_fr_tokenized) == len(
         train_lang1_en_tokenized), "The bilingual dataset must match in number of samples"
+
+    train_lang1_en = train_lang1_en.text.to_numpy()
+    train_lang2_fr = train_lang2_fr.text.to_numpy()
+
+    assert len(train_lang1_en_tokenized) == len(train_lang1_en)
+    assert len(train_lang2_fr_tokenized) == len(train_lang2_fr)
 
     if should_shuffle:
         logger.info("Shuffle corpora")
         if shuffle_seed:
             np.random.seed(shuffle_seed)
-        inputs = train_lang1_en_tokenized, train_lang1_en, train_lang2_fr_tokenized, train_lang2_fr
-        train_lang1_en_tokenized, train_lang1_en, train_lang2_fr_tokenized, train_lang2_fr = shuffle(inputs)
 
-        unaligned_en, unaligned_en_tokenized = shuffle(unaligned_en, unaligned_en_tokenized)
-        unaligned_fr, unaligned_fr_tokenized = shuffle(unaligned_fr, unaligned_fr_tokenized)
+        idx = np.arange(len(train_lang2_fr_tokenized))
+        train_lang1_en = train_lang1_en[idx]
+        train_lang2_fr = train_lang2_fr[idx]
+        train_lang1_en_tokenized = train_lang1_en_tokenized[idx]
+        train_lang2_fr_tokenized = train_lang2_fr_tokenized[idx]
+
+        idx = np.arange(len(unaligned_en))
+        unaligned_en = unaligned_en[idx]
+        unaligned_en_tokenized = unaligned_en_tokenized[idx]
+
+        idx = np.arange(len(unaligned_en))
+        unaligned_fr = unaligned_fr[idx]
+        unaligned_fr_tokenized = unaligned_fr_tokenized[idx]
 
     logger.info("Save all corpora")
 
@@ -144,25 +164,29 @@ def my_tokenizer(data_path,  # TODO get BLEU score with new dataset
         pickle.dump(unaligned_en_tokenized, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     with open(output_path / 'unaligned_en_tokenized.txt', 'w') as handle:
-        handle.writelines(unaligned_en)
+        for s in unaligned_en:
+            handle.write(s + "\n")
 
     with open(output_path / 'train_lang1_en_tokenized.pickle', 'wb') as handle:
         pickle.dump(train_lang1_en_tokenized, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     with open(output_path / 'train_lang1_en.txt', 'w') as handle:
-        handle.writelines(train_lang1_en)
+        for s in train_lang1_en:
+            handle.write(s + "\n")
 
     with open(output_path / 'unaligned_fr_tokenized.pickle', 'wb') as handle:
         pickle.dump(unaligned_fr_tokenized, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     with open(output_path / 'unaligned_fr_tokenized.txt', 'w') as handle:
-        handle.writelines(unaligned_fr)
+        for s in unaligned_fr:
+            handle.write(s + "\n")
 
     with open(output_path / 'train_lang2_fr_tokenized.pickle', 'wb') as handle:
         pickle.dump(train_lang2_fr_tokenized, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     with open(output_path / 'train_lang2_fr.txt', 'w') as handle:
-        handle.writelines(train_lang2_fr)
+        for s in train_lang2_fr:
+            handle.write(s + "\n")
 
 
 if __name__ == '__main__':

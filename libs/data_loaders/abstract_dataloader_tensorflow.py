@@ -32,7 +32,7 @@ class AbstractTensorFlowTokenizer(AbstractSubwordTokenizer, ABC):
         logger.info(f"Specified tokenizer for lang {language}: {tokenizer_filename_prefix}")
 
         if (Path(pretrained_model_dir_path) / (tokenizer_filename_prefix + "-vocab.subwords")).exists():
-            logger.info("Found an existing pretrained tokenizer for lang {language}: Load it")
+            logger.info(f"Found an existing pretrained tokenizer for lang {language}: Load it")
             filepath = Path(pretrained_model_dir_path) / (tokenizer_filename_prefix + "-vocab")
             tokenizer: SubwordTextEncoder = SubwordTextEncoder.load_from_file(str(filepath))
 

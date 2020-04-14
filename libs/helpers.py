@@ -98,7 +98,7 @@ def prepare_model(config):
     logger.info(f"Loading model: {model_source}")
     if config["model"]["definition"]["module"] == 'libs.models.transformerv2':
         model = transformer.load_transformer(config)
-    else:  # TODO both are doing the same. To do some refactoring
+    else:  # TODO both are doing the same. To do some refactoring? @Blaise
         model = tf.keras.models.load_model(model_source,
                                            custom_objects={'Encoder': Encoder,
                                                            'Decoder': Decoder,

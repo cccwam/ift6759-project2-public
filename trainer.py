@@ -139,6 +139,7 @@ def train_models(
 
                     if tensorboard_tracking_folder is not None:
                         tensorboard_log_dir = str(tensorboard_experiment_id / str(variation_num))
+                        # TF format is needed to load layers and not just model (hdf5 doesn't work)
                         checkpoints_path = str(tensorboard_log_dir) + "/" + (tensorboard_experiment_name +
                                                                              ".{epoch:02d}-{val_loss:.2f}.tf")
                         logger.info(f"Start variation id: " + str(tensorboard_log_dir))

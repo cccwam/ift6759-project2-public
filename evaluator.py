@@ -1,13 +1,6 @@
 import argparse
-import logging
 import subprocess
 import tempfile
-
-import tqdm
-from numpy import int32
-
-from libs.data_loaders.dataloader_bilingual_tensorflow import BilingualTranslationTFSubword
-from libs.models.transformer import Encoder, Decoder
 
 
 def generate_predictions(input_file_path: str, pred_file_path: str):
@@ -23,18 +16,26 @@ def generate_predictions(input_file_path: str, pred_file_path: str):
     """
 
     ##### MODIFY BELOW #####
-    import numpy as np
     import tensorflow as tf
 
     from libs import helpers
     from libs.data_loaders.abstract_dataloader import AbstractDataloader
     from libs.models import transformer
 
+    import tqdm
+
+    import logging
+    from libs.data_loaders.abstract_dataloader import create_masks_fm
+    from libs.data_loaders.dataloader_bilingual_huggingface import BilingualTranslationHFSubword
+    from libs.data_loaders.dataloader_bilingual_tensorflow import BilingualTranslationTFSubword
+    from libs.data_loaders.mass_subword import MassSubwordDataLoader
+    from libs.models.transformer import Encoder, Decoder
+
     logger = tf.get_logger()
     logger.setLevel(logging.DEBUG)
 
-    best_config_file = '/project/cq-training-1/project2/teams/team03/models/transformer_mass_v1_translation_with_pretraining_resume.json'
-    # best_config_file = 'configs/user/transformers-fm/TFM_TINY_TF_eval_fm.json'
+    # best_config_file = '/project/cq-training-1/project2/teams/team03/models/transformer_mass_v1_translation_with_pretraining_resume.json'
+    best_config_file = 'configs/user/transformers-fm/TFM_TINY_TF_eval_fm.json'
     logger.info(f"Using best config file: {best_config_file}")
     best_config = helpers.load_dict(best_config_file)
     helpers.validate_user_config(best_config)
@@ -54,50 +55,62 @@ def generate_predictions(input_file_path: str, pred_file_path: str):
         else:
             model: tf.keras.Model = helpers.prepare_model(config=best_config)
 
-#    batch_size = 32  # 32 is max for 6GB GPU memory
-    batch_size = 128  # TODO to check if ok with GPU
+    #    batch_size = 32  # 32 is max for 6GB GPU memory
+    batch_size = 128
     data_loader.build(batch_size=batch_size)
     test_dataset = data_loader.test_dataset
 
     all_predictions = []
-    if best_config["data_loader"]["definition"]["name"] == 'MassSubwordDataLoader':
+    if isinstance(data_loader, MassSubwordDataLoader):
         all_predictions = transformer.inference(
             data_loader.tokenizer, model, test_dataset)
     else:
-        # TODO to test again
-        if isinstance(data_loader, BilingualTranslationTFSubword):
+        # TODO to test again for HuggingFace dataloaders
+        if isinstance(data_loader, BilingualTranslationTFSubword) or \
+                isinstance(data_loader, BilingualTranslationHFSubword):
             encoder: Encoder = model.get_layer("encoder")
             decoder: Decoder = model.get_layer("decoder")
             final_layer: tf.keras.layers.Dense = model.layers[-1]
 
-            for inputs, mask in test_dataset:
+            for inputs, mask in tqdm.tqdm(test_dataset, total=data_loader.test_steps):
 
                 mini_batch_size = inputs.shape[0]
-                enc_output: tf.Tensor = encoder.__call__(inputs=inputs, mask=mask, training=False)
+                dec_inp = tf.Variable(tf.zeros((mini_batch_size, data_loader.get_seq_length() + 1), dtype=tf.int32))
 
-                dec_inp = np.zeros((mini_batch_size, data_loader.get_seq_length() + 1), dtype=int32)
-                dec_inp[:, 0] = data_loader.bos  # BOS token
-                # TODO not necesarly with HF tokenizer
+                bos_tensor = tf.convert_to_tensor(data_loader.bos)
+                bos_tensor = tf.reshape(bos_tensor, [1, 1])
+                bos_tensor = tf.tile(bos_tensor, multiples=[mini_batch_size, 1])
 
-                for timestep in tqdm.tqdm(range(data_loader.get_seq_length())):
-                    _, combined_mask, dec_padding_mask = data_loader.create_masks(
-                        inp=inputs,
-                        tar=dec_inp[:, :-1]
-                    )
+                dec_inp[:, 0].assign(bos_tensor[:, 0])  # BOS token
 
-                    dec_output, attention_weights = decoder(
-                        inputs=dec_inp[:, :-1], enc_output=enc_output, look_ahead_mask=combined_mask,
-                        padding_mask=dec_padding_mask)
+                # WARNING: IF THE MODEL USED WAS FROM A TF FILE, A LOT OF WARNINGS WILL APPEAR
+                #  Workaround: Use the hdf5 format to load the final model
+                # https://github.com/tensorflow/tensorflow/issues/35146
+                def get_preds(encoder, decoder, final_layer, dec_inp, inputs, mask, max_seq):
+                    enc_output: tf.Tensor = encoder.__call__(inputs=inputs, mask=mask, training=False)
 
-                    outputs = final_layer(inputs=dec_output)  # (batch_size, seq_length, vocab_size)
+                    for timestep in range(max_seq):
+                        _, combined_mask, dec_padding_mask = create_masks_fm(inp=inputs, tar=dec_inp[:, :-1])
 
-                    dec_inp[:, timestep + 1] = tf.argmax(outputs[:, timestep, :], axis=-1).numpy()
+                        dec_output, attention_weights = decoder(
+                            inputs=dec_inp[:, :-1], enc_output=enc_output, look_ahead_mask=combined_mask,
+                            padding_mask=dec_padding_mask)
 
-                predictions = dec_inp
+                        outputs = final_layer(inputs=dec_output)  # (batch_size, seq_length, vocab_size)
+                        pred = tf.argmax(outputs[:, timestep, :], axis=-1)
+                        pred = tf.cast(pred, dtype=tf.int32)
+                        dec_inp[:, timestep + 1].assign(pred)
+                    return dec_inp
 
-                if isinstance(predictions, tf.Tensor):
-                    predictions = predictions.numpy()
-                for prediction in predictions:
+                predictions = get_preds(
+                    encoder=encoder,
+                    decoder=decoder,
+                    final_layer=final_layer,
+                    dec_inp=dec_inp,
+                    inputs=inputs,
+                    mask=mask,
+                    max_seq=100)  # data_loader.get_seq_length())
+                for prediction in predictions.numpy():
                     all_predictions += [data_loader.decode(prediction)]
 
         else:

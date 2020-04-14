@@ -13,7 +13,7 @@
       "dropout_rate": 0.2,
       "pretrained_layers": [
         {
-          "model_path": "/project/cq-training-1/project2/teams/team03/tensorboard/wam/comparison_pretraining_encoder_only/TFM_TINY_BBPE_mlm_en/transformers_mlm_encoder_v1.builder_dataloader_monolingual_huggingface.MonolingualMaskedLanguageModelHF-2020-04-13T19:02:30.720352/0/transformers_mlm_encoder_v1.builder_dataloader_monolingual_huggingface.MonolingualMaskedLanguageModelHF.01-4.14.tf",
+          "model_path": "/project/cq-training-1/project2/teams/team03/tensorboard/wam/comparison_pretraining_encoder_only/TFM_TINY_BBPE_mlm_en/transformers_mlm_encoder_v1.builder_dataloader_monolingual_huggingface.MonolingualMaskedLanguageModelHF-2020-04-14T02:12:28.015671/0/transformers_mlm_encoder_v1.builder_dataloader_monolingual_huggingface.MonolingualMaskedLanguageModelHF.01-9.03.tf",
           "layer_name": "encoder",
           "target_layer_name": "encoder"
         }
@@ -28,7 +28,7 @@
     },
     "hyper_params": {
       "preprocessed_data": {
-        "folder": "/project/cq-training-1/project2/teams/team03/data/word_level_24032020",
+        "folder": "/project/cq-training-1/project2/teams/team03/data/preprocessed_13042020",
         "bilingual_corpus_filenames": [
           "train_lang1_en_tokenized.pickle",
           "train_lang2_fr_tokenized.pickle"

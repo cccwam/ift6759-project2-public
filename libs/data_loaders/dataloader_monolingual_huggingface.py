@@ -6,7 +6,7 @@ import tensorflow as tf
 from tokenizers import (Encoding)
 from tokenizers.implementations import BaseTokenizer
 
-from libs.data_loaders.abstract_dataloader import AbstractMonolingualDataloader
+from libs.data_loaders.abstract_dataloader import AbstractMonolingualDataloader, create_padding_mask_fm
 from libs.data_loaders.abstract_dataloader_huggingface import AbstractHuggingFaceTokenizer
 
 logger = tf.get_logger()
@@ -69,7 +69,7 @@ class AbstractMonolinguaHFlDataloaderSubword(AbstractMonolingualDataloader, Abst
 
     @property
     def bos(self) -> int:
-        return self._tokenizer_inference.encode(self._bos)[0]
+        return self._tokenizer_inference.encode(self._bos).ids[0]
 
 
 class MonolingualMaskedLanguageModelHF(AbstractMonolinguaHFlDataloaderSubword):
@@ -105,7 +105,7 @@ class MonolingualMaskedLanguageModelHF(AbstractMonolinguaHFlDataloaderSubword):
         ds = ds.prefetch(tf.data.experimental.AUTOTUNE)
 
         def add_padding_mask(source):
-            enc_padding_mask = self._create_padding_mask(source)
+            enc_padding_mask = create_padding_mask_fm(source)
             return (source, enc_padding_mask), source
 
         ds = ds.map(map_func=add_padding_mask)  # Add pad mask

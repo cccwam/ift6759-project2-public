@@ -3,11 +3,13 @@ from functools import partial
 from pathlib import Path
 from typing import List
 
+import numpy as np
 import tensorflow as tf
 from tokenizers import (Encoding)
 from tokenizers.implementations import BaseTokenizer
 
-from libs.data_loaders.abstract_dataloader import AbstractBilingualDataloaderSubword
+from libs.data_loaders.abstract_dataloader import AbstractBilingualDataloaderSubword, create_masks_fm, \
+    create_padding_mask_fm
 from libs.data_loaders.abstract_dataloader_huggingface import AbstractHuggingFaceTokenizer
 
 logger = tf.get_logger()
@@ -79,7 +81,7 @@ class AbstractBilingualHFDataloaderSubword(AbstractBilingualDataloaderSubword, A
 
     @property
     def bos(self) -> int:
-        return self._tokenizer_target_training.encode(self._bos)[0]
+        return self._tokenizer_target_training.encode(self._bos).ids[0]
 
 
 class BilingualTranslationHFSubword(AbstractBilingualHFDataloaderSubword):
@@ -107,7 +109,8 @@ class BilingualTranslationHFSubword(AbstractBilingualHFDataloaderSubword):
                          self._tokenizer_target_training)
         return self._hook_dataset_post_precessing(my_gen=my_gen, batch_size=batch_size)
 
-    def _hook_dataset_post_precessing(self, my_gen, batch_size: int):
+    @staticmethod
+    def _hook_dataset_post_precessing(my_gen, batch_size: int):
         ds = tf.data.Dataset.from_generator(my_gen,
                                             output_types=(tf.int32, tf.int32, tf.int32),
                                             output_shapes=(tf.TensorShape([None]),
@@ -119,13 +122,14 @@ class BilingualTranslationHFSubword(AbstractBilingualHFDataloaderSubword):
         ds = ds.prefetch(tf.data.experimental.AUTOTUNE)
 
         def add_mask(source, target_in, target_out):
-            enc_padding_mask, combined_mask, dec_padding_mask = self.create_masks(source,
-                                                                                  target_in)
+            enc_padding_mask, combined_mask, dec_padding_mask = create_masks_fm(source,
+                                                                                target_in)
             return (source, target_in, enc_padding_mask, combined_mask, dec_padding_mask), target_out
 
         return ds.map(map_func=add_mask)
 
-    def _my_generator_from_encodings(self, source_numericalized: List[Encoding], target_numericalized: List[Encoding]):
+    @staticmethod
+    def _my_generator_from_encodings(source_numericalized: List[Encoding], target_numericalized: List[Encoding]):
         n_samples = len(source_numericalized)
 
         for i in range(n_samples):
@@ -137,17 +141,18 @@ class BilingualTranslationHFSubword(AbstractBilingualHFDataloaderSubword):
                          self._target_without_dropout)
         return self._hook_dataset_post_precessing(my_gen=my_gen, batch_size=batch_size)
 
-    def _my_test_generator(self, test_input_file: Path):
-
-        lines = self._read_file(corpus_filepath=test_input_file)
-        source_numericalized: List[Encoding] = self._tokenizer_source_inference.encode_batch(sequences=lines)
-
-        for i in range(len(source_numericalized)):
-            yield source_numericalized[i].ids
+    @staticmethod
+    def _my_test_generator(source_numericalized: List[Encoding]):
+        for encoding in source_numericalized:
+            yield encoding.ids
 
     def _get_test_dataset(self, batch_size: int) -> tf.data.Dataset:
-        my_gen = partial(self._my_test_generator,
-                         Path(self._raw_english_test_set_file_path))
+        lines = self._read_file(corpus_filepath=Path(self._raw_english_test_set_file_path))
+        source_numericalized: List[Encoding] = self._tokenizer_source_inference.encode_batch(sequences=lines)
+
+        self._test_steps = np.ceil(len(source_numericalized) / self._batch_size)
+
+        my_gen = partial(self._my_test_generator, source_numericalized)
         ds = tf.data.Dataset.from_generator(my_gen,
                                             output_types=tf.int32,
                                             output_shapes=tf.TensorShape([None]))
@@ -156,7 +161,7 @@ class BilingualTranslationHFSubword(AbstractBilingualHFDataloaderSubword):
         ds = ds.prefetch(tf.data.experimental.AUTOTUNE)
 
         def add_mask(source):
-            enc_padding_mask = self._create_padding_mask(source)
+            enc_padding_mask = create_padding_mask_fm(source)
             return source, enc_padding_mask
 
         return ds.map(map_func=add_mask)

@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import List
 
 import tensorflow as tf
-from tokenizers import BertWordPieceTokenizer
 from tokenizers.implementations import BaseTokenizer
 
 from libs.data_loaders.abstract_dataloader import AbstractSubwordTokenizer
@@ -47,7 +46,7 @@ class AbstractHuggingFaceTokenizer(AbstractSubwordTokenizer, ABC):
 
         if filepath:
 
-            logger.info("Found an existing pretrained tokenizer for lang {language}: Load it")
+            logger.info(f"Found an existing pretrained tokenizer for lang {language}: Load it")
 
             if dropout is None:
                 if tokenizer_algorithm == "BertWordPieceTokenizer":

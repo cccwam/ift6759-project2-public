@@ -21,7 +21,7 @@
     },
     "hyper_params": {
       "preprocessed_data": {
-        "folder": "/project/cq-training-1/project2/teams/team03/data/word_level_24032020",
+        "folder": "/project/cq-training-1/project2/teams/team03/data/preprocessed_13042020",
         "monolingual_corpus_filename": "unaligned_en_tokenized.pickle",
         "language": "BOTH",
         "corpora_filenames": [
@@ -39,7 +39,7 @@
       "seq_length": 512,
       "samples_for_test": 0,
       "samples_for_valid": 5000,
-      "samples_for_train": 487443
+      "samples_for_train": 469000
     }
   },
   "trainer": {

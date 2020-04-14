@@ -3,10 +3,12 @@ from functools import partial
 from pathlib import Path
 from typing import List
 
+import numpy as np
 import tensorflow as tf
 from tensorflow_datasets.core.features.text import SubwordTextEncoder
 
-from libs.data_loaders.abstract_dataloader import AbstractBilingualDataloaderSubword
+from libs.data_loaders.abstract_dataloader import AbstractBilingualDataloaderSubword, create_masks_fm, \
+    create_padding_mask_fm
 from libs.data_loaders.abstract_dataloader_tensorflow import AbstractTensorFlowTokenizer
 
 logger = tf.get_logger()
@@ -76,7 +78,7 @@ class BilingualTranslationTFSubword(AbstractBilingualTFDataloaderSubword):
                          )
         return self._hook_dataset_post_precessing(my_gen=my_gen, batch_size=batch_size)
 
-    def _hook_dataset_post_precessing(self, my_gen: my_gen, batch_size: int):
+    def _hook_dataset_post_precessing(self, my_gen, batch_size: int):
         ds = tf.data.Dataset.from_generator(my_gen,
                                             output_types=(tf.int32, tf.int32, tf.int32),
                                             output_shapes=(tf.TensorShape([None]),
@@ -87,8 +89,8 @@ class BilingualTranslationTFSubword(AbstractBilingualTFDataloaderSubword):
         ds = ds.prefetch(tf.data.experimental.AUTOTUNE)
 
         def add_mask(source, target_in, target_out):
-            enc_padding_mask, combined_mask, dec_padding_mask = self.create_masks(source,
-                                                                                  target_in)
+            enc_padding_mask, combined_mask, dec_padding_mask = create_masks_fm(source,
+                                                                                target_in)
             return (source, target_in, enc_padding_mask, combined_mask, dec_padding_mask), target_out
 
         return ds.map(map_func=add_mask)
@@ -96,19 +98,18 @@ class BilingualTranslationTFSubword(AbstractBilingualTFDataloaderSubword):
     def _get_valid_dataset(self, batch_size: int) -> tf.data.Dataset:
         return self._get_train_dataset(batch_size=batch_size)
 
-    def _my_test_generator(self, test_input_file: Path):
-
-        lines = self._read_file(corpus_filepath=test_input_file)
-        source_numericalized: List[List[int]] = [self._tokenizer_source.encode(s) for s in lines]
-
-        n_samples = len(source_numericalized)
-
-        for i in range(n_samples):
-            yield source_numericalized[i]
+    def _my_test_generator(self, source_numericalized: List[List[int]]):
+        for s in source_numericalized:
+            yield s
 
     def _get_test_dataset(self, batch_size: int) -> tf.data.Dataset:
+        lines = self._read_file(corpus_filepath=Path(self._raw_english_test_set_file_path))
+        source_numericalized: List[List[int]] = [self._tokenizer_source.encode(s) for s in lines]
+
+        self._test_steps = np.ceil(len(source_numericalized) / self._batch_size)
+
         my_gen = partial(self._my_test_generator,
-                         Path(self._raw_english_test_set_file_path))
+                         source_numericalized)
         ds = tf.data.Dataset.from_generator(my_gen,
                                             output_types=tf.int32,
                                             output_shapes=tf.TensorShape([None]))
@@ -117,7 +118,7 @@ class BilingualTranslationTFSubword(AbstractBilingualTFDataloaderSubword):
         ds = ds.prefetch(tf.data.experimental.AUTOTUNE)
 
         def add_mask(source):
-            enc_padding_mask = self._create_padding_mask(source)
+            enc_padding_mask = create_padding_mask_fm(source)
             return source, enc_padding_mask
 
         return ds.map(map_func=add_mask)
