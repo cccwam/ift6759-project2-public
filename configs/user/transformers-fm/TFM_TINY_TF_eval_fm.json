@@ -12,7 +12,7 @@
       "intermediate_size": 512,
       "dropout_rate": 0.2
     },
-    "source": "TODO"
+    "source": "TODO.tf"
   },
   "data_loader": {
     "definition": {

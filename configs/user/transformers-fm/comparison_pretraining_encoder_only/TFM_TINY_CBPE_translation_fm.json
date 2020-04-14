@@ -10,19 +10,7 @@
       "num_attention_heads": 4,
       "hidden_size": 128,
       "intermediate_size": 512,
-      "dropout_rate": 0.2,
-      "pretrained_layers": [
-        {
-          "model_path": "/project/cq-training-1/project2/teams/team03/tensorboard/wam/comparison_pretraining_encoder_only/TFM_TINY_BBPE_mlm_en/transformers_mlm_encoder_v1.builder_dataloader_monolingual_huggingface.MonolingualMaskedLanguageModelHF-2020-04-14T04:02:14.938648/0/transformers_mlm_encoder_v1.builder_dataloader_monolingual_huggingface.MonolingualMaskedLanguageModelHF.10-4.12.tf",
-          "layer_name": "encoder",
-          "target_layer_name": "encoder"
-        },
-        {
-          "model_path": "/project/cq-training-1/project2/teams/team03/tensorboard/wam/comparison_pretraining_encoder_only/TFM_TINY_BBPE_mlm_en/transformers_mlm_encoder_v1.builder_dataloader_monolingual_huggingface.MonolingualMaskedLanguageModelHF-2020-04-14T04:02:14.938648/0/transformers_mlm_encoder_v1.builder_dataloader_monolingual_huggingface.MonolingualMaskedLanguageModelHF.10-4.12.tf",
-          "layer_name": "encoder",
-          "target_layer_name": "decoder"
-        }
-      ]
+      "dropout_rate": 0.2
     },
     "source": "online"
   },
@@ -58,7 +46,7 @@
         ]
       },
       "pretrained_model_dir_path": "/project/cq-training-1/project2/teams/team03/models/pretokenizers",
-      "tokenizer_algorithm": "ByteLevelBPETokenizer",
+      "tokenizer_algorithm": "CharBPETokenizer",
       "tmp_path": "/tmp",
       "dropout": 0,
       "vocab_size_source": 8000,

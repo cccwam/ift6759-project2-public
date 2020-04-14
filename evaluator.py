@@ -56,7 +56,7 @@ def generate_predictions(input_file_path: str, pred_file_path: str):
             model: tf.keras.Model = helpers.prepare_model(config=best_config)
 
     #    batch_size = 32  # 32 is max for 6GB GPU memory
-    batch_size = 128 #32  # TODO should be 128 on Helios
+    batch_size = 128
     data_loader.build(batch_size=batch_size)
     test_dataset = data_loader.test_dataset
 

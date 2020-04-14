@@ -210,3 +210,4 @@ dmypy.json
 
 /tools/bert/
 /tools/transformers-fm/
+/evaluator-fm.py
