@@ -414,7 +414,7 @@ def load_transformer(config):
                         'mlm_loss': losses.mlm_loss})
 
 
-def inferenceOriginal(tokenizer, model, test_dataset):
+def inference(tokenizer, model, test_dataset):
     """Inference step for transformer.
 
     :param tokenizer: tokenizer used for sentence reconstruction
@@ -466,7 +466,6 @@ def inferenceOriginal(tokenizer, model, test_dataset):
             # concatentate the predicted_id to the output which is given to the
             # decoder as its input.
             dec_inp = tf.concat([dec_inp, predicted_id], axis=-1)
-            
 
 
         for timestep in range(dec_inp.shape[0]):
@@ -484,7 +483,7 @@ def inferenceOriginal(tokenizer, model, test_dataset):
     return all_predictions
 
 
-def inference(tokenizer, model, test_dataset):
+def inferenceRandomSearch(tokenizer, model, test_dataset):
     """Inference step for transformer.
 
     :param tokenizer: tokenizer used for sentence reconstruction
@@ -521,7 +520,7 @@ def inference(tokenizer, model, test_dataset):
         for i in range(10):
             
             # Get new sequence of ids
-            dec_inp_random, score_random = randomSearch(encoder, decoder, final_layer, test_inp, 3)
+            dec_inp_random, score_random = randomSearch(encoder, decoder, final_layer, test_inp, 2)
             
             # Check if better than greedy
             if score_random > best_score:
@@ -553,25 +552,31 @@ def randomSearch(encoder, decoder, final_layer, test_inp, k):
         dec_output, attention_weights = decoder(inputs=dec_inp, enc_output=enc_output, look_ahead_mask=combined_mask, padding_mask=padding_mask, training=False)
 
         final_output = final_layer(inputs=dec_output)
-
+    
         # select the last word from the seq_len dimension
         predictions = final_output[:, -1:, :]
 
-        # Get on the k best id between 1 (id with highest probability) and k
-        randomIndex = random.randint(1, k)
-
-        # Sort and select one of the k best id
-        bestId = tf.argsort(predictions)
-        predicted_id = bestId[:, :, -randomIndex]
+        # Sort id and scores
+        bestId = tf.argsort(predictions)        
+        bestScore = tf.sort(predictions)
         
-        # Also take their respective scores
-        predicted_score = (tf.sort(predictions))[:, :, -randomIndex]
+        # Take one of the k best scores
+        predicted_id = []
+        for idRow, scoreRow in zip(bestId, bestScore):
+            for idR, scoreR in zip(idRow, scoreRow):
+                
+                # At beggining of sequence, allow for randomness, but after, always pick best score
+                if slen > 15: 
+                    k = 1
+                
+                # Get one of the k best ID and its corresponding score
+                randomIndex = random.randint(1, k)
+                predicted_id.append([idR[-randomIndex]])
+                score += scoreR[-randomIndex]
         
-        # Add the scores
-        for myScore in predicted_score:
-            score += myScore
+        # Convert to tensor
+        predicted_id = tf.convert_to_tensor(predicted_id)
         
         dec_inp = tf.concat([dec_inp, predicted_id], axis=-1) 
-    
     
     return dec_inp, score
