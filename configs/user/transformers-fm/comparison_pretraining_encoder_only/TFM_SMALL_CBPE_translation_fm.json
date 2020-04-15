@@ -5,29 +5,12 @@
       "name": "builder"
     },
     "hyper_params": {
-      "name": "Transformers-Tiny",
-      "num_hidden_layers": 3,
-      "num_attention_heads": 4,
-      "hidden_size": 128,
-      "intermediate_size": 512,
-      "dropout_rate": 0.2,
-      "pretrained_layers": [
-        {
-          "model_path": "/project/cq-training-1/project2/teams/team03/tensorboard/wam/comparison_pretraining_encoder_only/TFM_TINY_CharBPETokenizerCBPE_mlm_en/transformers_mlm_encoder_v1.builder_dataloader_monolingual_huggingface.MonolingualMaskedLanguageModelHF-2020-04-14T22:35:36.331536/0/transformers_mlm_encoder_v1.builder_dataloader_monolingual_huggingface.MonolingualMaskedLanguageModelHF.01-5.58.tf",
-          "layer_name": "encoder",
-          "target_layer_name": "encoder"
-        },
-        {
-          "model_path": "/project/cq-training-1/project2/teams/team03/tensorboard/wam/comparison_pretraining_encoder_only/TFM_TINY_CharBPETokenizerCBPE_mlm_en/transformers_mlm_encoder_v1.builder_dataloader_monolingual_huggingface.MonolingualMaskedLanguageModelHF-2020-04-14T22:35:36.331536/0/transformers_mlm_encoder_v1.builder_dataloader_monolingual_huggingface.MonolingualMaskedLanguageModelHF.01-5.58.tf",
-          "layer_name": "encoder",
-          "target_layer_name": "decoder"
-        },
-        {
-          "model_path": "/project/cq-training-1/project2/teams/team03/tensorboard/wam/comparison_pretraining_encoder_only/TFM_TINY_CharBPETokenizerCBPE_mlm_en/transformers_mlm_encoder_v1.builder_dataloader_monolingual_huggingface.MonolingualMaskedLanguageModelHF-2020-04-14T22:35:36.331536/0/transformers_mlm_encoder_v1.builder_dataloader_monolingual_huggingface.MonolingualMaskedLanguageModelHF.01-5.58.tf",
-          "layer_name": "final_layer",
-          "target_layer_name": "final_layer"
-        }
-      ]
+      "name": "Transformers-Small",
+      "num_hidden_layers": 4,
+      "num_attention_heads": 8,
+      "hidden_size": 512,
+      "intermediate_size": 2048,
+      "dropout_rate": 0.1
     },
     "source": "online"
   },

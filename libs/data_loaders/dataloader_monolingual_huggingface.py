@@ -103,7 +103,7 @@ class MonolingualMaskedLanguageModelHF(AbstractMonolinguaHFlDataloaderSubword):
 
     def _hook_dataset_post_precessing(self, ds: tf.data.Dataset, batch_size: int):
         ds = ds.padded_batch(batch_size=batch_size,
-                             padded_shapes=([None], [None]))
+                             padded_shapes=[None])
         ds = ds.prefetch(tf.data.experimental.AUTOTUNE)
 
         def add_padding_mask(source):
