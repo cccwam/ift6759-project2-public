@@ -5,38 +5,30 @@
       "name": "builder"
     },
     "hyper_params": {
-      "name": "Transformers-Tiny",
-      "num_hidden_layers": 3,
-      "num_attention_heads": 4,
-      "hidden_size": 128,
-      "intermediate_size": 512,
-      "dropout_rate": 0.2
+      "name": "Transformers-Small",
+      "num_hidden_layers": 4,
+      "num_attention_heads": 8,
+      "hidden_size": 512,
+      "intermediate_size": 2048,
+      "dropout_rate": 0.1
     },
-    "source": "online"
+    "source": "/project/cq-training-1/project2/teams/team03/tensorboard/wam/comparison_pretraining/transformers_mlm_encoder_v1.builder_dataloader_monolingual_huggingface.MonolingualMaskedLanguageModelHF-2020-04-15T01:13:27.665341/0/transformers_mlm_encoder_v1.builder_dataloader_monolingual_huggingface.MonolingualMaskedLanguageModelHF.10-5.48.tf"
   },
   "data_loader": {
     "definition": {
-      "module": "libs.data_loaders.dataloader_monolingual_subword_level",
-      "name": "MonolingualMaskLMDataloaderSubword"
+      "module": "libs.data_loaders.dataloader_monolingual_huggingface",
+      "name": "MonolingualMaskedLanguageModelHF"
     },
     "hyper_params": {
       "preprocessed_data": {
         "folder": "/project/cq-training-1/project2/teams/team03/data/preprocessed_13042020",
-        "monolingual_corpus_filename": "unaligned_en.txt",
+        "monolingual_corpus_filename": "unaligned_fr.txt",
         "language": "BOTH",
         "corpora_filenames": [
-          [
             "unaligned_en.txt",
             "unaligned_fr.txt",
             "train_lang1_en.txt",
             "train_lang2_fr.txt"
-          ],
-          [
-            "unaligned_en.txt",
-            "unaligned_fr.txt",
-            "train_lang1_en.txt",
-            "train_lang2_fr.txt"
-          ]
         ]
       },
       "pretrained_model_dir_path": "/project/cq-training-1/project2/teams/team03/models/pretokenizers",
@@ -56,15 +48,15 @@
       "metrics": [
         "perplexity_mlm"
       ],
-      "optimizer": "adam-transformer",
+      "optimizer": "adam",
       "lr_rate": [
-        -1
+        3e-5
       ],
       "epochs": [
-        2
+        10
       ],
       "batch_size": [
-        64
+        32
       ],
       "patience": [
         -1

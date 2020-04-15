@@ -163,7 +163,7 @@ def my_tokenizer(data_path,
     with open(output_path / 'unaligned_en_tokenized.pickle', 'wb') as handle:
         pickle.dump(unaligned_en_tokenized, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-    with open(output_path / 'unaligned_en_tokenized.txt', 'w') as handle:
+    with open(output_path / 'unaligned_en.txt', 'w') as handle:
         for s in unaligned_en:
             handle.write(s + "\n")
 
@@ -177,7 +177,7 @@ def my_tokenizer(data_path,
     with open(output_path / 'unaligned_fr_tokenized.pickle', 'wb') as handle:
         pickle.dump(unaligned_fr_tokenized, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-    with open(output_path / 'unaligned_fr_tokenized.txt', 'w') as handle:
+    with open(output_path / 'unaligned_fr.txt', 'w') as handle:
         for s in unaligned_fr:
             handle.write(s + "\n")
 
