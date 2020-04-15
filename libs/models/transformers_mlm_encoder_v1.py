@@ -49,5 +49,8 @@ def builder(
     model = tf.keras.Model([enc_inp, enc_padding_mask],
                            outputs, name=name)
     model.summary(line_length=120)
+    # There is a bug in TF Keras 2.0
+    #  When a model is save, it doesn't work to save after loading this saved model
+    #  Hack is to load weights and not a full model in .tf format
     model = load_pretrained_layers(config=config, my_model=model)
     return model

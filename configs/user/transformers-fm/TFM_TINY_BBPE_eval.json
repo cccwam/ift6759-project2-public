@@ -23,8 +23,8 @@
       "preprocessed_data": {
         "folder": "/project/cq-training-1/project2/teams/team03/data/preprocessed_13042020",
         "bilingual_corpus_filenames": [
-            "train_lang1_en.txt",
-            "train_lang2_fr.txt"
+          "train_lang1_en.txt",
+          "train_lang2_fr.txt"
         ],
         "languages": [
           "BOTH",

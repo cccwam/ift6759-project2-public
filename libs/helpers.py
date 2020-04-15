@@ -99,11 +99,12 @@ def prepare_model(config):
     if config["model"]["definition"]["module"] == 'libs.models.transformerv2':
         model = transformer.load_transformer(config)
     else:  # TODO both are doing the same. To do some refactoring? @Blaise
-        model = tf.keras.models.load_model(model_source,
-                                           custom_objects={'Encoder': Encoder,
-                                                           'Decoder': Decoder,
-                                                           'CustomSchedule': CustomSchedule,
-                                                           'mlm_loss': mlm_loss}, compile=False)
+        model: tf.keras.Model = tf.keras.models.load_model(model_source,
+                                                           custom_objects={'Encoder': Encoder,
+                                                                           'Decoder': Decoder,
+                                                                           'CustomSchedule': CustomSchedule,
+                                                                           'mlm_loss': mlm_loss}, compile=False)
+
     return model
 
 
@@ -126,7 +127,7 @@ def get_tensorboard_experiment_id(experiment_name, tensorboard_tracking_folder: 
     return tensorboard_tracking_folder / model_sub_folder
 
 
-def compile_model(model,
+def compile_model(model: tf.keras.Model,
                   learning_rate: float,
                   dataloader: AbstractDataloader,
                   loss: str,
