@@ -76,8 +76,8 @@ Simply run `sbatch sbatch_template.sh` to launch the training job.
 
 ```
 python evaluator.py \
-    --input-file-path /project/cq-training-1/project2/data/train.lang1 \
-    --target-file-path /project/cq-training-1/project2/data/train.lang2
+    --input-file-path /project/cq-training-1/project2/teams/team03/data/split_01/original/train.lang1.test \
+    --target-file-path /project/cq-training-1/project2/teams/team03/data/split_01/original/train.lang2.test
 ```
 
 *Read predictions from file and then calculate BLEU score:*
@@ -85,7 +85,7 @@ python evaluator.py \
 ```
 python evaluator.py \
     --input-file-path predictions.txt \
-    --target-file-path /project/cq-training-1/project2/data/train.lang2 \
+    --target-file-path /project/cq-training-1/project2/teams/team03/data/split_01/original/train.lang2.test \
     --do-not-run-model
 ```
 

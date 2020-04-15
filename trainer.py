@@ -1,6 +1,7 @@
 # Summary:
 #   Trains the predictor
 
+import os
 import argparse
 import logging
 import typing
@@ -165,7 +166,11 @@ def train_models(
                     variation_num += 1
 
     # Save final model
-    model.save(helpers.generate_model_name(config))
+    if tensorboard_tracking_folder is not None:
+        model.save(os.path.join(tensorboard_experiment_id, '0', 'final_model.hdf5'))
+    else:
+        model_name = helpers.generate_model_name(config)
+        model.save(model_name)
 
 
 def train_model(
