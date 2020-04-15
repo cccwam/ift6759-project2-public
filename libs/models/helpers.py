@@ -26,10 +26,13 @@ def load_pretrained_layers(config: dict, my_model: tf.keras.Model):
 
                 decoder.embedding.set_weights(pretrained_encoder.embedding.get_weights())
                 for i in range(len(decoder.dec_layers)):
+                    decoder.dec_layers[i].mha1.set_weights(pretrained_encoder.enc_layers[i].mha.get_weights())
                     decoder.dec_layers[i].mha2.set_weights(pretrained_encoder.enc_layers[i].mha.get_weights())
                     decoder.dec_layers[i].ffn.set_weights(pretrained_encoder.enc_layers[i].ffn.get_weights())
+                    decoder.dec_layers[i].layernorm1.set_weights(
+                        pretrained_encoder.enc_layers[i].layernorm1.get_weights())
                     decoder.dec_layers[i].layernorm2.set_weights(
-                        pretrained_encoder.enc_layers[i].layernorm2.get_weights())
+                        pretrained_encoder.enc_layers[i].layernorm1.get_weights())
                     decoder.dec_layers[i].layernorm3.set_weights(
                         pretrained_encoder.enc_layers[i].layernorm2.get_weights())
 

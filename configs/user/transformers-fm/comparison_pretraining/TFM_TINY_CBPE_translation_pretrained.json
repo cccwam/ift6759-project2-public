@@ -84,7 +84,7 @@
       ],
       "optimizer": "adam",
       "lr_rate": [
-        5e-4
+        1e-4
       ],
       "epochs": [
         50

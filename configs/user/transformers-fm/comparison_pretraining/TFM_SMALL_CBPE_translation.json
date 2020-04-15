@@ -10,7 +10,7 @@
       "num_attention_heads": 8,
       "hidden_size": 512,
       "intermediate_size": 2048,
-      "dropout_rate": 0.1
+      "dropout_rate": 0.2
     },
     "source": "online"
   },
