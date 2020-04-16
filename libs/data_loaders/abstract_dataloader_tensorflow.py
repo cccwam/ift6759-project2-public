@@ -64,7 +64,7 @@ class AbstractTensorFlowTokenizer(AbstractSubwordTokenizer, ABC):
         return tokenizer, corpus
 
     def _decode(self, tokens, tokenizer: SubwordTextEncoder):
-        pred: str = tokenizer.decode(tokens)
+        pred: str = tokenizer.decode(tokens).replace(self._bos, "")
         eos_pos = pred.find(self._eos)
         if eos_pos != -1:
             return pred[:eos_pos]
