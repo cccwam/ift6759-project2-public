@@ -23,6 +23,14 @@ def generate_predictions(input_file_path: str, pred_file_path: str):
     from libs.data_loaders.abstract_dataloader import AbstractDataloader
     from libs.models import transformer
 
+    import numpy as np
+    import random
+    from libs.seeds import TENSOR_FLOW_SEED, NUMPY_SEED, RANDOM_SEED
+
+    tf.random.set_seed(TENSOR_FLOW_SEED)
+    np.random.seed(NUMPY_SEED)
+    random.seed(RANDOM_SEED)
+
     # best_config = 'configs/user/lm_lstm_fr_v1.json'
     best_config_file = '/project/cq-training-1/project2/teams/team03/models/transformer_mass_v1_translation_with_pretraining_resume.json'
     print(f"Using best config file: {best_config_file}")
