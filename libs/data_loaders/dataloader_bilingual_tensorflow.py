@@ -5,6 +5,8 @@ from typing import List
 
 import numpy as np
 import tensorflow as tf
+from tfdeterminism import patch
+patch()
 from tensorflow_datasets.core.features.text import SubwordTextEncoder
 
 from libs.data_loaders.abstract_dataloader import AbstractBilingualDataloaderSubword, create_masks_fm, \

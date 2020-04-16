@@ -21,6 +21,9 @@ def generate_predictions(input_file_path: str, pred_file_path: str):
     from libs import helpers
     from libs.data_loaders.abstract_dataloader import AbstractDataloader
     from libs.models import transformer
+    import numpy as np
+    import random
+    from libs.seeds import TENSOR_FLOW_SEED, NUMPY_SEED, RANDOM_SEED
 
     import tqdm
 
@@ -30,6 +33,10 @@ def generate_predictions(input_file_path: str, pred_file_path: str):
     from libs.data_loaders.dataloader_bilingual_tensorflow import BilingualTranslationTFSubword
     from libs.data_loaders.mass_subword import MassSubwordDataLoader
     from libs.models.transformer import Encoder, Decoder
+
+    tf.random.set_seed(TENSOR_FLOW_SEED)
+    np.random.seed(NUMPY_SEED)
+    random.seed(RANDOM_SEED)
 
     logger = tf.get_logger()
     logger.setLevel(logging.DEBUG)

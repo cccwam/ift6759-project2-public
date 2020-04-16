@@ -7,14 +7,21 @@ import os
 import typing
 from pathlib import Path
 from typing import List
+from libs.seeds import *
 
 import tensorflow as tf
 from tensorboard.plugins.hparams import api as hp
+import numpy as np
+import random
 
 from libs import helpers
 from libs.data_loaders.abstract_dataloader import AbstractDataloader
 
 logger = tf.get_logger()
+
+tf.random.set_seed(TENSOR_FLOW_SEED)
+np.random.seed(NUMPY_SEED)
+random.seed(RANDOM_SEED)
 
 
 def main(
