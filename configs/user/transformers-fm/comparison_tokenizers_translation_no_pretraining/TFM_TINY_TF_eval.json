@@ -12,12 +12,12 @@
       "intermediate_size": 512,
       "dropout_rate": 0.2
     },
-    "source": "online"
+    "source": "/project/cq-training-1/project2/teams/team03/tensorboard/guest120/comparison_tokenizers_translation_no_pretraining/TFM_TINY_TF_translation/transformers_mt_encoder_decoder_v1.builder_dataloader_bilingual_tensorflow.BilingualTranslationTFSubword-2020-04-15T21:33:26.130789/0/transformers_mt_encoder_decoder_v1.builder_dataloader_bilingual_tensorflow.BilingualTranslationTFSubword.50-4.06.tf"
   },
   "data_loader": {
     "definition": {
-      "module": "libs.data_loaders.dataloader_bilingual_huggingface",
-      "name": "BilingualTranslationHFSubword"
+      "module": "libs.data_loaders.dataloader_bilingual_tensorflow",
+      "name": "BilingualTranslationTFSubword"
     },
     "hyper_params": {
       "preprocessed_data": {
@@ -46,9 +46,8 @@
         ]
       },
       "pretrained_model_dir_path": "/project/cq-training-1/project2/teams/team03/models/pretokenizers",
-      "tokenizer_algorithm": "CharBPETokenizer",
+      "tokenizer_algorithm": "SubWordTextEncoder",
       "tmp_path": "/tmp",
-      "dropout": 0,
       "vocab_size_source": 8000,
       "seq_length_source": 512,
       "vocab_size_target": 8000,
@@ -70,7 +69,7 @@
         -1
       ],
       "epochs": [
-        70
+        50
       ],
       "batch_size": [
         32

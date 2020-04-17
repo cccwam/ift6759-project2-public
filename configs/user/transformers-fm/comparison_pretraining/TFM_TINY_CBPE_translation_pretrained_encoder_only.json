@@ -10,7 +10,14 @@
       "num_attention_heads": 4,
       "hidden_size": 128,
       "intermediate_size": 512,
-      "dropout_rate": 0.2
+      "dropout_rate": 0.2,
+      "pretrained_layers": [
+        {
+          "model_path": "/project/cq-training-1/project2/teams/team03/tensorboard/guest120/comparison_pretraining/TFM_TINY_CBPE_mlm_fr_from_en/transformers_mlm_encoder_v1.builder_dataloader_monolingual_huggingface.MonolingualMaskedLanguageModelHF-2020-04-16T19:29:48.092805/0/transformers_mlm_encoder_v1.builder_dataloader_monolingual_huggingface.MonolingualMaskedLanguageModelHF.05-5.57.tf",
+          "layer_name": "encoder",
+          "target_layer_name": "encoder"
+        }
+      ]
     },
     "source": "online"
   },

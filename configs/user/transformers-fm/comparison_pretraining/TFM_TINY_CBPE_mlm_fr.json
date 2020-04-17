@@ -5,24 +5,12 @@
       "name": "builder"
     },
     "hyper_params": {
-      "name": "Transformers-Small",
-      "num_hidden_layers": 4,
-      "num_attention_heads": 8,
-      "hidden_size": 512,
-      "intermediate_size": 2048,
-      "dropout_rate": 0.1,
-      "pretrained_layers": [
-        {
-          "model_path": "/project/cq-training-1/project2/teams/team03/tensorboard/wam/comparison_pretraining/TFM_SMALL_CBPE_mlm_en/transformers_mlm_encoder_v1.builder_dataloader_monolingual_huggingface.MonolingualMaskedLanguageModelHF-2020-04-15T13:10:23.190123/0/transformers_mlm_encoder_v1.builder_dataloader_monolingual_huggingface.MonolingualMaskedLanguageModelHF.01-5.51.tf",
-          "layer_name": "encoder",
-          "target_layer_name": "encoder"
-        },
-        {
-          "model_path": "/project/cq-training-1/project2/teams/team03/tensorboard/wam/comparison_pretraining/TFM_SMALL_CBPE_mlm_en/transformers_mlm_encoder_v1.builder_dataloader_monolingual_huggingface.MonolingualMaskedLanguageModelHF-2020-04-15T13:10:23.190123/0/transformers_mlm_encoder_v1.builder_dataloader_monolingual_huggingface.MonolingualMaskedLanguageModelHF.01-5.51.tf",
-          "layer_name": "final_layer",
-          "target_layer_name": "final_layer"
-        }
-      ]
+      "name": "Transformers-Tiny",
+      "num_hidden_layers": 3,
+      "num_attention_heads": 4,
+      "hidden_size": 128,
+      "intermediate_size": 512,
+      "dropout_rate": 0.2
     },
     "source": "online"
   },
@@ -60,15 +48,15 @@
       "metrics": [
         "perplexity_mlm"
       ],
-      "optimizer": "adam",
+      "optimizer": "adam-transformer",
       "lr_rate": [
-        3e-5
+        -1
       ],
       "epochs": [
-        10
+        5
       ],
       "batch_size": [
-        32
+        128
       ],
       "patience": [
         -1

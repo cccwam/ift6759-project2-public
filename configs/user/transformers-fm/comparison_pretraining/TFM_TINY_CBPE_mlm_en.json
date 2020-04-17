@@ -48,12 +48,12 @@
       "metrics": [
         "perplexity_mlm"
       ],
-      "optimizer": "adam",
+      "optimizer": "adam-transformer",
       "lr_rate": [
-        3e-4
+        -1
       ],
       "epochs": [
-        10
+        5
       ],
       "batch_size": [
         128
