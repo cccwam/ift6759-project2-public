@@ -1,7 +1,9 @@
+import pickle
 from abc import abstractmethod, ABC
-from functools import partial
-from typing import Optional
+from pathlib import Path
+from typing import Optional, List
 
+import numpy as np
 import tensorflow as tf
 
 logger = tf.get_logger()
@@ -9,7 +11,6 @@ logger = tf.get_logger()
 
 class AbstractDataloader:
 
-    # TODO: Implement the usage of raw_english_test_set_file_path. See TODO in evaluator.py's generate_predictions()
     def __init__(self, config: dict, raw_english_test_set_file_path: str):
         """
         AbstractDataloader
@@ -28,40 +29,65 @@ class AbstractDataloader:
         self.test_dataset: Optional[tf.data.Dataset] = None
         self.valid_dataset: Optional[tf.data.Dataset] = None
         self.training_dataset: Optional[tf.data.Dataset] = None
+        self._validation_steps: Optional[int] = None
+        self._train_steps: Optional[int] = None
+        self._test_steps: Optional[int] = None
+        self._batch_size: Optional[int] = None
+
+        # TODO should we have one seed in cli or config ?
+        self._seed: int = self._dl_hparams["seed"] if "seed" in self._dl_hparams else 42
+
+        self._raw_english_test_set_file_path: str = raw_english_test_set_file_path
 
     def build(self,
               batch_size):
-        my_gen = self._get_generator()
+        self._batch_size = batch_size
 
-        assert self._output_types is not None, "Missing output_types"
-        assert self._output_shapes is not None, "Missing _output_shapes"
-        assert self._padded_shapes is not None, "Missing _padded_shapes"
+        self.training_dataset = self._get_train_dataset(batch_size=batch_size)
 
-        ds = tf.data.Dataset.from_generator(my_gen,
-                                            output_types=self._output_types,
-                                            output_shapes=self._output_shapes)
+        # Skip valid and test set
+        self.training_dataset = self.training_dataset.skip(np.ceil(self._samples_for_test / batch_size) +
+                                                           np.ceil(self._samples_for_valid / batch_size))
+        self.training_dataset = self.training_dataset
 
-        ds = self._hook_dataset_post_precessing(ds=ds)
-        ds = ds.padded_batch(batch_size=batch_size,
-                             padded_shapes=self._padded_shapes,
-                             drop_remainder=True)
-        ds = ds.prefetch(tf.data.experimental.AUTOTUNE)
+        ds_valid_test = self._get_valid_dataset(batch_size=batch_size)
 
-        ds_without_modification = tf.data.Dataset.from_generator(my_gen,
-                                                                 output_types=self._output_types,
-                                                                 output_shapes=self._output_shapes)
-        ds_without_modification = ds_without_modification.padded_batch(batch_size=batch_size,
-                                                                       padded_shapes=self._padded_shapes,
-                                                                       drop_remainder=True)
-        ds_without_modification = ds_without_modification.prefetch(tf.data.experimental.AUTOTUNE)
+        if self._samples_for_test != 0:
+            self.test_dataset = ds_valid_test.take(np.ceil(self._samples_for_test / batch_size))
+            ds_valid_test = ds_valid_test.skip(np.ceil(self._samples_for_test / batch_size))
+        ds_valid_test = ds_valid_test.take(np.ceil(self._samples_for_valid / batch_size))
+        self.valid_dataset = ds_valid_test  # .cache() # Cache will not work because of BLEU callback
 
-        self._build_all_dataset(ds, ds_without_modification, batch_size)
+        if self._samples_for_train > 0:
+            # Allow training with less samples and keeping the same validation size
+            # Useful to train models more quickly
+            self.training_dataset = self.training_dataset.take(np.ceil(self._samples_for_train / batch_size))
+            if self._samples_for_train < 12000:  # Prevent OOM
+                self.training_dataset = self.training_dataset.cache()
+            self.training_dataset = self.training_dataset.repeat()
+        else:
+            if self._samples_for_train < 12000:  # Prevent OOM
+                self.training_dataset = self.training_dataset.cache()
 
-    def _hook_dataset_post_precessing(self, ds):
-        return ds
+        if self._samples_for_train != -1:
+            self._train_steps = np.ceil(self._samples_for_train / batch_size)
+        else:
+            self._train_steps = None
+        self._validation_steps = np.ceil(self._samples_for_valid / batch_size)
+
+        if self._raw_english_test_set_file_path is not None:
+            self.build_test_dataset(batch_size=batch_size)
 
     @abstractmethod
-    def _get_generator(self):
+    def _get_train_dataset(self, batch_size: int) -> tf.data.Dataset:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def _get_valid_dataset(self, batch_size: int) -> tf.data.Dataset:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def _get_test_dataset(self, batch_size: int) -> tf.data.Dataset:
         raise NotImplementedError()
 
     @abstractmethod
@@ -69,36 +95,36 @@ class AbstractDataloader:
         raise NotImplementedError()
 
     @abstractmethod
-    def decode(self, tokens):
+    def decode(self, tokens) -> str:
         raise NotImplementedError
 
-    def _build_all_dataset(self, ds: tf.data.Dataset, ds_without_modification: tf.data.Dataset, batch_size: int):
-        ds_without_modification = ds_without_modification.skip(int(self._samples_for_test / batch_size))
-        self.valid_dataset_for_callbacks = ds_without_modification.take(int(self._samples_for_valid / batch_size))
+    def build_test_dataset(self, batch_size: int):
+        assert self._raw_english_test_set_file_path is not None, "Missing raw_english_test_set_file_path"
+        test_input_filepath = Path(self._raw_english_test_set_file_path)
+        assert test_input_filepath.exists(), "The test input file doesn't exist"
 
-        self.test_dataset = ds.take(int(self._samples_for_test / batch_size))
-        ds = ds.skip(int(self._samples_for_test / batch_size))
-        self.valid_dataset = ds.take(int(self._samples_for_valid / batch_size))
-        self.training_dataset = ds.skip(int(self._samples_for_valid / batch_size))
-
-        self._validation_steps = int(self._samples_for_valid / batch_size)
-
-        if self._samples_for_train > 0:
-            # Allow training with less samples and keeping the same validation size
-            # Useful to train models more quickly
-            self.training_dataset = self.training_dataset.take(int(self._samples_for_train / batch_size))
-
-    # TF bug https://github.com/tensorflow/tensorflow/issues/28782
-    # DO NOT USE CACHE BECAUSE OF RANDOM MASKING FOR MLM taks
-    #
-    #        self.test_dataset = self.test_dataset.cache()
-    #        self.training_dataset = self.training_dataset.cache()
-    #        self.valid_dataset = self.valid_dataset.cache()
+        self.test_dataset = self._get_test_dataset(batch_size=batch_size)
 
     @property
-    def validation_steps(self):
+    def samples_for_valid(self) -> int:
+        return self._samples_for_valid
+
+    @property
+    def validation_steps(self) -> int:
         assert self._validation_steps is not None, "You must call build before"
         return self._validation_steps
+
+    @property
+    def train_steps(self) -> Optional[int]:
+        return self._train_steps  # This may be null
+
+    @property
+    def test_steps(self) -> Optional[int]:
+        return self._test_steps  # This may be null
+
+    @property
+    def batch_size(self) -> Optional[int]:
+        return self._batch_size  # This may be null
 
 
 class AbstractMonolingualDataloader(AbstractDataloader, ABC):
@@ -113,33 +139,6 @@ class AbstractMonolingualDataloader(AbstractDataloader, ABC):
         assert self._seq_length is not None, "seq_length missing"
 
         self._output_types = None
-
-    @abstractmethod
-    def _my_generator(self, source_numericalized):
-        raise NotImplementedError
-
-    def _get_generator(self):
-        return partial(self._my_generator,
-                       source_numericalized=self._source_numericalized)
-
-
-class AbstractMonolingualCausalLMDataloader:
-
-    # noinspection PyUnusedLocal
-    def __init__(self, config: dict):
-        self._output_types = (tf.int32, tf.int32)
-        self._output_shapes = (tf.TensorShape([None]),
-                               tf.TensorShape([None]))
-        self._padded_shapes = (self._seq_length, self._seq_length)
-
-
-class AbstractMonolingualTransformersLMDataloader:
-
-    # noinspection PyUnusedLocal
-    def __init__(self, config: dict):
-        self._output_types = (tf.int32,)
-        self._output_shapes = (tf.TensorShape([None]),)
-        self._padded_shapes = (self._seq_length,)
 
 
 class AbstractBilingualDataloader(AbstractDataloader, ABC):
@@ -159,34 +158,138 @@ class AbstractBilingualDataloader(AbstractDataloader, ABC):
         self._seq_length_target: int = self._dl_hparams["seq_length_target"]
         assert self._seq_length_target is not None, "seq_length_target missing"
 
-        self._en_numericalized = None
-        self._fr_numericalized = None
+    def get_seq_length(self):
+        return self._seq_length_target
 
+
+class AbstractSubwordTokenizer(AbstractDataloader, ABC):
+
+    def __init__(self, config: dict, raw_english_test_set_file_path: str):
+
+        AbstractDataloader.__init__(self, config=config,
+                                    raw_english_test_set_file_path=raw_english_test_set_file_path)
+
+        self._pad = "<pad>"
+        self._mask = "<mask>"
+        self._bos = "<bos>"
+        self._eos = "<eos>"
+        self._unk = "<unk>"
+        self._sep = "<sep>"
+        self._cls = "<cls"
+
+        self._special_tokens = [self._pad, self._mask, self._bos, self._eos, self._unk, self._sep, self._cls]
+
+        self._folder: Path = Path(self._preprocessed_data["folder"])
+        assert self._folder.exists()
+
+        self._pretrained_model_dir_path: str = self._dl_hparams["pretrained_model_dir_path"]
+        assert self._pretrained_model_dir_path is not None, "Missing pretrained_model_dir_path in config"
+
+        self._tokenizer_algorithm: str = self._dl_hparams["tokenizer_algorithm"]
+        assert self._tokenizer_algorithm is not None, "Missing tokenizer_algorithm in config"
+
+        if "dropout" in self._dl_hparams:
+            self._dropout: Optional[float] = self._dl_hparams["dropout"]  # Optional
+        else:
+            self._dropout: Optional[float] = None
+
+    @staticmethod
+    def _get_tokenizer_filename_prefix(language: str,
+                                       tokenizer_algorithm: str,
+                                       vocab_size: int,
+                                       dropout: float) -> str:
+        if dropout is None:
+            return f"{language}_{tokenizer_algorithm}_vocab_size_{vocab_size}"
+        else:
+            return f"{language}_{tokenizer_algorithm}_vocab_size_{vocab_size}_dropout_{dropout}"
+
+    def _add_bos_eos_tokenized_sentence(self, s: List[str]) -> str:
+        return self._add_bos_eos(" ".join(s))
+
+    def _add_bos_eos(self, s: str) -> str:
+        return self._bos + s + self._eos
+
+    def _read_file(self, corpus_filepath: Path) -> List[str]:
+        if corpus_filepath.suffix == ".pickle":
+            with open(str(corpus_filepath), 'rb') as handle:
+                corpus = pickle.load(handle)
+                return [self._add_bos_eos_tokenized_sentence(s) for s in corpus]
+        else:
+            with open(str(corpus_filepath), 'r') as handle:
+                corpus = handle.read().split('\n')
+                return [self._add_bos_eos(s) for s in corpus]
+
+    @property
     @abstractmethod
-    def _my_generator(self, source_numericalized, target_numericalized):
-        raise NotImplementedError
-
-    def _get_generator(self):
-        return partial(self._my_generator,
-                       self._en_numericalized,
-                       self._fr_numericalized)
+    def bos(self) -> List[int]:
+        raise NotImplementedError()
 
 
-class AbstractBilingualSeq2SeqDataloader:
+class AbstractBilingualDataloaderSubword(AbstractBilingualDataloader, AbstractSubwordTokenizer, ABC):
+    """
+        Abstract class containing most logic for dataset for bilingual corpora at subword level.
+        It's using the Tokenizers library from HuggingFaces
 
-    # noinspection PyUnusedLocal
-    def __init__(self, config: dict):
-        self._output_types = ((tf.float32, tf.float32), tf.float32)
-        self._output_shapes = ((tf.TensorShape([None]), tf.TensorShape([None])),
-                               tf.TensorShape([None]))
-        self._padded_shapes = ((self._seq_length_source, self._seq_length_target),
-                               self._seq_length_target)
+    """
+
+    def __init__(self, config: dict, raw_english_test_set_file_path: str):
+        AbstractBilingualDataloader.__init__(self, config=config,
+                                             raw_english_test_set_file_path=raw_english_test_set_file_path)
+        AbstractSubwordTokenizer.__init__(self, config=config,
+                                          raw_english_test_set_file_path=raw_english_test_set_file_path)
+
+        self._languages: List[str] = self._preprocessed_data["languages"]
+        assert self._languages is not None, "Missing languages in config"
+        assert len(self._languages) == 2, "You should have only two languages"
+
+        self._corpora_filenames: List[List[str]] = self._preprocessed_data["corpora_filenames"]
+        assert self._corpora_filenames is not None, "Missing corpora_filenames in config"
+        assert len(self._corpora_filenames) == 2, "You should have only two languages"
+
+        self._bilingual_corpus_filenames: List[str] = self._preprocessed_data["bilingual_corpus_filenames"]
+        assert self._bilingual_corpus_filenames is not None, "Missing bilingual_corpus_filenames in config"
+        assert len(self._bilingual_corpus_filenames) == 2, "You should have only two languages"
+
+    def get_hparams(self):
+        return self._get_tokenizer_filename_prefix(language=self._languages[0],
+                                                   tokenizer_algorithm=self._tokenizer_algorithm,
+                                                   vocab_size=self._vocab_size_source,
+                                                   dropout=self._dropout) + "-" + \
+               self._get_tokenizer_filename_prefix(language=self._languages[1],
+                                                   tokenizer_algorithm=self._tokenizer_algorithm,
+                                                   vocab_size=self._vocab_size_target,
+                                                   dropout=self._dropout)
 
 
-class AbstractBilingualTransformersDataloader:
+@tf.function(experimental_relax_shapes=True)
+def create_padding_mask_fm(seq):
+    seq = tf.cast(tf.math.equal(seq, 0), tf.float32)
 
-    # noinspection PyUnusedLocal
-    def __init__(self, config: dict):
-        self._output_types = (tf.float32, tf.float32)
-        self._output_shapes = (tf.TensorShape([None]), tf.TensorShape([None]))
-        self._padded_shapes = (self._seq_length_source, self._seq_length_target)
+    # add extra dimensions to add the padding
+    # to the attention logits.
+    return seq[:, tf.newaxis, tf.newaxis, :]  # (batch_size, 1, 1, seq_len)
+
+
+@tf.function(experimental_relax_shapes=True)
+def create_look_ahead_mask_fm(seq_length):
+    mask = 1 - tf.linalg.band_part(tf.ones((seq_length, seq_length)), -1, 0)
+    return mask  # (seq_len, seq_len)
+
+
+@tf.function(experimental_relax_shapes=True)
+def create_masks_fm(inp, tar):
+    # Encoder padding mask
+    enc_padding_mask = create_padding_mask_fm(inp)
+
+    # Used in the 2nd attention block in the decoder.
+    # This padding mask is used to mask the encoder outputs.
+    dec_padding_mask = create_padding_mask_fm(inp)
+
+    # Used in the 1st attention block in the decoder.
+    # It is used to pad and mask future tokens in the input received by
+    # the decoder.
+    look_ahead_mask = create_look_ahead_mask_fm(tf.shape(tar)[1])
+    dec_target_padding_mask = create_padding_mask_fm(tar)
+    combined_mask = tf.maximum(dec_target_padding_mask, look_ahead_mask)
+
+    return enc_padding_mask, combined_mask, dec_padding_mask

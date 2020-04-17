@@ -5,26 +5,26 @@
       "name": "builder"
     },
     "hyper_params": {
-      "name": "Transformers-Small",
-      "num_hidden_layers": 4,
-      "num_attention_heads": 8,
-      "hidden_size": 512,
-      "intermediate_size": 3072,
-      "dropout_rate": 0.1
+      "name": "Transformers-Tiny",
+      "num_hidden_layers": 3,
+      "num_attention_heads": 4,
+      "hidden_size": 128,
+      "intermediate_size": 512,
+      "dropout_rate": 0.2
     },
     "source": "online"
   },
   "data_loader": {
     "definition": {
-      "module": "libs.data_loaders.dataloader_bilingual_subword_level",
-      "name": "BilingualTranslationSubword"
+      "module": "libs.data_loaders.dataloader_bilingual_huggingface",
+      "name": "BilingualTranslationHFSubword"
     },
     "hyper_params": {
       "preprocessed_data": {
-        "folder": "/project/cq-training-1/project2/teams/team03/data/word_level_24032020",
+        "folder": "/project/cq-training-1/project2/teams/team03/data/preprocessed_13042020",
         "bilingual_corpus_filenames": [
-          "train_lang1_en_tokenized.pickle",
-          "train_lang2_fr_tokenized.pickle"
+          "train_lang1_en.txt",
+          "train_lang2_fr.txt"
         ],
         "languages": [
           "BOTH",
@@ -32,30 +32,29 @@
         ],
         "corpora_filenames": [
           [
-            "unaligned_en_tokenized.pickle",
-            "unaligned_fr_tokenized.pickle",
-            "train_lang1_en_tokenized.pickle",
-            "train_lang2_fr_tokenized.pickle"
+            "unaligned_en.txt",
+            "unaligned_fr.txt",
+            "train_lang1_en.txt",
+            "train_lang2_fr.txt"
           ],
           [
-            "unaligned_en_tokenized.pickle",
-            "unaligned_fr_tokenized.pickle",
-            "train_lang1_en_tokenized.pickle",
-            "train_lang2_fr_tokenized.pickle"
+            "unaligned_en.txt",
+            "unaligned_fr.txt",
+            "train_lang1_en.txt",
+            "train_lang2_fr.txt"
           ]
         ]
       },
       "pretrained_model_dir_path": "/project/cq-training-1/project2/teams/team03/models/pretokenizers",
-      "tokenizer_algorithm": "ByteLevelBPETokenizer",
+      "tokenizer_algorithm": "BertWordPieceTokenizer",
       "tmp_path": "/tmp",
-      "dropout": 0.1,
       "vocab_size_source": 8000,
       "seq_length_source": 512,
       "vocab_size_target": 8000,
       "seq_length_target": 512,
       "samples_for_test": 500,
       "samples_for_valid": 500,
-      "samples_for_train": -1
+      "samples_for_train": 10000
     }
   },
   "trainer": {
@@ -67,16 +66,16 @@
       ],
       "optimizer": "adam-transformer",
       "lr_rate": [
-        3e-2
+        -1
       ],
       "epochs": [
-        30
+        50
       ],
       "batch_size": [
-        16
+        32
       ],
       "patience": [
-        2
+        -1
       ]
     }
   }

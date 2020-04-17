@@ -38,6 +38,7 @@ def train_bpe_tokenizer(data_path,
 
     """
 
+    # noinspection DuplicatedCode
     data_path = Path(data_path)
 
     logger.info("Load all tokenized corpora")

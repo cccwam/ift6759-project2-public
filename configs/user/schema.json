@@ -44,7 +44,7 @@
               ]
             },
             {
-              "pattern": "^.*\\.hdf5$|^.*\\.h5$"
+              "pattern": "^.*\\.hdf5$|^.*\\.h5|^.*\\.tf$"
             }
           ],
           "description": "Online evaluation, pre-saved .hdf5 file for evaluation or undefined method of evaluation"

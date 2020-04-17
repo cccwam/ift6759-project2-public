@@ -1,0 +1,78 @@
+{
+  "model": {
+    "definition": {
+      "module": "libs.models.transformers_mlm_encoder_v1",
+      "name": "builder"
+    },
+    "hyper_params": {
+      "name": "Transformers-Tiny",
+      "num_hidden_layers": 3,
+      "num_attention_heads": 4,
+      "hidden_size": 128,
+      "intermediate_size": 512,
+      "dropout_rate": 0.2,
+      "pretrained_layers": [
+        {
+          "model_path": "/project/cq-training-1/project2/teams/team03/tensorboard/guest120/comparison_pretraining/TFM_TINY_CBPE_mlm_en/transformers_mlm_encoder_v1.builder_dataloader_monolingual_huggingface.MonolingualMaskedLanguageModelHF-2020-04-16T17:12:16.536218/0/transformers_mlm_encoder_v1.builder_dataloader_monolingual_huggingface.MonolingualMaskedLanguageModelHF.05-5.58.tf",
+          "layer_name": "encoder",
+          "target_layer_name": "encoder"
+        },
+        {
+          "model_path": "/project/cq-training-1/project2/teams/team03/tensorboard/guest120/comparison_pretraining/TFM_TINY_CBPE_mlm_en/transformers_mlm_encoder_v1.builder_dataloader_monolingual_huggingface.MonolingualMaskedLanguageModelHF-2020-04-16T17:12:16.536218/0/transformers_mlm_encoder_v1.builder_dataloader_monolingual_huggingface.MonolingualMaskedLanguageModelHF.05-5.58.tf",
+          "layer_name": "final_layer",
+          "target_layer_name": "final_layer"
+        }
+      ]
+    },
+    "source": "online"
+  },
+  "data_loader": {
+    "definition": {
+      "module": "libs.data_loaders.dataloader_monolingual_huggingface",
+      "name": "MonolingualMaskedLanguageModelHF"
+    },
+    "hyper_params": {
+      "preprocessed_data": {
+        "folder": "/project/cq-training-1/project2/teams/team03/data/preprocessed_13042020",
+        "monolingual_corpus_filename": "unaligned_fr.txt",
+        "language": "BOTH",
+        "corpora_filenames": [
+          "unaligned_en.txt",
+          "unaligned_fr.txt",
+          "train_lang1_en.txt",
+          "train_lang2_fr.txt"
+        ]
+      },
+      "pretrained_model_dir_path": "/project/cq-training-1/project2/teams/team03/models/pretokenizers",
+      "tokenizer_algorithm": "CharBPETokenizer",
+      "tmp_path": "/tmp",
+      "dropout": 0,
+      "vocab_size": 8000,
+      "seq_length": 512,
+      "samples_for_test": 0,
+      "samples_for_valid": 5000,
+      "samples_for_train": 469000
+    }
+  },
+  "trainer": {
+    "hyper_params": {
+      "loss": "mlm_loss",
+      "metrics": [
+        "perplexity_mlm"
+      ],
+      "optimizer": "adam-transformer",
+      "lr_rate": [
+        -1
+      ],
+      "epochs": [
+        5
+      ],
+      "batch_size": [
+        128
+      ],
+      "patience": [
+        -1
+      ]
+    }
+  }
+}

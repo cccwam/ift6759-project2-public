@@ -12,6 +12,7 @@ from libs.data_loaders import AbstractDataloader
 from libs.losses import mlm_loss
 from libs.metrics import perplexity, BleuIntervalEvaluation, perplexity_mlm
 from libs.models import transformer
+from libs.models.transformer import Encoder, Decoder
 from libs.optimizers import CustomSchedule
 
 logger = tf.get_logger()
@@ -94,11 +95,16 @@ def prepare_model(config):
         else:
             raise FileNotFoundError(f'Error: The file {default_model_path} does not exist.')
 
-    print(f"Loading model: {model_source}")
+    logger.info(f"Loading model: {model_source}")
     if config["model"]["definition"]["module"] == 'libs.models.transformerv2':
         model = transformer.load_transformer(config)
-    else:
-        model = tf.keras.models.load_model(model_source)
+    else:  # TODO both are doing the same. To do some refactoring? @Blaise
+        model: tf.keras.Model = tf.keras.models.load_model(model_source,
+                                                           custom_objects={'Encoder': Encoder,
+                                                                           'Decoder': Decoder,
+                                                                           'CustomSchedule': CustomSchedule,
+                                                                           'mlm_loss': mlm_loss}, compile=False)
+
     return model
 
 
@@ -121,13 +127,13 @@ def get_tensorboard_experiment_id(experiment_name, tensorboard_tracking_folder: 
     return tensorboard_tracking_folder / model_sub_folder
 
 
-def compile_model(model,
+def compile_model(model: tf.keras.Model,
                   learning_rate: float,
                   dataloader: AbstractDataloader,
                   loss: str,
                   optimizer: str,
                   config: dict,
-                  metrics: List[str] = None):
+                  metrics: List[str] = None) -> (tf.keras.models.Model, List[tf.keras.callbacks.Callback]):
     """
         Helper function to compile a new model at each variation of the experiment
     :param learning_rate:

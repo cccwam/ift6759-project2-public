@@ -1,9 +1,9 @@
 # Summary:
 #   Trains the predictor
 
-import os
 import argparse
 import logging
+import os
 import typing
 from pathlib import Path
 from typing import List
@@ -148,6 +148,7 @@ def train_models(
 
                     if tensorboard_tracking_folder is not None:
                         tensorboard_log_dir = str(tensorboard_experiment_id / str(variation_num))
+                        # TF format is needed to load layers and not just model (hdf5 doesn't work)
                         checkpoints_path = str(tensorboard_log_dir) + "/" + (tensorboard_experiment_name +
                                                                              ".{epoch:02d}-{val_loss:.2f}.tf")
                         logger.info(f"Start variation id: " + str(tensorboard_log_dir))
@@ -191,9 +192,9 @@ def train_model(
         loss: str,
         optimizer: str,
         metrics: List[str],
-        patience: int,
         checkpoints_path: str,
         config: dict,
+        patience: int,
 ):
     """
     The training loop for a single model
@@ -221,7 +222,7 @@ def train_model(
         # Workaround for https://github.com/tensorflow/tensorboard/issues/2412
         callbacks = [tf.keras.callbacks.TensorBoard(log_dir=tensorboard_log_dir, profile_batch=0),
                      tf.keras.callbacks.ModelCheckpoint(filepath=checkpoints_path, save_weights_only=False,
-                                                        save_best_only=True, monitor='val_loss'),
+                                                        save_best_only=False, monitor='val_loss'),
                      hp.KerasCallback(writer=str(tensorboard_log_dir), hparams=hparams)]
     else:
         callbacks = []
@@ -245,12 +246,16 @@ def train_model(
                                                                      learning_rate=learning_rate,
                                                                      config=config)
 
-    callbacks += [tf.keras.callbacks.EarlyStopping(patience=patience)] + additional_callbacks
+    if patience != -1:
+        callbacks += [tf.keras.callbacks.EarlyStopping(patience=patience)] + additional_callbacks
+    else:
+        callbacks += additional_callbacks
 
     compiled_model.fit(
         dataloader.training_dataset,
         epochs=epochs,
         callbacks=callbacks,
+        steps_per_epoch=dataloader.train_steps if hasattr(dataloader, "train_steps") else None,
         validation_data=dataloader.valid_dataset,
         validation_steps=dataloader.validation_steps
     )

@@ -25,6 +25,7 @@ def builder(
     seq_length_target = dl_hparams["seq_length_target"]
 
     # For the config see https://github.com/google-research/bert
+    # noinspection DuplicatedCode
     name = model_hparams["name"]
     num_hidden_layers = model_hparams["num_hidden_layers"]
     num_attention_heads = model_hparams["num_attention_heads"]
@@ -40,7 +41,7 @@ def builder(
         num_hidden_layers, hidden_size, num_attention_heads, intermediate_size, vocab_size_target,
         seq_length_target, dropout_rate=dropout_rate)
 
-    final_layer = tf.keras.layers.Dense(vocab_size_target)
+    final_layer = tf.keras.layers.Dense(vocab_size_target, name="final_layer")
 
     enc_inp = tf.keras.layers.Input(
         shape=(None,), dtype=tf.int32, name="enc_inp")
@@ -64,5 +65,5 @@ def builder(
                            outputs, name=name)
 
     model.summary(line_length=120)
-    load_pretrained_layers(config=config, my_model=model)
+    model = load_pretrained_layers(config=config, my_model=model)
     return model

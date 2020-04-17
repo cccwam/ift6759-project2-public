@@ -1,0 +1,82 @@
+{
+  "model": {
+    "definition": {
+      "module": "libs.models.transformers_mt_encoder_decoder_v1",
+      "name": "builder"
+    },
+    "hyper_params": {
+      "name": "Transformers-Tiny",
+      "num_hidden_layers": 3,
+      "num_attention_heads": 4,
+      "hidden_size": 128,
+      "intermediate_size": 512,
+      "dropout_rate": 0.2
+    },
+    "source": "TODO.tf"
+  },
+  "data_loader": {
+    "definition": {
+      "module": "libs.data_loaders.dataloader_bilingual_tensorflow",
+      "name": "BilingualTranslationTFSubword"
+    },
+    "hyper_params": {
+      "preprocessed_data": {
+        "folder": "/project/cq-training-1/project2/teams/team03/data/preprocessed_13042020",
+        "bilingual_corpus_filenames": [
+          "train_lang1_en.txt",
+          "train_lang2_fr.txt"
+        ],
+        "languages": [
+          "BOTH",
+          "BOTH"
+        ],
+        "corpora_filenames": [
+          [
+            "unaligned_en.txt",
+            "unaligned_fr.txt",
+            "train_lang1_en.txt",
+            "train_lang2_fr.txt"
+          ],
+          [
+            "unaligned_en.txt",
+            "unaligned_fr.txt",
+            "train_lang1_en.txt",
+            "train_lang2_fr.txt"
+          ]
+        ]
+      },
+      "pretrained_model_dir_path": "/project/cq-training-1/project2/teams/team03/models/pretokenizers",
+      "tokenizer_algorithm": "SubWordTextEncoder",
+      "tmp_path": "/tmp",
+      "vocab_size_source": 8000,
+      "seq_length_source": 512,
+      "vocab_size_target": 8000,
+      "seq_length_target": 512,
+      "samples_for_test": 500,
+      "samples_for_valid": 500,
+      "samples_for_train": 10000
+    }
+  },
+  "trainer": {
+    "hyper_params": {
+      "loss": "mlm_loss",
+      "metrics": [
+        "sparse_accuracy",
+        "bleu"
+      ],
+      "optimizer": "adam-transformer",
+      "lr_rate": [
+        -1
+      ],
+      "epochs": [
+        50
+      ],
+      "batch_size": [
+        32
+      ],
+      "patience": [
+        -1
+      ]
+    }
+  }
+}
