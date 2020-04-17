@@ -477,10 +477,10 @@ def inference(tokenizer, model, test_dataset):
     return all_predictions
 
 
-# Perform inference by randomly searching for each sentence, the k most probable
-# ids and return the sentence having the most added probability
+
 def inferenceRandomSearch(tokenizer, model, test_dataset):
-    """Inference step for transformer.
+    """Perform inference by randomly searching for each sentence, the k most probable
+    ids and return the sentence having the most added probability
 
     :param tokenizer: tokenizer used for sentence reconstruction
     :param model: tf.keras.Model, the model to use
@@ -538,9 +538,10 @@ def inferenceRandomSearch(tokenizer, model, test_dataset):
 
     return all_predictions
 
-# Helper method of inferenceRandomSearch performing the computation for an input's batch
-def randomSearch(encoder, decoder, final_layer, test_inp, k):
 
+def randomSearch(encoder, decoder, final_layer, test_inp, k):
+    """Helper method of inferenceRandomSearch performing the computation for an input's batch
+    """
 
     score = 0
     enc_inp, dec_inp, padding_mask, combined_mask = test_inp
@@ -556,7 +557,7 @@ def randomSearch(encoder, decoder, final_layer, test_inp, k):
         predictions = final_output[:, -1:, :]
 
         # Sort id and scores
-        bestId = tf.argsort(predictions) 
+        bestId = tf.argsort(predictions)
         bestScore = tf.sort(predictions)
 
         # Take one of the k best scores
