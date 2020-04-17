@@ -34,6 +34,14 @@ def generate_predictions(input_file_path: str, pred_file_path: str):
     logger = tf.get_logger()
     logger.setLevel(logging.DEBUG)
 
+    import numpy as np
+    import random
+    from libs.seeds import TENSOR_FLOW_SEED, NUMPY_SEED, RANDOM_SEED
+
+    tf.random.set_seed(TENSOR_FLOW_SEED)
+    np.random.seed(NUMPY_SEED)
+    random.seed(RANDOM_SEED)
+
     best_config_file = '/project/cq-training-1/project2/teams/team03/models/transformer_mass_v1_translation_with_pretraining_resume.json'
     # best_config_file = 'configs/user/transformers-fm/TFM_TINY_BBPE_eval.json'
     logger.info(f"Using best config file: {best_config_file}")

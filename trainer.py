@@ -14,6 +14,14 @@ from tensorboard.plugins.hparams import api as hp
 from libs import helpers
 from libs.data_loaders.abstract_dataloader import AbstractDataloader
 
+import numpy as np
+import random
+from libs.seeds import TENSOR_FLOW_SEED, NUMPY_SEED, RANDOM_SEED
+
+tf.random.set_seed(TENSOR_FLOW_SEED)
+np.random.seed(NUMPY_SEED)
+random.seed(RANDOM_SEED)
+
 logger = tf.get_logger()
 
 
