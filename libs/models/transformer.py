@@ -541,20 +541,22 @@ def inferenceRandomSearch(tokenizer, model, test_dataset):
 # Helper method of inferenceRandomSearch performing the computation for an input's batch
 def randomSearch(encoder, decoder, final_layer, test_inp, k):
 
+
     score = 0
     enc_inp, dec_inp, padding_mask, combined_mask = test_inp
     enc_output = encoder(inputs=enc_inp, mask=padding_mask, training=False)
 
     for slen in range(100):
-        dec_output, attention_weights = decoder(inputs=dec_inp, enc_output=enc_output, look_ahead_mask=combined_mask, padding_mask=padding_mask, training=False)
-
+        dec_output, attention_weights = decoder(
+                inputs=dec_inp, enc_output=enc_output, look_ahead_mask=combined_mask,
+                padding_mask=padding_mask, training=False)
         final_output = final_layer(inputs=dec_output)
 
         # select the last word from the seq_len dimension
         predictions = final_output[:, -1:, :]
 
         # Sort id and scores
-        bestId = tf.argsort(predictions)        
+        bestId = tf.argsort(predictions) 
         bestScore = tf.sort(predictions)
 
         # Take one of the k best scores
@@ -563,7 +565,7 @@ def randomSearch(encoder, decoder, final_layer, test_inp, k):
             for idR, scoreR in zip(idRow, scoreRow):
 
                 # At beggining of sequence, allow for randomness, but after, always pick best score
-                if slen > 15: 
+                if slen > 15:
                     k = 1
 
                 # Get one of the k best ID and its corresponding score
