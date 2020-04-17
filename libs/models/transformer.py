@@ -483,6 +483,8 @@ def inference(tokenizer, model, test_dataset):
     return all_predictions
 
 
+# Perform inference by randomly searching for each sentence, the k most probable
+# ids and return the sentence having the most added probability
 def inferenceRandomSearch(tokenizer, model, test_dataset):
     """Inference step for transformer.
 
@@ -542,6 +544,7 @@ def inferenceRandomSearch(tokenizer, model, test_dataset):
 
     return all_predictions
 
+# Helper method of inferenceRandomSearch performing the computation for an input's batch
 def randomSearch(encoder, decoder, final_layer, test_inp, k):
     
     score = 0
