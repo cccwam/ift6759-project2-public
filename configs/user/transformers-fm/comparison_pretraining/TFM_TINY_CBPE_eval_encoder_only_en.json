@@ -12,7 +12,7 @@
       "intermediate_size": 512,
       "dropout_rate": 0.2
     },
-    "source": "/project/cq-training-1/project2/teams/team03/tensorboard/wam/comparison_pretraining/TFM_TINY_CBPE_translation/transformers_mt_encoder_decoder_v1.builder_dataloader_bilingual_huggingface.BilingualTranslationHFSubword-2020-04-15T21:58:58.219276/0/transformers_mt_encoder_decoder_v1.builder_dataloader_bilingual_huggingface.BilingualTranslationHFSubword.68-4.20.tf"
+    "source": "/project/cq-training-1/project2/teams/team03/tensorboard/guest120/comparison_pretraining/TFM_TINY_CBPE_translation_pretrained_encoder_only_en/transformers_mt_encoder_decoder_v1.builder_dataloader_bilingual_huggingface.BilingualTranslationHFSubword-2020-04-17T04:51:25.719241/0/transformers_mt_encoder_decoder_v1.builder_dataloader_bilingual_huggingface.BilingualTranslationHFSubword.50-4.77.tf"
   },
   "data_loader": {
     "definition": {
