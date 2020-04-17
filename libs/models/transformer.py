@@ -416,12 +416,10 @@ def load_transformer(config):
 
 def inference(tokenizer, model, test_dataset):
     """Inference step for transformer.
-
     :param tokenizer: tokenizer used for sentence reconstruction
     :param model: tf.keras.Model, the model to use
     :param test_dataset: tokenized test sentences to translate
     :return: list of sentences, the translated sentences
-
     """
 
     begin_token = tokenizer.vocab_size
@@ -436,12 +434,12 @@ def inference(tokenizer, model, test_dataset):
     # final_layer = [layer for layer in model.layers if layer.name == '???'][0]
     all_predictions = []
     for i, test_inp in enumerate(test_dataset):
-        # ToDo better verbosity
-        print(i)
+        if i % 10 == 0:
+            print(f"Running inference for batch {i + 1}-{i + 10}")
         enc_inp, dec_inp, padding_mask, combined_mask = test_inp
         enc_output = encoder(inputs=enc_inp, mask=padding_mask, training=False)
         # ToDo allow different max length?
-        for slen in range(100):
+        for slen in range(60):
             dec_output, attention_weights = decoder(
                 inputs=dec_inp, enc_output=enc_output, look_ahead_mask=combined_mask,
                 padding_mask=padding_mask, training=False)
@@ -451,12 +449,10 @@ def inference(tokenizer, model, test_dataset):
             # select the last word from the seq_len dimension
             predictions = final_output[:, -1:, :]
             # (batch_size, 1, vocab_size)
-            
-           
-            predicted_id = tf.cast(tf.argmax(predictions, axis=-1), tf.int32)  # (batch_size, 1)
-            
-            #print(tf.shape(predicted_id))
-            
+
+            predicted_id = tf.cast(tf.argmax(predictions, axis=-1),
+                                   tf.int32)  # (batch_size, 1)
+
             # ToDo reimplement this stop criteria in batch?
             # return the result if the predicted_id is equal to the end token
             # if predicted_id == end_token:
@@ -467,7 +463,6 @@ def inference(tokenizer, model, test_dataset):
             # decoder as its input.
             dec_inp = tf.concat([dec_inp, predicted_id], axis=-1)
 
-
         for timestep in range(dec_inp.shape[0]):
             sent_ids = []
             for j in dec_inp[timestep]:
@@ -476,8 +471,7 @@ def inference(tokenizer, model, test_dataset):
                 if j == end_token:
                     break
                 sent_ids.append(j)
-
-                predicted_sentence = tokenizer.decode(sent_ids)
+            predicted_sentence = tokenizer.decode(sent_ids)
             all_predictions.append(predicted_sentence)
 
     return all_predictions
@@ -510,25 +504,25 @@ def inferenceRandomSearch(tokenizer, model, test_dataset):
     for i, test_inp in enumerate(test_dataset):
         # ToDo better verbosity
         print(i)
-        
+
         # Get sentence using greedy search
         dec_inp_greedy, score_greedy = randomSearch(encoder, decoder, final_layer, test_inp, 1)
-        
+
         # Currently greedy is best solution
         best_score = score_greedy
         dec_inp = dec_inp_greedy
-       
+
         # Randomly search for a better sentence by creating 10 sentences and keeping the one having the highest score
         for i in range(10):
-            
+
             # Get new sequence of ids
             dec_inp_random, score_random = randomSearch(encoder, decoder, final_layer, test_inp, 2)
-            
+
             # Check if better than greedy
             if score_random > best_score:
                 dec_inp = dec_inp_random
                 best_score = score_random
-        
+
         # Convert ids to words
         for timestep in range(dec_inp.shape[0]):
             sent_ids = []
@@ -546,40 +540,40 @@ def inferenceRandomSearch(tokenizer, model, test_dataset):
 
 # Helper method of inferenceRandomSearch performing the computation for an input's batch
 def randomSearch(encoder, decoder, final_layer, test_inp, k):
-    
+
     score = 0
     enc_inp, dec_inp, padding_mask, combined_mask = test_inp
     enc_output = encoder(inputs=enc_inp, mask=padding_mask, training=False)
-    
+
     for slen in range(100):
         dec_output, attention_weights = decoder(inputs=dec_inp, enc_output=enc_output, look_ahead_mask=combined_mask, padding_mask=padding_mask, training=False)
 
         final_output = final_layer(inputs=dec_output)
-    
+
         # select the last word from the seq_len dimension
         predictions = final_output[:, -1:, :]
 
         # Sort id and scores
         bestId = tf.argsort(predictions)        
         bestScore = tf.sort(predictions)
-        
+
         # Take one of the k best scores
         predicted_id = []
         for idRow, scoreRow in zip(bestId, bestScore):
             for idR, scoreR in zip(idRow, scoreRow):
-                
+
                 # At beggining of sequence, allow for randomness, but after, always pick best score
                 if slen > 15: 
                     k = 1
-                
+
                 # Get one of the k best ID and its corresponding score
                 randomIndex = random.randint(1, k)
                 predicted_id.append([idR[-randomIndex]])
                 score += scoreR[-randomIndex]
-        
+
         # Convert to tensor
         predicted_id = tf.convert_to_tensor(predicted_id)
-        
-        dec_inp = tf.concat([dec_inp, predicted_id], axis=-1) 
-    
+
+        dec_inp = tf.concat([dec_inp, predicted_id], axis=-1)
+
     return dec_inp, score
