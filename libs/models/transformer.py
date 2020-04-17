@@ -477,7 +477,6 @@ def inference(tokenizer, model, test_dataset):
     return all_predictions
 
 
-
 def inferenceRandomSearch(tokenizer, model, test_dataset):
     """Perform inference by randomly searching for each sentence, the k most probable
     ids and return the sentence having the most added probability
@@ -540,8 +539,7 @@ def inferenceRandomSearch(tokenizer, model, test_dataset):
 
 
 def randomSearch(encoder, decoder, final_layer, test_inp, k):
-    """Helper method of inferenceRandomSearch performing the computation for an input's batch
-    """
+    """Helper method of inferenceRandomSearch """
 
     score = 0
     enc_inp, dec_inp, padding_mask, combined_mask = test_inp
