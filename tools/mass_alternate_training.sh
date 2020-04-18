@@ -1,5 +1,6 @@
 #!/bin/bash
 # This script runs the alternating strategy for MASS pretraining.
+# Must be called from the repository root directory as `bash tools/mass_alternate_training.sh`
 # An initial run of the translation task is required with
 # python trainer.py -c=configs/user/transformer_mass_v1_translation_no_pretraining.json
 # and the resulting model must be copied, in this case we use the location:

@@ -117,6 +117,6 @@ python trainer.py \
 # For evaluation, do not forget to change the best_config in evaluator.py
 
 # The alternating MASS training is facilitated by the script
-./mass_alternate_training.sh
+bash tools/mass_alternate_training.sh
 ``` 
 
