@@ -29,7 +29,10 @@
       "samples_for_valid": 0,
       "samples_for_train": 0,
       "vocab_size_source": 8273,
-      "vocab_size_target": 8273
+      "vocab_size_target": 8273,
+      "train_take": 200000,
+      "validation_take": 20000,
+      "random_seed": 1234
     }
   },
   "trainer": {

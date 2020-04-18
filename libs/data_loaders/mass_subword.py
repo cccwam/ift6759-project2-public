@@ -1,13 +1,44 @@
 import copy
+import json
 import os
 import random
 
 import tensorflow as tf
+import tensorflow_datasets as tfds
 
-from libs.data_loaders import subwords
 from libs.models import transformer
 
 TextLineDataset = tf.data.TextLineDataset
+
+
+def subword_tokenizer(vocabulary_file, sentences, target_vocab_size=2 ** 13,
+                      force_compute=False):
+    """Subword tokenizer for given sentences
+
+    :param vocabulary_file: str, path to vocabulary file on disk
+    :param sentences: TextLineDataset of the sentences
+    :param target_vocab_size: int
+    :param force_compute: force computation even if vocabulary_file exists
+    :return: tokenizer
+    """
+
+    if force_compute or (not os.path.isfile(vocabulary_file + '.subwords')):
+        print(f"Computing subword vocabulary ({vocabulary_file})")
+        tokenizer = tfds.features.text.SubwordTextEncoder.build_from_corpus(
+            (sentence.numpy() for sentence in sentences),
+            target_vocab_size=target_vocab_size)
+        tokenizer.save_to_file(vocabulary_file)
+        all_tokens = []
+        for i in range(tokenizer.vocab_size):
+            all_tokens.append(tokenizer.decode([i]))
+        with open(vocabulary_file + '.json', 'w') as file_vocab:
+            file_vocab.write(json.dumps(all_tokens, indent=2))
+
+    else:
+        print(f"Loading precomputed subword vocabulary ({vocabulary_file})")
+        tokenizer = tfds.features.text.SubwordTextEncoder.load_from_file(
+            vocabulary_file)
+    return tokenizer
 
 
 def create_for_transformer_pre_mask(tokenizer):
@@ -224,7 +255,7 @@ class MassSubwordDataLoader:
         if self.raw_english_test_set_file_path:
             sentences_test = TextLineDataset([self.raw_english_test_set_file_path])
 
-        self.tokenizer = subwords.subword_tokenizer(
+        self.tokenizer = subword_tokenizer(
             vocabulary_name, datasets['sentences_all_train'])
         self.vocab_size_source = self.tokenizer.vocab_size + 2
         print(self.vocab_size_source)
@@ -354,20 +385,21 @@ class MassSubwordDataLoaderPretraining:
 
         dl_hparams = self.config["data_loader"]["hyper_params"]
         vocabulary_name = dl_hparams["vocabulary_name"]
+        rseed = dl_hparams["random_seed"]
+        train_take = dl_hparams["train_take"]
+        validation_take = dl_hparams["validation_take"]
 
         datasets = create_text_datasets(self.config)
 
-        self.tokenizer = subwords.subword_tokenizer(
+        self.tokenizer = subword_tokenizer(
             vocabulary_name, datasets['sentences_all_train'])
         self.vocab_size_source = self.tokenizer.vocab_size + 2
         print(self.vocab_size_source)
 
-        # ToDo use the whole dataset
-        # ToDo random seed (rotation?)
-        sentences_both_train = datasets['sentences_all_train'].shuffle(buffer_size=1000000).take(100000)
-        sentences_both_validation = datasets['sentences_all_validation'].shuffle(buffer_size=1000000).take(10000)
-        # sentences_both_train = datasets['sentences_all_train'].shuffle(buffer_size=1000000)
-        # sentences_both_validation = datasets['sentences_all_validation'].shuffle(buffer_size=1000000)
+        sentences_both_train = datasets['sentences_all_train'].shuffle(
+            buffer_size=1000000, seed=rseed).take(train_take)
+        sentences_both_validation = datasets['sentences_all_validation'].shuffle(
+            buffer_size=1000000, seed=rseed).take(validation_take)
 
         tf_encode = create_for_transformer_mass_task(self.tokenizer)
 
