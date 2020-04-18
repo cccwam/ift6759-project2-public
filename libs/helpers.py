@@ -11,7 +11,6 @@ import tensorflow as tf
 from libs.data_loaders import AbstractDataloader
 from libs.losses import mlm_loss
 from libs.metrics import perplexity, BleuIntervalEvaluation, perplexity_mlm
-from libs.models import transformer
 from libs.models.transformer import Encoder, Decoder
 from libs.optimizers import CustomSchedule
 
