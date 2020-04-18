@@ -96,14 +96,11 @@ def prepare_model(config):
             raise FileNotFoundError(f'Error: The file {default_model_path} does not exist.')
 
     logger.info(f"Loading model: {model_source}")
-    if config["model"]["definition"]["module"] == 'libs.models.transformerv2':
-        model = transformer.load_transformer(config)
-    else:  # TODO both are doing the same. To do some refactoring? @Blaise
-        model: tf.keras.Model = tf.keras.models.load_model(model_source,
-                                                           custom_objects={'Encoder': Encoder,
-                                                                           'Decoder': Decoder,
-                                                                           'CustomSchedule': CustomSchedule,
-                                                                           'mlm_loss': mlm_loss}, compile=False)
+    model: tf.keras.Model = tf.keras.models.load_model(model_source,
+                                                       custom_objects={'Encoder': Encoder,
+                                                                       'Decoder': Decoder,
+                                                                       'CustomSchedule': CustomSchedule,
+                                                                       'mlm_loss': mlm_loss}, compile=False)
 
     return model
 

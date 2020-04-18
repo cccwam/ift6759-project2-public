@@ -6,13 +6,13 @@
     },
     "hyper_params": {
       "name": "TRANSFORMER_MASS_V1",
-      "num_layers": 4,
-      "d_model": 256,
-      "num_heads": 8,
-      "dff": 1024,
+      "num_layers": 3,
+      "d_model": 128,
+      "num_heads": 4,
+      "dff": 512,
       "dropout_rate": 0.2
     },
-    "source": "/project/cq-training-1/project2/teams/team03/models/libs.models.transformerv2.MASS_V2_PRETRAINING.hdf5"
+    "source": "/project/cq-training-1/project2/teams/team03/models/best_model.hdf5"
   },
   "data_loader": {
     "definition": {
@@ -30,8 +30,8 @@
       "samples_for_train": 0,
       "vocab_size_source": 8273,
       "vocab_size_target": 8273,
-      "train_take": 200000,
-      "validation_take": 20000,
+      "train_take": 100000,
+      "validation_take": 10000,
       "random_seed": 1234
     }
   },
@@ -42,7 +42,7 @@
         -1
       ],
       "epochs": [
-        40
+        1
       ],
       "optimizer": "adam-transformer",
       "metrics": [
@@ -52,7 +52,7 @@
         64
       ],
       "patience": [
-        10
+        100
       ]
     }
   }

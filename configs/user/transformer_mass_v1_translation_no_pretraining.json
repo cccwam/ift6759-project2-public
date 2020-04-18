@@ -29,7 +29,10 @@
       "samples_for_valid": 0,
       "samples_for_train": 0,
       "vocab_size_source": 8273,
-      "vocab_size_target": 8273
+      "vocab_size_target": 8273,
+      "train_take": 100000,
+      "validation_take": 10000,
+      "random_seed": 1234
     }
   },
   "trainer": {
@@ -39,7 +42,7 @@
         -1
       ],
       "epochs": [
-        35
+        100
       ],
       "optimizer": "adam-transformer",
       "metrics": [
@@ -49,7 +52,7 @@
         64
       ],
       "patience": [
-        40
+        5
       ]
     }
   }

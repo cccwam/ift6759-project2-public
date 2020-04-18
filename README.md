@@ -115,5 +115,8 @@ python trainer.py \
     --config config/user/transformer_mass_v1_translation_with_pretraining.json
     --tensorboard_tracking_folder /project/cq-training-1/project2/teams/team03/tensorboard/$USER
 # For evaluation, do not forget to change the best_config in evaluator.py
+
+# The alternating MASS training is facilitated by the script
+./mass_alternate_training.sh
 ``` 
 
