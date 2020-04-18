@@ -6,7 +6,6 @@ import random
 import tensorflow as tf
 import tensorflow_datasets as tfds
 
-from libs.data_loaders import subwords
 from libs.models import transformer
 
 TextLineDataset = tf.data.TextLineDataset
