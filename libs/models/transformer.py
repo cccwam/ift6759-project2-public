@@ -10,6 +10,7 @@ from typing import List
 
 import numpy as np
 import tensorflow as tf
+import random
 
 from libs import losses
 from libs.optimizers import CustomSchedule
@@ -422,12 +423,10 @@ def load_transformer(config):
 
 def inference(tokenizer, model, test_dataset):
     """Inference step for transformer.
-
     :param tokenizer: tokenizer used for sentence reconstruction
     :param model: tf.keras.Model, the model to use
     :param test_dataset: tokenized test sentences to translate
     :return: list of sentences, the translated sentences
-
     """
 
     begin_token = tokenizer.vocab_size
@@ -476,3 +475,106 @@ def inference(tokenizer, model, test_dataset):
             all_predictions.append(predicted_sentence)
 
     return all_predictions
+
+
+def inferenceRandomSearch(tokenizer, model, test_dataset):
+    """Perform inference by randomly searching for each sentence, the k most probable
+    ids and return the sentence having the most added probability
+
+    :param tokenizer: tokenizer used for sentence reconstruction
+    :param model: tf.keras.Model, the model to use
+    :param test_dataset: tokenized test sentences to translate
+    :return: list of sentences, the translated sentences
+
+    """
+
+    begin_token = tokenizer.vocab_size
+    end_token = tokenizer.vocab_size + 1
+
+    # ToDo actually fetch by name
+    encoder = model.layers[3]
+    # encoder = [layer for layer in model.layers if layer.name=='Encoder'][0]
+    decoder = model.layers[5]
+    # decoder = [layer for layer in model.layers if layer.name == 'Decoder'][0]
+    final_layer = model.layers[6]
+    # final_layer = [layer for layer in model.layers if layer.name == '???'][0]
+    all_predictions = []
+
+    for i, test_inp in enumerate(test_dataset):
+        # ToDo better verbosity
+        print(i)
+
+        # Get sentence using greedy search
+        dec_inp_greedy, score_greedy = randomSearch(encoder, decoder, final_layer, test_inp, 1)
+
+        # Currently greedy is best solution
+        best_score = score_greedy
+        dec_inp = dec_inp_greedy
+
+        # Randomly search for a better sentence by creating 10 sentences and keeping the one having the highest score
+        for i in range(10):
+
+            # Get new sequence of ids
+            dec_inp_random, score_random = randomSearch(encoder, decoder, final_layer, test_inp, 2)
+
+            # Check if better than greedy
+            if score_random > best_score:
+                dec_inp = dec_inp_random
+                best_score = score_random
+
+        # Convert ids to words
+        for timestep in range(dec_inp.shape[0]):
+            sent_ids = []
+            for j in dec_inp[timestep]:
+                if j == begin_token:
+                    continue
+                if j == end_token:
+                    break
+                sent_ids.append(j)
+
+                predicted_sentence = tokenizer.decode(sent_ids)
+            all_predictions.append(predicted_sentence)
+
+    return all_predictions
+
+
+def randomSearch(encoder, decoder, final_layer, test_inp, k):
+    """Helper method of inferenceRandomSearch """
+
+    score = 0
+    enc_inp, dec_inp, padding_mask, combined_mask = test_inp
+    enc_output = encoder(inputs=enc_inp, mask=padding_mask, training=False)
+
+    for slen in range(100):
+        dec_output, attention_weights = decoder(
+                inputs=dec_inp, enc_output=enc_output, look_ahead_mask=combined_mask,
+                padding_mask=padding_mask, training=False)
+        final_output = final_layer(inputs=dec_output)
+
+        # select the last word from the seq_len dimension
+        predictions = final_output[:, -1:, :]
+
+        # Sort id and scores
+        bestId = tf.argsort(predictions)
+        bestScore = tf.sort(predictions)
+
+        # Take one of the k best scores
+        predicted_id = []
+        for idRow, scoreRow in zip(bestId, bestScore):
+            for idR, scoreR in zip(idRow, scoreRow):
+
+                # At beggining of sequence, allow for randomness, but after, always pick best score
+                if slen > 15:
+                    k = 1
+
+                # Get one of the k best ID and its corresponding score
+                randomIndex = random.randint(1, k)
+                predicted_id.append([idR[-randomIndex]])
+                score += scoreR[-randomIndex]
+
+        # Convert to tensor
+        predicted_id = tf.convert_to_tensor(predicted_id)
+
+        dec_inp = tf.concat([dec_inp, predicted_id], axis=-1)
+
+    return dec_inp, score
