@@ -425,7 +425,6 @@ def inference(tokenizer, model, test_dataset):
     begin_token = tokenizer.vocab_size
     end_token = tokenizer.vocab_size + 1
 
-    # ToDo actually fetch by name
     encoder = model.layers[3]
     # encoder = [layer for layer in model.layers if layer.name=='Encoder'][0]
     decoder = model.layers[5]
@@ -438,7 +437,7 @@ def inference(tokenizer, model, test_dataset):
             print(f"Running inference for batch {i + 1}-{i + 10}")
         enc_inp, dec_inp, padding_mask, combined_mask = test_inp
         enc_output = encoder(inputs=enc_inp, mask=padding_mask, training=False)
-        # ToDo allow different max length?
+        # a maximum length of 60 was experimentally determined to be the best
         for slen in range(60):
             dec_output, attention_weights = decoder(
                 inputs=dec_inp, enc_output=enc_output, look_ahead_mask=combined_mask,
@@ -452,12 +451,6 @@ def inference(tokenizer, model, test_dataset):
 
             predicted_id = tf.cast(tf.argmax(predictions, axis=-1),
                                    tf.int32)  # (batch_size, 1)
-
-            # ToDo reimplement this stop criteria in batch?
-            # return the result if the predicted_id is equal to the end token
-            # if predicted_id == end_token:
-            #     return tf.squeeze(transformer_output,
-            #                       axis=0), attention_weights
 
             # concatentate the predicted_id to the output which is given to the
             # decoder as its input.
